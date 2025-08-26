@@ -4,7 +4,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-// import { useRouter } from 'next/navigation' // FIX: Removed unused import
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,7 +12,7 @@ import Link from 'next/link'
 type Connection = {
   id: number
   status: string
-  sponsor_email?: string
+  sponsor_email?: string 
 }
 
 export default function SponsorPage() {
@@ -49,6 +48,7 @@ export default function SponsorPage() {
     fetchConnection()
   }, [fetchConnection])
 
+  // UPDATED FUNCTION
   const handleInviteSponsor = async () => {
     if (!sponsorEmail.trim()) {
       alert('Please enter a valid email address for your sponsor.')
@@ -59,8 +59,20 @@ export default function SponsorPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('You must be logged in to invite a sponsor.')
 
-      alert(`In a full app, an email invite would be sent to ${sponsorEmail}. For now, we will simulate this by creating a pending connection if the user exists.`)
-      
+      // This securely calls our Edge Function
+      const { data, error } = await supabase.functions.invoke('invite-sponsor', {
+        body: { 
+          practitioner_user_id: user.id,
+          sponsor_email: sponsorEmail 
+        },
+      })
+
+      if (error) throw error
+
+      alert(data.message)
+      // Refresh the connection status to show the new 'pending' state
+      fetchConnection()
+
     } catch (error) {
       if (error instanceof Error) alert(error.message)
     } finally {
@@ -87,7 +99,6 @@ export default function SponsorPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* FIX: Replaced ' with &apos; below */}
               <p>You are not currently connected with a sponsor. Enter your sponsor&apos;s email address below to invite them.</p>
               <Input
                 type="email"
