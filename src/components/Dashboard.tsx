@@ -1,5 +1,3 @@
-// src/components/Dashboard.tsx
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -57,7 +55,12 @@ export default function Dashboard({ session }: { session: Session }) {
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-gray-600">Signed in as: {session.user.email}</p>
         </div>
-        <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
+        <div className="flex items-center space-x-2">
+          <Link href="/sponsor">
+            <Button variant="outline">Manage Sponsor</Button>
+          </Link>
+          <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -66,7 +69,6 @@ export default function Dashboard({ session }: { session: Session }) {
           <p>Loading virtues...</p>
         ) : (
           <ul className="space-y-3">
-            {/* CORRECTED STRUCTURE BELOW */}
             {virtues.map((virtue) => (
               <li key={virtue.id}>
                 <Link 

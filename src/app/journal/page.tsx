@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react' // FIX: Removed unused 'useCallback'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 
+// ... (rest of the file is exactly the same)
 // Define our data types
 type JournalEntry = {
   id: number
@@ -50,7 +51,6 @@ export default function JournalPage() {
 
         if (data && data.length > 0) {
           setActiveVirtue(data[0])
-          // Once we have the active virtue, fetch its entries
           const { data: entryData, error: entryError } = await supabase
             .from('user_journal_entries')
             .select('*')
@@ -89,7 +89,6 @@ export default function JournalPage() {
 
         if (error) throw error
         
-        // Add the new entry to the top of the list for an instant update
         if (newEntry) {
           setEntries([newEntry, ...entries])
         }
@@ -139,7 +138,6 @@ export default function JournalPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Morning Section */}
         <section>
           <Card>
             <CardHeader><CardTitle>Morning Intention</CardTitle></CardHeader>
@@ -162,7 +160,6 @@ export default function JournalPage() {
           </div>
         </section>
 
-        {/* Evening Section */}
         <section>
           <Card>
             <CardHeader><CardTitle>Evening Reflection</CardTitle></CardHeader>

@@ -33,9 +33,11 @@ export default function VirtueDetailPage() {
 
         if (error) throw error
         if (data) {
-          data.virtue_stages.sort((a, b) => a.stage_number - b.stage_number);
+          // FIX: Add explicit types for sort parameters
+          data.virtue_stages.sort((a: Stage, b: Stage) => a.stage_number - b.stage_number);
           data.virtue_stages.forEach(stage => {
-            stage.stage_prompts.sort((a, b) => a.id - b.id);
+            // FIX: Add explicit types for sort parameters
+            stage.stage_prompts.sort((a: Prompt, b: Prompt) => a.id - b.id);
           });
           setVirtue(data)
         }
@@ -56,12 +58,11 @@ export default function VirtueDetailPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('You must be logged in to select a virtue.')
 
-      // CORRECTED UPSERT COMMAND
       const { error } = await supabase
         .from('user_active_virtue')
         .upsert(
           { user_id: user.id, virtue_id: id },
-          { onConflict: 'user_id' } // Tells Supabase which column to check for conflicts
+          { onConflict: 'user_id' }
         )
 
       if (error) throw error
