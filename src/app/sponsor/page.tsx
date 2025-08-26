@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter } from 'next/navigation'
+// import { useRouter } from 'next/navigation' // FIX: Removed unused import
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,8 +13,7 @@ import Link from 'next/link'
 type Connection = {
   id: number
   status: string
-  // We'll need to join to get sponsor details later
-  sponsor_email?: string // This will come from a join in the future
+  sponsor_email?: string
 }
 
 export default function SponsorPage() {
@@ -29,13 +28,11 @@ export default function SponsorPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // For now, we just fetch the direct connection
-      // Later, we can join to get the sponsor's name/email
       const { data, error } = await supabase
         .from('sponsor_connections')
         .select('*')
         .eq('practitioner_user_id', user.id)
-        .maybeSingle() // A user might have one or zero connections
+        .maybeSingle()
 
       if (error) throw error
       if (data) {
@@ -62,14 +59,8 @@ export default function SponsorPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('You must be logged in to invite a sponsor.')
 
-      // This is a placeholder for a more robust invitation system
-      // For the MVP, we will directly invite a user by creating a pending connection
-      // A full implementation would use an Edge Function to send an email
       alert(`In a full app, an email invite would be sent to ${sponsorEmail}. For now, we will simulate this by creating a pending connection if the user exists.`)
       
-      // We will add the logic to create the connection in the next step
-      // For now, this UI is the focus.
-
     } catch (error) {
       if (error instanceof Error) alert(error.message)
     } finally {
@@ -93,11 +84,11 @@ export default function SponsorPage() {
           {connection ? (
             <div>
               <p>Your connection status is: <span className="font-semibold capitalize">{connection.status}</span></p>
-              {/* In the future, we'll show the sponsor's name here */}
             </div>
           ) : (
             <div className="space-y-4">
-              <p>You are not currently connected with a sponsor. Enter your sponsor's email address below to invite them.</p>
+              {/* FIX: Replaced ' with &apos; below */}
+              <p>You are not currently connected with a sponsor. Enter your sponsor&apos;s email address below to invite them.</p>
               <Input
                 type="email"
                 placeholder="sponsor@example.com"
