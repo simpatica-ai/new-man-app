@@ -1,9 +1,12 @@
+// src/components/Dashboard.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
+import Link from 'next/link'
 
 type Virtue = {
   id: number;
@@ -31,7 +34,7 @@ export default function Dashboard({ session }: { session: Session }) {
         if (data) {
           setVirtues(data)
         }
-      } catch (error) { // The 'any' type has been removed
+      } catch (error) {
         if (error instanceof Error) {
             alert(error.message)
         }
@@ -63,10 +66,16 @@ export default function Dashboard({ session }: { session: Session }) {
           <p>Loading virtues...</p>
         ) : (
           <ul className="space-y-3">
+            {/* CORRECTED STRUCTURE BELOW */}
             {virtues.map((virtue) => (
-              <li key={virtue.id} className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
-                <p className="text-brand-text">{virtue.description}</p>
+              <li key={virtue.id}>
+                <Link 
+                  href={`/virtue/${virtue.id}`} 
+                  className="block p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
+                  <p className="text-brand-text">{virtue.description}</p>
+                </Link>
               </li>
             ))}
           </ul>
