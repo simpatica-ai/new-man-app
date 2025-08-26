@@ -1,10 +1,13 @@
+// src/components/Dashboard.tsx
+
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
 type Virtue = {
   id: number;
@@ -12,37 +15,79 @@ type Virtue = {
   description: string;
 };
 
+// A new type for sponsor invitations, joining with the profiles table
+type Invitation = {
+    id: number; // This is the connection ID
+    status: string;
+    profiles: {
+        full_name: string | null;
+        id: string; // This is the practitioner's user ID
+    } | null
+}
+
 export default function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true)
   const [virtues, setVirtues] = useState<Virtue[]>([])
+  const [invitations, setInvitations] = useState<Invitation[]>([])
+
+  // This function gets all the necessary data for the dashboard
+  const getDashboardData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Fetch virtues for the practitioner view
+      const virtuesPromise = supabase.from('virtues').select(`id, name, description`).order('id')
+
+      // Fetch any pending invitations where the current user is the sponsor
+      // We join with the 'profiles' table to get the practitioner's name
+      const invitesPromise = supabase
+        .from('sponsor_connections')
+        .select(`
+            id, 
+            status,
+            profiles ( id, full_name )
+        `)
+        .eq('sponsor_user_id', user.id)
+        .eq('status', 'pending')
+      
+      // Run both queries in parallel for performance
+      const [virtuesResult, invitesResult] = await Promise.all([virtuesPromise, invitesPromise])
+
+      if (virtuesResult.error) throw virtuesResult.error
+      setVirtues(virtuesResult.data || [])
+      
+      if (invitesResult.error) throw invitesResult.error
+      setInvitations(invitesResult.data || [])
+
+    } catch (error) {
+      if (error instanceof Error) alert(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const getVirtues = async () => {
+    getDashboardData()
+  }, [getDashboardData])
+  
+  // This function updates the connection status to 'active'
+  const handleAcceptInvite = async (connectionId: number) => {
       try {
-        setLoading(true)
-        const { data, error, status } = await supabase
-          .from('virtues')
-          .select(`id, name, description`)
-          .order('id')
-
-        if (error && status !== 406) {
-          throw error
-        }
-
-        if (data) {
-          setVirtues(data)
-        }
+          const { error } = await supabase
+            .from('sponsor_connections')
+            .update({ status: 'active' })
+            .eq('id', connectionId)
+        
+          if (error) throw error
+          alert('Connection accepted! You can now view this user\'s journal.')
+          // Refresh the dashboard to remove the pending invitation
+          getDashboardData()
       } catch (error) {
-        if (error instanceof Error) {
-            alert(error.message)
-        }
-      } finally {
-        setLoading(false)
+          if (error instanceof Error) alert(error.message)
       }
-    }
-
-    getVirtues()
-  }, [])
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -56,33 +101,10 @@ export default function Dashboard({ session }: { session: Session }) {
             <p className="text-gray-600">Signed in as: {session.user.email}</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Link href="/sponsor">
-            <Button variant="outline">Manage Sponsor</Button>
-          </Link>
+          <Link href="/sponsor"><Button variant="outline">Manage Sponsor</Button></Link>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>
       </div>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Choose a Virtue to Practice</h2>
-        {loading ? (
-          <p>Loading virtues...</p>
-        ) : (
-          <ul className="space-y-3">
-            {virtues.map((virtue) => (
-              <li key={virtue.id}>
-                <Link 
-                  href={`/virtue/${virtue.id}`} 
-                  className="block p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
-                  <p className="text-brand-text">{virtue.description}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
+      
+      {/* SPONSOR HUB - Only shows if there are invitations */}
+      {

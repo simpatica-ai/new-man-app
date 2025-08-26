@@ -1,3 +1,6 @@
 {
-  "imports": {}
+  "importMap": "./supabase/functions/import_map.json",
+  "vendor": [
+    "supabase/functions/invite-sponsor/index.ts"
+  ]
 }
