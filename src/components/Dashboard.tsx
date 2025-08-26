@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabaseClient'
 import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 
-// Define a type for the virtue data for better type-safety
 type Virtue = {
   id: number;
   name: string;
@@ -17,14 +16,13 @@ export default function Dashboard({ session }: { session: Session }) {
   const [virtues, setVirtues] = useState<Virtue[]>([])
 
   useEffect(() => {
-    // Fetches the list of virtues from the database
     const getVirtues = async () => {
       try {
         setLoading(true)
         const { data, error, status } = await supabase
           .from('virtues')
           .select(`id, name, description`)
-          .order('id') // Ensure virtues are always in the same order
+          .order('id')
 
         if (error && status !== 406) {
           throw error
@@ -33,15 +31,17 @@ export default function Dashboard({ session }: { session: Session }) {
         if (data) {
           setVirtues(data)
         }
-      } catch (error: any) {
-        alert(error.message)
+      } catch (error) { // The 'any' type has been removed
+        if (error instanceof Error) {
+            alert(error.message)
+        }
       } finally {
         setLoading(false)
       }
     }
 
     getVirtues()
-  }, []) // The empty dependency array means this effect runs once when the component mounts
+  }, [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()

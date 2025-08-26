@@ -22,8 +22,10 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
       alert('Signed in successfully!')
-    } catch (error: any) {
-      alert(error.error_description || error.message)
+    } catch (error) { // The 'any' type has been removed
+      if (error instanceof Error) {
+        alert(error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -39,8 +41,10 @@ export default function Auth() {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) throw error
       alert('Check your email for the confirmation link!')
-    } catch (error: any) {
-      alert(error.error_description || error.message)
+    } catch (error) { // The 'any' type has been removed
+      if (error instanceof Error) {
+        alert(error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -51,8 +55,10 @@ export default function Auth() {
       setLoading(true)
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
       if (error) throw error
-    } catch (error: any) {
-      alert(error.error_description || error.message)
+    } catch (error) { // The 'any' type has been removed
+      if (error instanceof Error) {
+        alert(error.message)
+      }
     } finally {
       setLoading(false)
     }
