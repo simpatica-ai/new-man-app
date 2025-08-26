@@ -33,10 +33,10 @@ export default function VirtueDetailPage() {
 
         if (error) throw error
         if (data) {
-          // FIX: Add explicit types for sort parameters
           data.virtue_stages.sort((a: Stage, b: Stage) => a.stage_number - b.stage_number);
-          data.virtue_stages.forEach(stage => {
-            // FIX: Add explicit types for sort parameters
+          
+          // FIX: Add explicit type for the 'stage' parameter below
+          data.virtue_stages.forEach((stage: Stage) => {
             stage.stage_prompts.sort((a: Prompt, b: Prompt) => a.id - b.id);
           });
           setVirtue(data)
