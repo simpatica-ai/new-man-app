@@ -1,4 +1,4 @@
-// src/app/sponsor/page.tsx
+// src/app/sponsor/page.tsx -- FINAL VERSION
 
 'use client'
 
@@ -9,14 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 
-type Connection = {
-  id: number
-  status: string
-  sponsor_email?: string 
+type ConnectionDetails = {
+  id: number;
+  status: string;
+  sponsor_name: string | null;
 }
 
 export default function SponsorPage() {
-  const [connection, setConnection] = useState<Connection | null>(null)
+  const [connection, setConnection] = useState<ConnectionDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [sponsorEmail, setSponsorEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,15 +28,18 @@ export default function SponsorPage() {
       if (!user) return
 
       const { data, error } = await supabase
-        .from('sponsor_connections')
-        .select('*')
-        .eq('practitioner_user_id', user.id)
-        .maybeSingle()
+        .rpc('get_practitioner_connection_details', {
+          practitioner_id_param: user.id,
+        })
 
-      if (error) throw error
-      if (data) {
-        setConnection(data)
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setConnection(data[0]);
+      } else {
+        setConnection(null);
       }
+
     } catch (error) {
       if (error instanceof Error) alert(error.message)
     } finally {
@@ -48,7 +51,6 @@ export default function SponsorPage() {
     fetchConnection()
   }, [fetchConnection])
 
-  // UPDATED FUNCTION
   const handleInviteSponsor = async () => {
     if (!sponsorEmail.trim()) {
       alert('Please enter a valid email address for your sponsor.')
@@ -56,25 +58,26 @@ export default function SponsorPage() {
     }
     try {
       setIsSubmitting(true)
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('You must be logged in to invite a sponsor.')
-
-      // This securely calls our Edge Function
+      
       const { data, error } = await supabase.functions.invoke('invite-sponsor', {
-        body: { 
-          practitioner_user_id: user.id,
-          sponsor_email: sponsorEmail 
-        },
+        body: { email: sponsorEmail },
       })
 
-      if (error) throw error
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
-      alert(data.message)
-      // Refresh the connection status to show the new 'pending' state
+      // This is the updated, more informative success message
+      alert('Invitation sent successfully! The sponsor must now log in to their own account to accept the request.');
       fetchConnection()
 
     } catch (error) {
-      if (error instanceof Error) alert(error.message)
+      if (error instanceof Error) {
+        if (error.message.includes("Sponsor user not found")) {
+          alert("Your requested sponsor is not a user. Please invite them to sign up first.");
+        } else {
+          alert(error.message);
+        }
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -95,7 +98,8 @@ export default function SponsorPage() {
         <CardContent>
           {connection ? (
             <div>
-              <p>Your connection status is: <span className="font-semibold capitalize">{connection.status}</span></p>
+              <p>Your sponsor is: <strong>{connection.sponsor_name || 'Sponsor'}</strong></p>
+              <p>Status: <span className="font-semibold capitalize">{connection.status}</span></p>
             </div>
           ) : (
             <div className="space-y-4">

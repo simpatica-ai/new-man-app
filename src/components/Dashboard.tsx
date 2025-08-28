@@ -1,4 +1,4 @@
-// src/components/Dashboard.tsx
+// src/components/Dashboard.tsx -- FINAL VERSION
 
 'use client'
 
@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 
 type Virtue = {
   id: number;
@@ -15,51 +15,40 @@ type Virtue = {
   description: string;
 };
 
-// A new type for sponsor invitations, joining with the profiles table
-type Invitation = {
-    id: number; // This is the connection ID
+type Connection = {
+    id: number;
     status: string;
-    profiles: {
-        full_name: string | null;
-        id: string; // This is the practitioner's user ID
-    } | null
+    practitioner_name: string | null;
 }
 
 export default function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true)
   const [virtues, setVirtues] = useState<Virtue[]>([])
-  const [invitations, setInvitations] = useState<Invitation[]>([])
+  const [invitations, setInvitations] = useState<Connection[]>([])
+  const [activeSponsorships, setActiveSponsorships] = useState<Connection[]>([])
 
-  // This function gets all the necessary data for the dashboard
   const getDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Fetch virtues for the practitioner view
       const virtuesPromise = supabase.from('virtues').select(`id, name, description`).order('id')
 
-      // Fetch any pending invitations where the current user is the sponsor
-      // We join with the 'profiles' table to get the practitioner's name
-      const invitesPromise = supabase
-        .from('sponsor_connections')
-        .select(`
-            id, 
-            status,
-            profiles ( id, full_name )
-        `)
-        .eq('sponsor_user_id', user.id)
-        .eq('status', 'pending')
+      // This now calls our new, powerful database functions
+      const invitesPromise = supabase.rpc('get_pending_invitations_for_sponsor', { sponsor_id_param: user.id });
+      const activeSponsorshipsPromise = supabase.rpc('get_active_sponsorships_for_sponsor', { sponsor_id_param: user.id });
       
-      // Run both queries in parallel for performance
-      const [virtuesResult, invitesResult] = await Promise.all([virtuesPromise, invitesPromise])
+      const [virtuesResult, invitesResult, activeSponsorshipsResult] = await Promise.all([virtuesPromise, invitesPromise, activeSponsorshipsPromise]);
 
       if (virtuesResult.error) throw virtuesResult.error
       setVirtues(virtuesResult.data || [])
       
       if (invitesResult.error) throw invitesResult.error
       setInvitations(invitesResult.data || [])
+
+      if (activeSponsorshipsResult.error) throw activeSponsorshipsResult.error
+      setActiveSponsorships(activeSponsorshipsResult.data || [])
 
     } catch (error) {
       if (error instanceof Error) alert(error.message)
@@ -72,7 +61,6 @@ export default function Dashboard({ session }: { session: Session }) {
     getDashboardData()
   }, [getDashboardData])
   
-  // This function updates the connection status to 'active'
   const handleAcceptInvite = async (connectionId: number) => {
       try {
           const { error } = await supabase
@@ -81,8 +69,7 @@ export default function Dashboard({ session }: { session: Session }) {
             .eq('id', connectionId)
         
           if (error) throw error
-          alert('Connection accepted! You can now view this user\'s journal.')
-          // Refresh the dashboard to remove the pending invitation
+          alert('Connection accepted!')
           getDashboardData()
       } catch (error) {
           if (error instanceof Error) alert(error.message)
@@ -92,6 +79,68 @@ export default function Dashboard({ session }: { session: Session }) {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
   }
+  
+    // Helper component for the Sponsor's view
+  const SponsorDashboard = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Sponsor Hub</CardTitle>
+            <CardDescription>Review invitations and access your practitioners' journals.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            {invitations.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-blue-800">Pending Invitations</h3>
+                  <ul className="space-y-2">
+                      {invitations.map(invite => (
+                          <li key={invite.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
+                              <span>Invitation from: <strong>{invite.practitioner_name || 'A new practitioner'}</strong></span>
+                              <Button size="sm" onClick={() => handleAcceptInvite(invite.id)}>Accept</Button>
+                          </li>
+                      ))}
+                  </ul>
+                </div>
+            )}
+             {activeSponsorships.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Actively Sponsoring</h3>
+                  <ul className="space-y-2">
+                      {activeSponsorships.map(conn => (
+                          <li key={conn.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
+                              <span><strong>{conn.practitioner_name || 'Practitioner'}</strong></span>
+                              <Button size="sm" variant="outline">View Journal</Button>
+                          </li>
+                      ))}
+                  </ul>
+                </div>
+            )}
+        </CardContent>
+    </Card>
+  );
+
+  // Helper component for the Practitioner's view
+  const PractitionerDashboard = () => (
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Choose a Virtue to Practice</h2>
+      {loading && virtues.length === 0 ? (
+        <p>Loading virtues...</p>
+      ) : (
+        <ul className="space-y-3">
+          {virtues.map((virtue) => (
+            <li key={virtue.id}>
+              <Link 
+                href={`/virtue/${virtue.id}`} 
+                className="block p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              >
+                <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
+                <p className="text-brand-text">{virtue.description}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 
   return (
     <div className="container mx-auto p-4">
@@ -101,10 +150,20 @@ export default function Dashboard({ session }: { session: Session }) {
             <p className="text-gray-600">Signed in as: {session.user.email}</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Link href="/sponsor"><Button variant="outline">Manage Sponsor</Button></Link>
+          {activeSponsorships.length === 0 && (
+            <Link href="/sponsor"><Button variant="outline">Manage Sponsor</Button></Link>
+          )}
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>
       </div>
       
-      {/* SPONSOR HUB - Only shows if there are invitations */}
-      {
+      {loading ? (
+        <p>Loading dashboard...</p>
+      ) : activeSponsorships.length > 0 || invitations.length > 0 ? (
+        <SponsorDashboard />
+      ) : (
+        <PractitionerDashboard />
+      )}
+    </div>
+  )
+}
