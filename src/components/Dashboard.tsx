@@ -1,5 +1,3 @@
-// src/components/Dashboard.tsx -- FINAL VERSION
-
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -17,9 +15,11 @@ type Virtue = {
 
 type Connection = {
     id: number;
-    status: string;
-    practitioner_name: string | null;
-    practitioner_id: string;
+    status: 'pending' | 'active';
+    practitioner: {
+        full_name: string | null;
+        id: string;
+    }
 }
 
 export default function Dashboard({ session }: { session: Session }) {
@@ -36,7 +36,7 @@ export default function Dashboard({ session }: { session: Session }) {
       if (!user) return
 
       const virtuesPromise = supabase.from('virtues').select(`id, name, description`).order('id')
-
+      
       const invitesPromise = supabase.rpc('get_pending_invitations_for_sponsor', { sponsor_id_param: user.id });
       const activeSponsorshipsPromise = supabase.rpc('get_active_sponsorships_for_sponsor', { sponsor_id_param: user.id });
       
@@ -52,7 +52,6 @@ export default function Dashboard({ session }: { session: Session }) {
       const activeConns = activeSponsorshipsResult.data || [];
       setActiveSponsorships(activeConns)
 
-      // This is the key logic: if a user has any active sponsorships, they are a sponsor.
       if (activeConns.length > 0) {
         setIsSponsor(true);
       } else {
@@ -129,25 +128,42 @@ export default function Dashboard({ session }: { session: Session }) {
   );
 
   const PractitionerDashboard = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Choose a Virtue to Practice</h2>
-      {loading && virtues.length === 0 ? (
-        <p>Loading virtues...</p>
-      ) : (
-        <ul className="space-y-3">
-          {virtues.map((virtue) => (
-            <li key={virtue.id}>
-              <Link 
-                href={`/virtue/${virtue.id}`} 
-                className="block p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
-                <p className="text-brand-text">{virtue.description}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="space-y-8">
+      {/* NEW CARD TO LINK TO THE ASSESSMENT */}
+      <Card className="bg-gray-50">
+        <CardHeader>
+          <CardTitle>Personal Inventory</CardTitle>
+          <CardDescription>
+            Start your journey by taking the Character Defects Inventory. This will help you identify which virtues to focus on first.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/assessment">
+            <Button>Take the Assessment</Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Choose a Virtue to Practice</h2>
+        {virtues.length > 0 ? (
+          <ul className="space-y-3">
+            {virtues.map((virtue) => (
+              <li key={virtue.id}>
+                <Link 
+                  href={`/virtue/${virtue.id}`} 
+                  className="block p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white"
+                >
+                  <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
+                  <p className="text-brand-text">{virtue.description}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500">Loading virtues...</p>
+        )}
+      </div>
     </div>
   );
 
@@ -159,7 +175,6 @@ export default function Dashboard({ session }: { session: Session }) {
             <p className="text-gray-600">Signed in as: {session.user.email}</p>
         </div>
         <div className="flex items-center space-x-2">
-          {/* This button is now hidden if the user is a sponsor */}
           {!isSponsor && (
             <Link href="/sponsor"><Button variant="outline">Manage Sponsor</Button></Link>
           )}
@@ -167,7 +182,6 @@ export default function Dashboard({ session }: { session: Session }) {
         </div>
       </div>
       
-      {/* This logic is now cleaner and uses the 'isSponsor' state */}
       {loading ? (
         <p>Loading dashboard...</p>
       ) : isSponsor ? (
