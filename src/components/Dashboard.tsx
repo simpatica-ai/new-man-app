@@ -1,5 +1,3 @@
-// src/components/Dashboard.tsx -- FINAL VERSION
-
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -17,8 +15,11 @@ type Virtue = {
 
 type Connection = {
     id: number;
-    status: string;
-    practitioner_name: string | null;
+    status: 'pending' | 'active';
+    practitioner: {
+        full_name: string | null;
+        id: string;
+    }
 }
 
 export default function Dashboard({ session }: { session: Session }) {
@@ -35,20 +36,21 @@ export default function Dashboard({ session }: { session: Session }) {
 
       const virtuesPromise = supabase.from('virtues').select(`id, name, description`).order('id')
 
-      // This now calls our new, powerful database functions
-      const invitesPromise = supabase.rpc('get_pending_invitations_for_sponsor', { sponsor_id_param: user.id });
-      const activeSponsorshipsPromise = supabase.rpc('get_active_sponsorships_for_sponsor', { sponsor_id_param: user.id });
+      const connectionsPromise = supabase
+        .from('sponsor_connections')
+        .select(`id, status, practitioner:profiles!inner (id, full_name)`)
+        .eq('sponsor_user_id', user.id)
       
-      const [virtuesResult, invitesResult, activeSponsorshipsResult] = await Promise.all([virtuesPromise, invitesPromise, activeSponsorshipsPromise]);
+      const [virtuesResult, connectionsResult] = await Promise.all([virtuesPromise, connectionsPromise])
 
       if (virtuesResult.error) throw virtuesResult.error
       setVirtues(virtuesResult.data || [])
       
-      if (invitesResult.error) throw invitesResult.error
-      setInvitations(invitesResult.data || [])
-
-      if (activeSponsorshipsResult.error) throw activeSponsorshipsResult.error
-      setActiveSponsorships(activeSponsorshipsResult.data || [])
+      if (connectionsResult.error) throw connectionsResult.error
+      if (connectionsResult.data) {
+          setInvitations(connectionsResult.data.filter(c => c.status === 'pending'));
+          setActiveSponsorships(connectionsResult.data.filter(c => c.status === 'active'));
+      }
 
     } catch (error) {
       if (error instanceof Error) alert(error.message)
@@ -79,13 +81,13 @@ export default function Dashboard({ session }: { session: Session }) {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
   }
-  
-    // Helper component for the Sponsor's view
+
   const SponsorDashboard = () => (
     <Card>
         <CardHeader>
             <CardTitle>Sponsor Hub</CardTitle>
-            <CardDescription>Review invitations and access your practitioners' journals.</CardDescription>
+            {/* THIS LINE IS THE FIX */}
+            <CardDescription>Review invitations and access your practitioners&apos; journals.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             {invitations.length > 0 && (
@@ -94,7 +96,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <ul className="space-y-2">
                       {invitations.map(invite => (
                           <li key={invite.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span>Invitation from: <strong>{invite.practitioner_name || 'A new practitioner'}</strong></span>
+                              <span>Invitation from: <strong>{invite.practitioner?.full_name || 'A new practitioner'}</strong></span>
                               <Button size="sm" onClick={() => handleAcceptInvite(invite.id)}>Accept</Button>
                           </li>
                       ))}
@@ -107,8 +109,10 @@ export default function Dashboard({ session }: { session: Session }) {
                   <ul className="space-y-2">
                       {activeSponsorships.map(conn => (
                           <li key={conn.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span><strong>{conn.practitioner_name || 'Practitioner'}</strong></span>
-                              <Button size="sm" variant="outline">View Journal</Button>
+                              <span><strong>{conn.practitioner?.full_name || 'Practitioner'}</strong></span>
+                              <Link href={`/sponsor/journal/${conn.practitioner.id}`}>
+                                <Button size="sm" variant="outline">View Journal</Button>
+                              </Link>
                           </li>
                       ))}
                   </ul>
@@ -118,7 +122,6 @@ export default function Dashboard({ session }: { session: Session }) {
     </Card>
   );
 
-  // Helper component for the Practitioner's view
   const PractitionerDashboard = () => (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Choose a Virtue to Practice</h2>
