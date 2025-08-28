@@ -1,3 +1,5 @@
+// src/components/Dashboard.tsx -- FINAL VERSION
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -15,15 +17,14 @@ type Virtue = {
 
 type Connection = {
     id: number;
-    status: 'pending' | 'active';
-    practitioner: {
-        full_name: string | null;
-        id: string;
-    }
+    status: string;
+    practitioner_name: string | null;
+    practitioner_id: string;
 }
 
 export default function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true)
+  const [isSponsor, setIsSponsor] = useState(false)
   const [virtues, setVirtues] = useState<Virtue[]>([])
   const [invitations, setInvitations] = useState<Connection[]>([])
   const [activeSponsorships, setActiveSponsorships] = useState<Connection[]>([])
@@ -36,20 +37,26 @@ export default function Dashboard({ session }: { session: Session }) {
 
       const virtuesPromise = supabase.from('virtues').select(`id, name, description`).order('id')
 
-      const connectionsPromise = supabase
-        .from('sponsor_connections')
-        .select(`id, status, practitioner:profiles!inner (id, full_name)`)
-        .eq('sponsor_user_id', user.id)
+      const invitesPromise = supabase.rpc('get_pending_invitations_for_sponsor', { sponsor_id_param: user.id });
+      const activeSponsorshipsPromise = supabase.rpc('get_active_sponsorships_for_sponsor', { sponsor_id_param: user.id });
       
-      const [virtuesResult, connectionsResult] = await Promise.all([virtuesPromise, connectionsPromise])
+      const [virtuesResult, invitesResult, activeSponsorshipsResult] = await Promise.all([virtuesPromise, invitesPromise, activeSponsorshipsPromise]);
 
       if (virtuesResult.error) throw virtuesResult.error
       setVirtues(virtuesResult.data || [])
       
-      if (connectionsResult.error) throw connectionsResult.error
-      if (connectionsResult.data) {
-          setInvitations(connectionsResult.data.filter(c => c.status === 'pending'));
-          setActiveSponsorships(connectionsResult.data.filter(c => c.status === 'active'));
+      if (invitesResult.error) throw invitesResult.error
+      setInvitations(invitesResult.data || [])
+
+      if (activeSponsorshipsResult.error) throw activeSponsorshipsResult.error
+      const activeConns = activeSponsorshipsResult.data || [];
+      setActiveSponsorships(activeConns)
+
+      // This is the key logic: if a user has any active sponsorships, they are a sponsor.
+      if (activeConns.length > 0) {
+        setIsSponsor(true);
+      } else {
+        setIsSponsor(false);
       }
 
     } catch (error) {
@@ -81,12 +88,11 @@ export default function Dashboard({ session }: { session: Session }) {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
   }
-
+  
   const SponsorDashboard = () => (
     <Card>
         <CardHeader>
             <CardTitle>Sponsor Hub</CardTitle>
-            {/* THIS LINE IS THE FIX */}
             <CardDescription>Review invitations and access your practitioners&apos; journals.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -96,7 +102,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <ul className="space-y-2">
                       {invitations.map(invite => (
                           <li key={invite.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span>Invitation from: <strong>{invite.practitioner?.full_name || 'A new practitioner'}</strong></span>
+                              <span>Invitation from: <strong>{invite.practitioner_name || 'A new practitioner'}</strong></span>
                               <Button size="sm" onClick={() => handleAcceptInvite(invite.id)}>Accept</Button>
                           </li>
                       ))}
@@ -109,8 +115,8 @@ export default function Dashboard({ session }: { session: Session }) {
                   <ul className="space-y-2">
                       {activeSponsorships.map(conn => (
                           <li key={conn.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span><strong>{conn.practitioner?.full_name || 'Practitioner'}</strong></span>
-                              <Link href={`/sponsor/journal/${conn.practitioner.id}`}>
+                              <span><strong>{conn.practitioner_name || 'Practitioner'}</strong></span>
+                              <Link href={`/sponsor/journal/${conn.practitioner_id}`}>
                                 <Button size="sm" variant="outline">View Journal</Button>
                               </Link>
                           </li>
@@ -153,16 +159,18 @@ export default function Dashboard({ session }: { session: Session }) {
             <p className="text-gray-600">Signed in as: {session.user.email}</p>
         </div>
         <div className="flex items-center space-x-2">
-          {activeSponsorships.length === 0 && (
+          {/* This button is now hidden if the user is a sponsor */}
+          {!isSponsor && (
             <Link href="/sponsor"><Button variant="outline">Manage Sponsor</Button></Link>
           )}
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>
       </div>
       
+      {/* This logic is now cleaner and uses the 'isSponsor' state */}
       {loading ? (
         <p>Loading dashboard...</p>
-      ) : activeSponsorships.length > 0 || invitations.length > 0 ? (
+      ) : isSponsor ? (
         <SponsorDashboard />
       ) : (
         <PractitionerDashboard />

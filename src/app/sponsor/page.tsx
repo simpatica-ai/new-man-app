@@ -27,6 +27,7 @@ export default function SponsorPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // This now calls our new, powerful database function
       const { data, error } = await supabase
         .rpc('get_practitioner_connection_details', {
           practitioner_id_param: user.id,
@@ -34,10 +35,11 @@ export default function SponsorPage() {
 
       if (error) throw error;
       
+      // The result is an array, so we check if it has any items
       if (data && data.length > 0) {
-        setConnection(data[0]);
+        setConnection(data[0]); // Set the connection to the first item
       } else {
-        setConnection(null);
+        setConnection(null); // Explicitly set to null if no connection is found
       }
 
     } catch (error) {
@@ -66,8 +68,7 @@ export default function SponsorPage() {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      // This is the updated, more informative success message
-      alert('Invitation sent successfully! The sponsor must now log in to their own account to accept the request.');
+      alert('Invitation sent! The sponsor must now log in to their own account to accept the request.');
       fetchConnection()
 
     } catch (error) {
