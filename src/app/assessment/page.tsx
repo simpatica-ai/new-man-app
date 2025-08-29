@@ -120,7 +120,6 @@ const getBarColorClass = (rating: number): string => {
     return 'bg-green-500 print-bar-green';
 };
 
-
 export default function AssessmentPage() {
     const [loading, setLoading] = useState(true);
     const [ratings, setRatings] = useState<Ratings>({});
@@ -297,7 +296,7 @@ export default function AssessmentPage() {
             </Card>
 
             {results && (
-                <div id="printable-area" className="mt-6">
+                 <div id="printable-area" className="mt-6">
                     <div className="print-header" style={{ display: 'none' }}>
                         <h1 className="text-xl font-bold">New Man App</h1>
                         <h2 className="text-lg">Character Defects Inventory Results</h2>
@@ -317,7 +316,6 @@ export default function AssessmentPage() {
                                     <div>
                                         <Label className="text-xs font-medium">Average Rating (Frequency)</Label>
                                         <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                                            {/* FIX: Applying both screen and print color classes */}
                                             <div 
                                                 className={`h-2.5 rounded-full ${getBarColorClass(averageRating)}`}
                                                 style={{ width: `${(averageRating / 5) * 100}%` }}>
