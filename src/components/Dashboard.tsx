@@ -8,31 +8,29 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 
 // --- TYPE DEFINITIONS ---
+type StageProgress = {
+  virtue_id: number;
+  stage_number: number;
+  status: 'not_started' | 'in_progress' | 'completed';
+}
+
 type Virtue = {
   id: number;
   name: string;
   description: string;
   short_description: string | null;
-  defect_intensity_score?: number;
-  progress?: StageProgress[]; 
+  priority_score?: number; 
+  defect_intensity?: number;
 };
 
 type Connection = {
     id: number;
     status: 'pending' | 'active';
-    practitioner: {
-        full_name: string | null;
-        id: string;
-    }
-};
+    practitioner_name: string | null;
+    practitioner_id: string;
+}
 
-type StageProgress = {
-    virtue_id: number;
-    stage_number: number;
-    status: 'not_started' | 'in_progress' | 'completed';
-};
-
-// --- DEFECTS DATA (RESTORED) ---
+// --- DATA for calculation ---
 const defects = [
     { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
@@ -45,7 +43,6 @@ const defects = [
     { name: "Close-mindedness", virtues: ["Humility", "Respect"] },
     { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Conceit", virtues: ["Humility"] },
-    { name: "Cowardice", virtues: ["Vulnerability", "Courage"] },
     { name: "Cruelty", virtues: ["Compassion", "Respect"] },
     { name: "Deceit", virtues: ["Honesty", "Integrity"] },
     { name: "Defensiveness", virtues: ["Humility", "Vulnerability"] },
@@ -53,9 +50,6 @@ const defects = [
     { name: "Disrespect", virtues: ["Respect", "Compassion"] },
     { name: "Distrust", virtues: ["Vulnerability", "Honesty"] },
     { name: "Egotism", virtues: ["Humility", "Respect"] },
-    { name: "Envy", virtues: ["Gratitude", "Contentment"] },
-    { name: "Fearfulness", virtues: ["Vulnerability", "Courage"] },
-    { name: "Greed", virtues: ["Gratitude", "Generosity"] },
     { name: "Haughtiness", virtues: ["Humility", "Respect"] },
     { name: "Hypocrisy", virtues: ["Honesty", "Integrity"] },
     { name: "Impatience", virtues: ["Patience", "Mindfulness"] },
@@ -65,32 +59,25 @@ const defects = [
     { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"] },
     { name: "Intolerance", virtues: ["Respect", "Compassion"] },
     { name: "Irresponsibility", virtues: ["Responsibility"] },
-    { name: "Jealousy", virtues: ["Gratitude", "Contentment"] },
     { name: "Judgmental attitude", virtues: ["Compassion", "Respect"] },
     { name: "Lack of empathy", virtues: ["Compassion"] },
     { name: "Lack of gratitude", virtues: ["Gratitude"] },
     { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Laziness", virtues: ["Responsibility", "Effort"] },
     { name: "Lying", virtues: ["Honesty", "Integrity"] },
     { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"] },
     { name: "Narcissism", virtues: ["Humility", "Compassion"] },
     { name: "Neglect", virtues: ["Responsibility", "Compassion"] },
     { name: "Objectification", virtues: ["Respect", "Compassion"] },
     { name: "Pride", virtues: ["Humility", "Respect"] },
-    { name: "Procrastination", virtues: ["Responsibility", "Effort"] },
     { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Resentment", virtues: ["Gratitude", "Compassion"] },
     { name: "Rudeness", virtues: ["Respect", "Compassion"] },
     { name: "Self-centeredness", virtues: ["Humility", "Compassion"] },
     { name: "Self-righteousness", virtues: ["Humility", "Respect"] },
-    { name: "Selfishness", virtues: ["Compassion", "Generosity"] },
+    { name: "Selfishness", virtues: ["Compassion"] },
     { name: "Stealing", virtues: ["Honesty", "Integrity"] },
-    { name: "Stubbornness", virtues: ["Humility", "Openness"] },
     { name: "Superiority", virtues: ["Humility", "Respect"] },
-    { name: "Suspicion", virtues: ["Vulnerability", "Trust"] },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] },
-    { name: "Vindictiveness", virtues: ["Compassion", "Forgiveness"] },
-    { name: "Withdrawn behavior", virtues: ["Vulnerability", "Connection"] }
+    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] }
 ];
 
 // --- DASHBOARD COMPONENT ---
@@ -101,7 +88,7 @@ export default function Dashboard({ session }: { session: Session }) {
   const [invitations, setInvitations] = useState<Connection[]>([]);
   const [activeSponsorships, setActiveSponsorships] = useState<Connection[]>([]);
   const [assessmentTaken, setAssessmentTaken] = useState(false);
-  const stageTitles = ["Starting", "Building", "Maintaining"];
+  const [progress, setProgress] = useState<Map<string, StageProgress['status']>>(new Map());
 
   const getDashboardData = useCallback(async () => {
     try {
@@ -114,7 +101,7 @@ export default function Dashboard({ session }: { session: Session }) {
       const activeSponsorshipsPromise = supabase.rpc('get_active_sponsorships_for_sponsor', { sponsor_id_param: user.id });
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', user.id).order('assessment_id', { ascending: false });
       const progressPromise = supabase.from('user_virtue_stage_progress').select('virtue_id, stage_number, status').eq('user_id', user.id);
-
+      
       const [virtuesResult, invitesResult, activeSponsorshipsResult, assessmentResult, progressResult] = await Promise.all([
           virtuesPromise, invitesPromise, activeSponsorshipsPromise, assessmentPromise, progressPromise
       ]);
@@ -126,47 +113,44 @@ export default function Dashboard({ session }: { session: Session }) {
       setActiveSponsorships(activeConns);
       setIsSponsor(activeConns.length > 0);
 
+      if (progressResult.error) throw progressResult.error;
+      const progressMap = new Map<string, StageProgress['status']>();
+      // THIS IS THE VERCEL BUILD FIX
+      (progressResult.data || []).forEach(p => {
+        // We use a type assertion here to tell TypeScript that the string from the DB is safe
+        progressMap.set(`${p.virtue_id}-${p.stage_number}`, p.status as StageProgress['status']);
+      });
+      setProgress(progressMap);
+
       if (virtuesResult.error) throw virtuesResult.error;
       const baseVirtues = virtuesResult.data || [];
       if (assessmentResult.error) throw assessmentResult.error;
       const results = assessmentResult.data || [];
-      if (progressResult.error) throw progressResult.error;
-      const progressData = progressResult.data || [];
-
-      const progressMap = new Map<string, StageProgress>();
-      progressData.forEach(p => {
-          progressMap.set(`${p.virtue_id}-${p.stage_number}`, p);
-      });
 
       if (results.length > 0) {
         setAssessmentTaken(true);
         const scoreMap = new Map<string, number>();
-        results.forEach(r => scoreMap.set(r.virtue_name, r.priority_score));
-        
-        const maxScores = new Map<string, number>();
-        defects.forEach(defect => {
-            defect.virtues.forEach(virtue => {
-                maxScores.set(virtue, (maxScores.get(virtue) || 0) + 25);
-            });
+        results.forEach(r => { scoreMap.set(r.virtue_name, r.priority_score); });
+
+        const maxPossibleScores = new Map<string, number>();
+        baseVirtues.forEach(virtue => {
+            const relevantDefects = defects.filter(d => d.virtues.includes(virtue.name));
+            maxPossibleScores.set(virtue.name, relevantDefects.length * 25);
         });
 
         const sortedVirtues = baseVirtues
             .map(v => {
-                const actualScore = scoreMap.get(v.name) || 0;
-                const maxScore = maxScores.get(v.name) || 1;
-                const intensity = (actualScore / maxScore) * 10;
-                const virtueProgress = [1, 2, 3].map(stageNum => 
-                    progressMap.get(`${v.id}-${stageNum}`) || { virtue_id: v.id, stage_number: stageNum, status: 'not_started' }
-                );
-                return { ...v, defect_intensity_score: parseFloat(intensity.toFixed(1)), progress: virtueProgress };
+                const priority_score = scoreMap.get(v.name) || 0;
+                const maxScore = maxPossibleScores.get(v.name) || 1;
+                const defect_intensity = (priority_score / maxScore) * 10;
+                return { ...v, priority_score, defect_intensity };
             })
-            .sort((a, b) => (b.defect_intensity_score || 0) - (a.defect_intensity_score || 0));
+            .sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
         setVirtues(sortedVirtues);
       } else {
         setAssessmentTaken(false);
         setVirtues(baseVirtues);
       }
-
     } catch (error) {
       if (error instanceof Error) alert(error.message);
     } finally {
@@ -193,19 +177,15 @@ export default function Dashboard({ session }: { session: Session }) {
     await supabase.auth.signOut();
   };
   
-  const getBarColor = (score: number) => {
-      if (score > 7.5) return 'bg-red-500';
-      if (score > 5) return 'bg-orange-400';
-      if (score > 2.5) return 'bg-yellow-400';
-      return 'bg-green-500';
+  const getButtonClass = (virtueId: number, stage: number) => {
+    const status = progress.get(`${virtueId}-${stage}`);
+    switch (status) {
+        case 'in_progress': return 'bg-yellow-400 hover:bg-yellow-500 text-black';
+        case 'completed': return 'bg-green-500 hover:bg-green-600 text-white';
+        default: return 'bg-gray-300 hover:bg-gray-400 text-gray-800';
+    }
   };
-
-  const getButtonVariant = (status: string): "default" | "secondary" | "outline" => {
-      if (status === 'completed') return 'default';
-      if (status === 'in_progress') return 'secondary';
-      return 'outline';
-  };
-
+  
   const SponsorDashboard = () => (
     <Card>
         <CardHeader>
@@ -219,7 +199,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <ul className="space-y-2">
                       {invitations.map(invite => (
                           <li key={invite.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span>Invitation from: <strong>{invite.practitioner?.full_name || 'A new practitioner'}</strong></span>
+                              <span>Invitation from: <strong>{invite.practitioner_name || 'A new practitioner'}</strong></span>
                               <Button size="sm" onClick={() => handleAcceptInvite(invite.id)}>Accept</Button>
                           </li>
                       ))}
@@ -232,8 +212,8 @@ export default function Dashboard({ session }: { session: Session }) {
                   <ul className="space-y-2">
                       {activeSponsorships.map(conn => (
                           <li key={conn.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span><strong>{conn.practitioner?.full_name || 'Practitioner'}</strong></span>
-                              <Link href={`/sponsor/journal/${conn.practitioner.id}`}>
+                              <span><strong>{conn.practitioner_name || 'Practitioner'}</strong></span>
+                              <Link href={`/sponsor/journal/${conn.practitioner_id}`}>
                                 <Button size="sm" variant="outline">View Journal</Button>
                               </Link>
                           </li>
@@ -271,26 +251,26 @@ export default function Dashboard({ session }: { session: Session }) {
             </div>
           {virtues.map((virtue) => (
             <Card key={virtue.id} className="bg-white">
-                <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex-grow">
-                            <h3 className="font-bold text-lg text-slate-900">{virtue.name}</h3>
-                            <p className="text-sm text-slate-600 mt-1 mb-3">{virtue.short_description || virtue.description}</p>
-                            <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                                <span>Defect Intensity: {virtue.defect_intensity_score} / 10</span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2.5 mt-2">
-                                <div className={`${getBarColor(virtue.defect_intensity_score || 0)} h-2.5 rounded-full`} style={{ width: `${(virtue.defect_intensity_score || 0) * 10}%` }}></div>
-                            </div>
+                <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-grow md:w-2/3">
+                        <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
+                        <p className="text-brand-text text-sm mb-2">{virtue.short_description || virtue.description}</p>
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <span>Defect Intensity: {(virtue.defect_intensity || 0).toFixed(1)} / 10</span>
                         </div>
-                        <div className="flex-shrink-0 mt-4 md:mt-0 flex flex-col items-start gap-2">
-                           <h4 className="font-semibold text-sm text-slate-600">Journaling</h4>
-                            {virtue.progress?.map(p => (
-                                <Button key={p.stage_number} variant={getButtonVariant(p.status)} size="sm" className="w-full justify-start">
-                                    Stage {p.stage_number} - {stageTitles[p.stage_number - 1]}
-                                </Button>
-                            ))}
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                            <div className={`h-2.5 rounded-full ${
+                                (virtue.defect_intensity || 0) > 7.5 ? 'bg-red-600' :
+                                (virtue.defect_intensity || 0) > 5 ? 'bg-orange-500' :
+                                (virtue.defect_intensity || 0) > 2.5 ? 'bg-yellow-400' : 'bg-green-500'
+                            }`} style={{ width: `${(virtue.defect_intensity || 0) * 10}%` }}></div>
                         </div>
+                    </div>
+                    <div className="flex-shrink-0 md:w-1/3 flex flex-col items-stretch gap-2">
+                        <p className="text-sm font-semibold text-center text-gray-600">Journaling</p>
+                        <Button size="sm" className={`justify-start ${getButtonClass(virtue.id, 1)}`}>Stage 1 - Starting</Button>
+                        <Button size="sm" className={`justify-start ${getButtonClass(virtue.id, 2)}`}>Stage 2 - Building</Button>
+                        <Button size="sm" className={`justify-start ${getButtonClass(virtue.id, 3)}`}>Stage 3 - Maintaining</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -325,3 +305,4 @@ export default function Dashboard({ session }: { session: Session }) {
     </div>
   )
 }
+
