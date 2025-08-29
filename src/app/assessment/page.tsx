@@ -9,9 +9,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Session } from '@supabase/supabase-js'
-import '../print.css'; // Correctly import the global print stylesheet
+import '../print.css';
 
-// --- Data aligned with the 12 Core Virtues ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"];
 
 const defects = [
@@ -111,7 +110,6 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
     </div>
 );
 
-// Helper function to get the correct color for the bar
 const getBarColorClass = (rating: number): string => {
     const percentage = (rating / 5) * 100;
     if (percentage > 75) return 'bg-red-600 print-bar-red';
@@ -178,7 +176,15 @@ export default function AssessmentPage() {
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
-        const virtueScores: { [key: string]: { score: number; harm: number; defects: any[], defectCount: number } } = {};
+        
+        // This is the definitive Vercel build fix, as diagnosed by Grok
+        type DefectDetail = {
+            name: string;
+            score: number;
+            harm: string;
+        };
+        const virtueScores: { [key: string]: { score: number; harm: number; defects: DefectDetail[], defectCount: number } } = {};
+        
         coreVirtuesList.forEach(v => { virtueScores[v] = { score: 0, harm: 0, defects: [], defectCount: 0 }; });
         defects.forEach(defect => {
             const score = ratings[defect.name] || 1;
@@ -235,7 +241,6 @@ export default function AssessmentPage() {
                 if (resultsError) throw resultsError;
             }
         } catch (error) {
-            // This is the definitive Vercel build fix
             if (error instanceof Error) {
                 alert(`Error saving results: ${error.message}`);
             } else {
