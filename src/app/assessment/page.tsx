@@ -1,8 +1,6 @@
-// src/app/assessment/page.tsx -- UPDATED VERSION
-
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -78,11 +76,91 @@ type Ratings = { [key: string]: number };
 type HarmLevels = { [key: string]: string };
 type Result = { virtue: string; priority: number; defects: { name: string; score: number; harm: string }[] };
 
+const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
+    defect: { name: string }, 
+    rating?: number, 
+    harmLevel?: string, 
+    onRatingChange: (name: string, value: string) => void, 
+    onHarmChange: (name: string, value: string) => void 
+}) => (
+    <div className="flex flex-col md:flex-row md:items-center border-b p-2 space-y-2 md:space-y-0">
+        <div className="w-full md:w-1/4 font-medium">{defect.name}</div>
+        <div className="w-full md:w-2/4">
+            <RadioGroup onValueChange={(value) => onRatingChange(defect.name, value)} value={String(rating || '')} className="flex items-center justify-around">
+                {[1,2,3,4,5].map(value => (
+                    <div key={value} className="flex flex-col items-center space-y-1">
+                        <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-gray-500">{['Never','Rarely','Sometimes','Often','Always'][value-1]}</Label>
+                        <RadioGroupItem value={String(value)} id={`${defect.name}-${value}`} />
+                    </div>
+                ))}
+            </RadioGroup>
+        </div>
+        <div className="w-full md:w-1/4">
+            <Select onValueChange={(value) => onHarmChange(defect.name, value)} value={harmLevel || ''}>
+                <SelectTrigger><SelectValue placeholder="Harm Level..." /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="None">None</SelectItem>
+                    <SelectItem value="Minimal">Minimal</SelectItem>
+                    <SelectItem value="Moderate">Moderate</SelectItem>
+                    <SelectItem value="Significant">Significant</SelectItem>
+                    <SelectItem value="Severe">Severe</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+    </div>
+);
+
 export default function AssessmentPage() {
+    const [loading, setLoading] = useState(true);
     const [ratings, setRatings] = useState<Ratings>({});
     const [harmLevels, setHarmLevels] = useState<HarmLevels>({});
     const [results, setResults] = useState<Result[] | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchLatestAssessment = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error("User not found");
+
+                const { data: latestAssessment, error: assessmentError } = await supabase
+                    .from('user_assessments')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (assessmentError) throw assessmentError;
+
+                if (latestAssessment) {
+                    const { data: defectDetails, error: detailsError } = await supabase
+                        .from('user_assessment_defects')
+                        .select('defect_name, rating, harm_level')
+                        .eq('assessment_id', latestAssessment.id);
+
+                    if (detailsError) throw detailsError;
+
+                    const initialRatings: Ratings = {};
+                    const initialHarmLevels: HarmLevels = {};
+                    if (defectDetails) {
+                        defectDetails.forEach(detail => {
+                            initialRatings[detail.defect_name] = detail.rating;
+                            initialHarmLevels[detail.defect_name] = detail.harm_level;
+                        });
+                    }
+                    setRatings(initialRatings);
+                    setHarmLevels(initialHarmLevels);
+                }
+            } catch (error) {
+                if (error instanceof Error) alert(`Error loading previous assessment: ${error.message}`);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLatestAssessment();
+    }, []);
 
     const handleRatingChange = (defectName: string, value: string) => {
         setRatings(prev => ({ ...prev, [defectName]: parseInt(value) }));
@@ -91,34 +169,6 @@ export default function AssessmentPage() {
     const handleHarmChange = (defectName: string, value: string) => {
         setHarmLevels(prev => ({ ...prev, [defectName]: value }));
     };
-
-    const DefectRow = ({ defect }: { defect: { name: string } }) => (
-        <div className="flex flex-col md:flex-row md:items-center border-b p-2 space-y-2 md:space-y-0">
-            <div className="w-full md:w-1/4 font-medium">{defect.name}</div>
-            <div className="w-full md:w-2/4">
-                <RadioGroup onValueChange={(value) => handleRatingChange(defect.name, value)} className="flex items-center justify-around">
-                    {[1,2,3,4,5].map(value => (
-                        <div key={value} className="flex flex-col items-center space-y-1">
-                            <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-gray-500">{['Never','Rarely','Sometimes','Often','Always'][value-1]}</Label>
-                            <RadioGroupItem value={String(value)} id={`${defect.name}-${value}`} />
-                        </div>
-                    ))}
-                </RadioGroup>
-            </div>
-            <div className="w-full md:w-1/4">
-                <Select onValueChange={(value) => handleHarmChange(defect.name, value)}>
-                    <SelectTrigger><SelectValue placeholder="Harm Level..." /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Minimal">Minimal</SelectItem>
-                        <SelectItem value="Moderate">Moderate</SelectItem>
-                        <SelectItem value="Significant">Significant</SelectItem>
-                        <SelectItem value="Severe">Severe</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
-    );
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
@@ -145,7 +195,7 @@ export default function AssessmentPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("User not found");
             const { data: assessment, error: assessmentError } = await supabase
-                .from('user_assessments').insert({ user_id: user.id }).select().single();
+                .from('user_assessments').insert({ user_id: user.id, assessment_type: 'initial' }).select().single();
             if (assessmentError) throw assessmentError;
             const defectRatingsToInsert = Object.entries(ratings).map(([defect_name, rating]) => ({
                 assessment_id: assessment.id, user_id: user.id, defect_name, rating,
@@ -170,6 +220,10 @@ export default function AssessmentPage() {
         }
     };
 
+    if (loading) {
+        return <div className="p-8 text-center">Loading assessment...</div>;
+    }
+
     return (
         <div className="container mx-auto p-4 md:p-8">
             <Card>
@@ -182,10 +236,16 @@ export default function AssessmentPage() {
                         <>
                             <div className="flex flex-col">
                                 {defects.map((defect) => (
-                                    <DefectRow key={defect.name} defect={defect} />
+                                    <DefectRow 
+                                        key={defect.name} 
+                                        defect={defect} 
+                                        rating={ratings[defect.name]}
+                                        harmLevel={harmLevels[defect.name]}
+                                        onRatingChange={handleRatingChange}
+                                        onHarmChange={handleHarmChange}
+                                    />
                                 ))}
                             </div>
-                            {/* NEW BUTTON GROUP */}
                             <div className="mt-6 flex flex-col md:flex-row gap-2">
                                 <Link href="/" className="flex-1">
                                     <Button variant="outline" className="w-full">Back to Dashboard</Button>
