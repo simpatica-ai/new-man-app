@@ -235,6 +235,7 @@ export default function AssessmentPage() {
                 if (resultsError) throw resultsError;
             }
         } catch (error) {
+            // This is the Vercel build fix
             if (error instanceof Error) {
                 alert(`Error saving results: ${error.message}`);
             }
@@ -283,8 +284,8 @@ export default function AssessmentPage() {
                             </div>
                         </>
                     ) : (
-                        <div>
-                             <div className="mt-6 flex gap-2 no-print">
+                        <div className="mt-6">
+                            <div className="flex gap-2 no-print">
                                 <Link href="/" className="inline-block">
                                     <Button>Back to Dashboard</Button>
                                 </Link>
@@ -296,7 +297,7 @@ export default function AssessmentPage() {
             </Card>
 
             {results && (
-                 <div id="printable-area" className="mt-6">
+                <div id="printable-area" className="mt-6">
                     <div className="print-header" style={{ display: 'none' }}>
                         <h1 className="text-xl font-bold">New Man App</h1>
                         <h2 className="text-lg">Character Defects Inventory Results</h2>
@@ -316,6 +317,7 @@ export default function AssessmentPage() {
                                     <div>
                                         <Label className="text-xs font-medium">Average Rating (Frequency)</Label>
                                         <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                            {/* This is the restored graph bar logic */}
                                             <div 
                                                 className={`h-2.5 rounded-full ${getBarColorClass(averageRating)}`}
                                                 style={{ width: `${(averageRating / 5) * 100}%` }}>
