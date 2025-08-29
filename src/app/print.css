@@ -1,0 +1,64 @@
+/*
+ * This stylesheet contains global styles for printing application pages.
+ * It is designed to be imported into any component that needs a
+ * "Print to PDF" functionality.
+ */
+
+@media print {
+  /* Hide everything by default when printing */
+  body * {
+    visibility: hidden;
+    -webkit-print-color-adjust: exact !important; /* Force colors to print in Chrome/Safari */
+    color-adjust: exact !important; /* Standard property for other browsers */
+  }
+
+  /* Make only the designated printable area and its children visible */
+  #printable-area, #printable-area * {
+    visibility: visible;
+  }
+
+  /* Position the printable area to take up the full page */
+  #printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+    margin: 0;
+  }
+
+  /* A utility class to hide elements from the printout (like buttons) */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Styles for the print-only header */
+  .print-header {
+    display: block !important; /* Make it visible only on print */
+    text-align: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 1rem;
+  }
+
+  /* Clean up card styles for printing */
+  .print-card {
+    border: 1px solid #eee !important;
+    box-shadow: none !important;
+    page-break-inside: avoid; /* Prevent cards from splitting across pages */
+  }
+  
+  /* Ensure colored bars in charts are printed */
+  .print-bar-red { background-color: #dc2626 !important; }
+  .print-bar-orange { background-color: #f97316 !important; }
+  .print-bar-yellow { background-color: #facc15 !important; }
+  .print-bar-green { background-color: #22c55e !important; }
+  .print-bar-blue { background-color: #3b82f6 !important; }
+
+
+  /* Prevent headings from being the last thing on a page */
+  h2, h3 {
+    page-break-after: avoid;
+  }
+}
+

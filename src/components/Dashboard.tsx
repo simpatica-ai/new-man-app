@@ -14,7 +14,7 @@ type Virtue = {
   description: string;
   short_description: string | null;
   defect_intensity_score?: number;
-  progress?: StageProgress[]; // To hold stage progress
+  progress?: StageProgress[]; 
 };
 
 type Connection = {
@@ -26,18 +26,13 @@ type Connection = {
     }
 };
 
-type AssessmentResult = {
-    virtue_name: string;
-    priority_score: number;
-};
-
 type StageProgress = {
     virtue_id: number;
     stage_number: number;
     status: 'not_started' | 'in_progress' | 'completed';
 };
 
-// --- DEFECTS DATA (for score calculation) ---
+// --- DEFECTS DATA (RESTORED) ---
 const defects = [
     { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
@@ -114,7 +109,6 @@ export default function Dashboard({ session }: { session: Session }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // --- DATA FETCHING ---
       const virtuesPromise = supabase.from('virtues').select(`id, name, description, short_description`).order('id');
       const invitesPromise = supabase.rpc('get_pending_invitations_for_sponsor', { sponsor_id_param: user.id });
       const activeSponsorshipsPromise = supabase.rpc('get_active_sponsorships_for_sponsor', { sponsor_id_param: user.id });
@@ -125,7 +119,6 @@ export default function Dashboard({ session }: { session: Session }) {
           virtuesPromise, invitesPromise, activeSponsorshipsPromise, assessmentPromise, progressPromise
       ]);
 
-      // --- PROCESS SPONSOR DATA ---
       if (invitesResult.error) throw invitesResult.error;
       setInvitations(invitesResult.data || []);
       if (activeSponsorshipsResult.error) throw activeSponsorshipsResult.error;
@@ -133,7 +126,6 @@ export default function Dashboard({ session }: { session: Session }) {
       setActiveSponsorships(activeConns);
       setIsSponsor(activeConns.length > 0);
 
-      // --- PROCESS PRACTITIONER DATA ---
       if (virtuesResult.error) throw virtuesResult.error;
       const baseVirtues = virtuesResult.data || [];
       if (assessmentResult.error) throw assessmentResult.error;
@@ -214,7 +206,6 @@ export default function Dashboard({ session }: { session: Session }) {
       return 'outline';
   };
 
-  // --- SUB-COMPONENTS for rendering ---
   const SponsorDashboard = () => (
     <Card>
         <CardHeader>
@@ -292,7 +283,6 @@ export default function Dashboard({ session }: { session: Session }) {
                                 <div className={`${getBarColor(virtue.defect_intensity_score || 0)} h-2.5 rounded-full`} style={{ width: `${(virtue.defect_intensity_score || 0) * 10}%` }}></div>
                             </div>
                         </div>
-                        {/* UPDATED BUTTON LAYOUT */}
                         <div className="flex-shrink-0 mt-4 md:mt-0 flex flex-col items-start gap-2">
                            <h4 className="font-semibold text-sm text-slate-600">Journaling</h4>
                             {virtue.progress?.map(p => (
