@@ -31,6 +31,7 @@ type Connection = {
 }
 
 // --- DATA for calculation ---
+// THIS IS THE COMPLETE AND CORRECT LIST OF ALL DEFECTS
 const defects = [
     { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
@@ -43,6 +44,7 @@ const defects = [
     { name: "Close-mindedness", virtues: ["Humility", "Respect"] },
     { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Conceit", virtues: ["Humility"] },
+    { name: "Cowardice", virtues: ["Vulnerability", "Courage"] },
     { name: "Cruelty", virtues: ["Compassion", "Respect"] },
     { name: "Deceit", virtues: ["Honesty", "Integrity"] },
     { name: "Defensiveness", virtues: ["Humility", "Vulnerability"] },
@@ -50,6 +52,9 @@ const defects = [
     { name: "Disrespect", virtues: ["Respect", "Compassion"] },
     { name: "Distrust", virtues: ["Vulnerability", "Honesty"] },
     { name: "Egotism", virtues: ["Humility", "Respect"] },
+    { name: "Envy", virtues: ["Gratitude", "Contentment"] },
+    { name: "Fearfulness", virtues: ["Vulnerability", "Courage"] },
+    { name: "Greed", virtues: ["Gratitude", "Generosity"] },
     { name: "Haughtiness", virtues: ["Humility", "Respect"] },
     { name: "Hypocrisy", virtues: ["Honesty", "Integrity"] },
     { name: "Impatience", virtues: ["Patience", "Mindfulness"] },
@@ -59,25 +64,32 @@ const defects = [
     { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"] },
     { name: "Intolerance", virtues: ["Respect", "Compassion"] },
     { name: "Irresponsibility", virtues: ["Responsibility"] },
+    { name: "Jealousy", virtues: ["Gratitude", "Contentment"] },
     { name: "Judgmental attitude", virtues: ["Compassion", "Respect"] },
     { name: "Lack of empathy", virtues: ["Compassion"] },
     { name: "Lack of gratitude", virtues: ["Gratitude"] },
     { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"] },
+    { name: "Laziness", virtues: ["Responsibility", "Effort"] },
     { name: "Lying", virtues: ["Honesty", "Integrity"] },
     { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"] },
     { name: "Narcissism", virtues: ["Humility", "Compassion"] },
     { name: "Neglect", virtues: ["Responsibility", "Compassion"] },
     { name: "Objectification", virtues: ["Respect", "Compassion"] },
     { name: "Pride", virtues: ["Humility", "Respect"] },
+    { name: "Procrastination", virtues: ["Responsibility", "Effort"] },
     { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Resentment", virtues: ["Gratitude", "Compassion"] },
     { name: "Rudeness", virtues: ["Respect", "Compassion"] },
     { name: "Self-centeredness", virtues: ["Humility", "Compassion"] },
     { name: "Self-righteousness", virtues: ["Humility", "Respect"] },
-    { name: "Selfishness", virtues: ["Compassion"] },
+    { name: "Selfishness", virtues: ["Compassion", "Generosity"] },
     { name: "Stealing", virtues: ["Honesty", "Integrity"] },
+    { name: "Stubbornness", virtues: ["Humility", "Openness"] },
     { name: "Superiority", virtues: ["Humility", "Respect"] },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] }
+    { name: "Suspicion", virtues: ["Vulnerability", "Trust"] },
+    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] },
+    { name: "Vindictiveness", virtues: ["Compassion", "Forgiveness"] },
+    { name: "Withdrawn behavior", virtues: ["Vulnerability", "Connection"] }
 ];
 
 // --- DASHBOARD COMPONENT ---
@@ -115,9 +127,7 @@ export default function Dashboard({ session }: { session: Session }) {
 
       if (progressResult.error) throw progressResult.error;
       const progressMap = new Map<string, StageProgress['status']>();
-      // THIS IS THE VERCEL BUILD FIX
       (progressResult.data || []).forEach(p => {
-        // We use a type assertion here to tell TypeScript that the string from the DB is safe
         progressMap.set(`${p.virtue_id}-${p.stage_number}`, p.status as StageProgress['status']);
       });
       setProgress(progressMap);
