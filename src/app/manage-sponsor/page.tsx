@@ -1,5 +1,3 @@
-// src/app/sponsor/page.tsx -- FINAL VERSION
-
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -15,7 +13,7 @@ type ConnectionDetails = {
   sponsor_name: string | null;
 }
 
-export default function SponsorPage() {
+export default function ManageSponsorPage() {
   const [connection, setConnection] = useState<ConnectionDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [sponsorEmail, setSponsorEmail] = useState('')
@@ -27,7 +25,7 @@ export default function SponsorPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // This now calls our new, powerful database function
+      // Calls the reliable RPC function to get connection details
       const { data, error } = await supabase
         .rpc('get_practitioner_connection_details', {
           practitioner_id_param: user.id,
@@ -35,15 +33,15 @@ export default function SponsorPage() {
 
       if (error) throw error;
       
-      // The result is an array, so we check if it has any items
       if (data && data.length > 0) {
-        setConnection(data[0]); // Set the connection to the first item
+        setConnection(data[0]);
       } else {
-        setConnection(null); // Explicitly set to null if no connection is found
+        setConnection(null);
       }
-
     } catch (error) {
-      if (error instanceof Error) alert(error.message)
+      if (error instanceof Error) {
+        alert("Failed to fetch sponsor details: " + error.message);
+      }
     } finally {
       setLoading(false)
     }
@@ -54,42 +52,44 @@ export default function SponsorPage() {
   }, [fetchConnection])
 
   const handleInviteSponsor = async () => {
-    if (!sponsorEmail.trim()) {
-      alert('Please enter a valid email address for your sponsor.')
+    if (!sponsorEmail) {
+      alert('Please enter your sponsor\'s email address.')
       return
     }
     try {
       setIsSubmitting(true)
-      
       const { data, error } = await supabase.functions.invoke('invite-sponsor', {
-        body: { email: sponsorEmail },
+        body: { sponsor_email: sponsorEmail },
       })
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (error) {
+        // This logic correctly parses the structured error from the Edge Function
+        try {
+          const errorJson = JSON.parse(error.message);
+          alert(`Error: ${errorJson.error}`);
+        } catch {
+          alert(`An unexpected error occurred: ${error.message}`);
+        }
+        return;
+      }
 
-      alert('Invitation sent! The sponsor must now log in to their own account to accept the request.');
-      fetchConnection()
-
+      alert('Invitation sent successfully!')
+      fetchConnection(); // Refresh connection status
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes("Sponsor user not found")) {
-          alert("Your requested sponsor is not a user. Please invite them to sign up first.");
-        } else {
-          alert(error.message);
-        }
+        alert("A client-side error occurred: " + error.message);
       }
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (loading) return <div className="p-4">Loading connection status...</div>
+  if (loading) return <div className="p-4 text-center">Loading connection status...</div>
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <Link href="/" className="text-sm text-blue-600 hover:underline mb-4 block">
-        &larr; Back to Dashboard
+      <Link href="/" className="mb-4 inline-block">
+          <Button variant="outline">&larr; Back to Dashboard</Button>
       </Link>
       <Card>
         <CardHeader>
@@ -121,3 +121,4 @@ export default function SponsorPage() {
     </div>
   )
 }
+

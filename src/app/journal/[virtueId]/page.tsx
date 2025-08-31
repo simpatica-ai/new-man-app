@@ -180,9 +180,36 @@ export default function VirtueJournalPage() {
     if (error) {
       alert("Error saving memo: " + error.message)
     } else {
-      alert("Memo for Stage " + stageNumber + " saved successfully.")
+      alert("Memo draft for Stage " + stageNumber + " saved successfully.")
     }
   }
+
+  const handleUpdateSponsor = async (stageNumber: number) => {
+    const memoText = stageMemos.get(stageNumber) || "";
+    if (!currentUserId || !virtue) return;
+
+    if (!confirm("This will make your current memo for this stage visible to your sponsor. Are you sure?")) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('sponsor_visible_memos')
+      .upsert({
+        user_id: currentUserId,
+        virtue_id: virtue.id,
+        stage_number: stageNumber,
+        memo_text: memoText,
+        practitioner_updated_at: new Date().toISOString(), // Set the update timestamp
+      }, {
+        onConflict: 'user_id, virtue_id, stage_number'
+      });
+
+    if (error) {
+      alert("Error updating sponsor: " + error.message);
+    } else {
+      alert("Sponsor has been updated with your latest memo for Stage " + stageNumber + ".");
+    }
+  };
 
   const handleSaveJournal = async () => {
     if (!newJournalEntry.trim() || !currentUserId) return
@@ -342,17 +369,21 @@ export default function VirtueJournalPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 gap-2">
+        <TabsList className={`grid w-full gap-2 ${connectionId ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="stage-1">Dismantling</TabsTrigger>
           <TabsTrigger value="stage-2">Building</TabsTrigger>
           <TabsTrigger value="stage-3">Maintaining</TabsTrigger>
           <TabsTrigger value="journal">Journal</TabsTrigger>
-          <TabsTrigger value="sponsor" className="relative">
-            Sponsor
-            {hasUnreadMessages && (
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
-            )}
-          </TabsTrigger>
+          
+          {connectionId && (
+            <TabsTrigger value="sponsor" className="relative">
+              Sponsor
+              {hasUnreadMessages && (
+                <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+              )}
+            </TabsTrigger>
+          )}
+
           <TabsTrigger value="discovery">Discovery</TabsTrigger>
         </TabsList>
 
@@ -369,7 +400,12 @@ export default function VirtueJournalPage() {
                   onChange={(html) => setStageMemos(new Map(stageMemos.set(stageNum, html)))}
                 />
                 <div className="flex justify-end items-center gap-4">
-                  <Button onClick={() => handleSaveMemo(stageNum)}>Save Memo</Button>
+                  <Button onClick={() => handleSaveMemo(stageNum)}>Save Memo (Draft)</Button>
+                  {connectionId && (
+                    <Button variant="outline" onClick={() => handleUpdateSponsor(stageNum)}>
+                      Update Sponsor
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
