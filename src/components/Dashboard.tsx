@@ -31,7 +31,6 @@ type Connection = {
 }
 
 // --- DATA for calculation ---
-// THIS IS THE COMPLETE AND CORRECT LIST OF ALL DEFECTS
 const defects = [
     { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
@@ -278,9 +277,15 @@ export default function Dashboard({ session }: { session: Session }) {
                     </div>
                     <div className="flex-shrink-0 md:w-1/3 flex flex-col items-stretch gap-2">
                         <p className="text-sm font-semibold text-center text-gray-600">Journaling</p>
-                        <Button size="sm" className={`justify-start ${getButtonClass(virtue.id, 1)}`}>Stage 1 - Starting</Button>
-                        <Button size="sm" className={`justify-start ${getButtonClass(virtue.id, 2)}`}>Stage 2 - Building</Button>
-                        <Button size="sm" className={`justify-start ${getButtonClass(virtue.id, 3)}`}>Stage 3 - Maintaining</Button>
+                        <Link href={`/journal/${virtue.id}?stage=1`} passHref>
+                            <Button size="sm" className={`w-full justify-start ${getButtonClass(virtue.id, 1)}`}>Stage 1 - Starting</Button>
+                        </Link>
+                        <Link href={`/journal/${virtue.id}?stage=2`} passHref>
+                            <Button size="sm" className={`w-full justify-start ${getButtonClass(virtue.id, 2)}`}>Stage 2 - Building</Button>
+                        </Link>
+                        <Link href={`/journal/${virtue.id}?stage=3`} passHref>
+                           <Button size="sm" className={`w-full justify-start ${getButtonClass(virtue.id, 3)}`}>Stage 3 - Maintaining</Button>
+                        </Link>
                     </div>
                 </CardContent>
             </Card>
