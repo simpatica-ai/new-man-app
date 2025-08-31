@@ -1,68 +1,79 @@
 'use client'
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Auth() {
-  const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      alert('Please enter both email and password.')
-      return
+      alert('Please enter both email and password.');
+      return;
     }
     try {
-      setLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
-      alert('Signed in successfully!')
-    } catch (error) { // The 'any' type has been removed
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      alert('Signed in successfully!');
+    } catch (error) {
       if (error instanceof Error) {
-        alert(error.message)
+        alert(error.message);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSignUp = async () => {
     if (!email || !password) {
-      alert('Please enter both email and password to sign up.')
-      return
+      alert('Please enter both email and password to sign up.');
+      return;
     }
     try {
-      setLoading(true)
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) throw error
-      alert('Check your email for the confirmation link!')
-    } catch (error) { // The 'any' type has been removed
+      setLoading(true);
+      const payload = {
+        email,
+        password,
+        options: {
+          data: {},
+          emailRedirectTo: 'http://localhost:3000' // Match your app's URL
+        }
+      };
+      console.log('Sign-up payload:', payload);
+      const { data, error } = await supabase.auth.signUp(payload);
+      if (error) throw error;
+      console.log('Sign-up response:', data);
+      alert('Check your email for the confirmation link! (or account created if confirmation disabled)');
+    } catch (error) {
       if (error instanceof Error) {
-        alert(error.message)
+        console.error('Sign-up error:', error.message, error.details, error.status);
+        alert(error.message);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const signInWithGoogle = async () => {
     try {
-      setLoading(true)
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
-      if (error) throw error
-    } catch (error) { // The 'any' type has been removed
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) throw error;
+    } catch (error) {
       if (error instanceof Error) {
-        alert(error.message)
+        alert(error.message);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -97,12 +108,12 @@ export default function Auth() {
               />
             </div>
             <div className="grid gap-2">
-                <Button onClick={handleSignIn} className="w-full" disabled={loading}>
-                  {loading ? 'Signing In...' : 'Sign In'}
-                </Button>
-                <Button onClick={handleSignUp} className="w-full" variant="outline" disabled={loading}>
-                  {loading ? '...' : 'Sign Up'}
-                </Button>
+              <Button onClick={handleSignIn} className="w-full" disabled={loading}>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Button>
+              <Button onClick={handleSignUp} className="w-full" variant="outline" disabled={loading}>
+                {loading ? '...' : 'Sign Up'}
+              </Button>
             </div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -119,5 +130,5 @@ export default function Auth() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
