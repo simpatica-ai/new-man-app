@@ -58,7 +58,8 @@ export default function ManageSponsorPage() {
     }
     try {
       setIsSubmitting(true)
-      const { data, error } = await supabase.functions.invoke('invite-sponsor', {
+      // ## FIX: Removed unused 'data' variable.
+      const { error } = await supabase.functions.invoke('invite-sponsor', {
         body: { sponsor_email: sponsorEmail },
       })
 
@@ -121,4 +122,3 @@ export default function ManageSponsorPage() {
     </div>
   )
 }
-

@@ -53,7 +53,8 @@ export default function Auth() {
       alert('Check your email for the confirmation link! (or account created if confirmation disabled)');
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Sign-up error:', error.message, error.details, error.status);
+        // ## FIX: Removed .details and .status, which do not exist on the standard Error type.
+        console.error('Sign-up error:', error.message);
         alert(error.message);
       }
     } finally {
