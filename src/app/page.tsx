@@ -8,17 +8,39 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import Dashboard from '@/components/Dashboard';
+import { Session } from '@supabase/supabase-js';
 
 export default function Home() {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLogin, setIsLogin] = useState(!session); // Initialize based on session
+  const [isLogin, setIsLogin] = useState(!session);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const router = useRouter();
+
+  // ## Handles the phone number formatting
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 1. Get only the digits from the input
+    const digits = e.target.value.replace(/\D/g, '');
+    let formattedNumber = '';
+
+    // 2. Apply the (XXX) XXX-XXXX format
+    if (digits.length > 0) {
+      formattedNumber = `(${digits.substring(0, 3)}`;
+    }
+    if (digits.length >= 4) {
+      formattedNumber += `) ${digits.substring(3, 6)}`;
+    }
+    if (digits.length >= 7) {
+      formattedNumber += `-${digits.substring(6, 10)}`;
+    }
+
+    // 3. Update the state
+    setPhoneNumber(formattedNumber);
+  };
 
   useEffect(() => {
     async function checkSession() {
@@ -28,8 +50,8 @@ export default function Home() {
         const response = await supabase.auth.getSession();
         console.log('getSession response:', response);
         sessionData = response.data;
-        if (sessionData.error) {
-          console.error('Session fetch error:', sessionData.error.message);
+        if (response.error) {
+          console.error('Session fetch error:', response.error.message);
           await supabase.auth.signOut();
           setLoading(false);
           return;
@@ -46,32 +68,67 @@ export default function Home() {
         try {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select(`
+              id,
+              full_name,
+              role,
+              user_data:users (
+                email
+              )
+            `)
             .eq('id', sessionData.session.user.id)
             .single();
           if (profileError) {
             if (profileError.code === 'PGRST116') {
               console.warn('No profile found for user:', sessionData.session.user.id);
-            } else if (profileError.status === 406) {
-              console.error('Profile fetch 406 error:', profileError.message);
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: sessionData.session.user.id,
+                  full_name: sessionData.session.user.user_metadata?.full_name || 'Unknown User'
+                });
+              if (insertError) {
+                console.error('Profile creation error:', insertError.message);
+              } else {
+                const { data: newProfile } = await supabase
+                  .from('profiles')
+                  .select(`
+                    id,
+                    full_name,
+                    role,
+                    user_data:users (
+                      email
+                    )
+                  `)
+                  .eq('id', sessionData.session.user.id)
+                  .single();
+                if (newProfile) console.log('New profile found:', newProfile);
+              }
             } else {
-              console.error('Profile fetch error:', profileError.message);
+              console.error('Profile fetch error:', profileError.message, profileError.details);
             }
           } else if (profile) {
-            console.log('Profile found:', profile.full_name);
+            console.log('Profile found:', profile);
+            const profileWithEmail = {
+              ...profile,
+              email: profile.user_data?.email || null
+            };
+            delete profileWithEmail.user_data;
+            console.log('Profile with email:', profileWithEmail);
           }
         } catch (fetchError) {
+            if (fetchError instanceof Error)
           console.error('Profile fetch failed:', fetchError.message);
         }
       }
       console.log('Setting loading to false');
       setLoading(false);
-      setIsLogin(!sessionData.session); // Update isLogin based on session
+      setIsLogin(!sessionData.session);
     }
 
     checkSession();
 
-    const handleAuthStateChange = async (_event: string, session: any) => {
+    const handleAuthStateChange = async (_event: string, session: Session | null) => {
       console.log('Handling auth state change:', _event);
       setSession(session);
       if (session?.user) {
@@ -94,9 +151,6 @@ export default function Home() {
                 console.log('Profile updated successfully for:', session.user.id);
               }
             }
-            if (_event === 'SIGNED_IN') {
-              router.push('/');
-            }
           } else {
             console.warn('User not fully authenticated, skipping profile update');
           }
@@ -106,16 +160,16 @@ export default function Home() {
       }
       if (!session) {
         console.log('User signed out');
-        setIsLogin(true); // Reset to login form on sign-out
+        setIsLogin(true);
       } else {
-        setIsLogin(false); // Switch to Dashboard on sign-in
+        setIsLogin(false);
       }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,31 +192,27 @@ export default function Home() {
       const payload = {
         email,
         password,
-        options: { data: { full_name: fullName }, emailRedirectTo: 'http://localhost:3000' }
+        options: {
+          data: {
+            full_name: fullName,
+            // ## Send only the digits to the backend
+            phone_number: phoneNumber.replace(/\D/g, '') || null
+          },
+          emailRedirectTo: 'http://localhost:3000'
+        }
       };
       console.log('Sign-up payload:', payload);
+
       const { data, error } = await supabase.auth.signUp(payload);
-      if (error) throw error;
-      console.log('Sign-up response:', data);
+      console.log('Sign-up response:', { data, error });
+
+      if (error) {
+        console.error('Sign-up error details:', error.message, error.name, error.status);
+        throw error;
+      }
+
       if (data.user) {
-        console.log('Updating profile for user:', data.user.id);
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ full_name: fullName, phone_number: phoneNumber || null })
-          .eq('id', data.user.id);
-        if (updateError) {
-          console.error('Profile update error:', updateError.message);
-          throw updateError;
-        }
-        console.log('Profile updated, re-checking session');
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        if (session) {
-          router.push('/');
-        } else {
-          console.error('Session not available after sign-up');
-          router.push('/');
-        }
+        alert('Sign-up successful! Please check your email to confirm your account.');
       }
     } catch (error) {
       if (error instanceof Error) setError(error.message);
@@ -242,6 +292,7 @@ export default function Home() {
                 <div className="text-center text-sm">
                   Don’t have an account?{' '}
                   <button
+                    type="button"
                     className="text-blue-600 hover:underline"
                     onClick={() => setIsLogin(false)}
                   >
@@ -289,8 +340,10 @@ export default function Home() {
                     id="signup-phone"
                     type="tel"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="e.g., 123-456-7890"
+                    // ## Use the new formatting handler
+                    onChange={handlePhoneChange}
+                    placeholder="(123) 456-7890"
+                    maxLength={14}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -307,6 +360,7 @@ export default function Home() {
                 <div className="text-center text-sm">
                   Already have an account?{' '}
                   <button
+                    type="button"
                     className="text-blue-600 hover:underline"
                     onClick={() => setIsLogin(true)}
                   >
