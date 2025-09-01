@@ -373,6 +373,8 @@ export default function Dashboard({ session }: { session: Session }) {
               </Button>
             </Link>
           )}
+          {/* ## ADDED GET SUPPORT BUTTON HERE ## */}
+          <Link href="/get-support"><Button variant="outline">Get Support</Button></Link>
           <Link href="/account-settings"><Button variant="outline">Settings</Button></Link>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>

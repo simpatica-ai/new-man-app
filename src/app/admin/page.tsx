@@ -6,21 +6,35 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from 'next/navigation';
 
-// Type to hold our combined practitioner and connection data
+// --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
-  id: string; // Practitioner's UUID
+  id: string; 
   full_name: string | null;
   email: string | null;
   connection_id: number | null;
   sponsor_name: string | null;
 };
 
+type SupportTicket = {
+  id: number;
+  created_at: string;
+  subject: string;
+  message: string;
+  status: 'Open' | 'In Progress' | 'Closed';
+  user_email: string;
+  user_full_name: string;
+};
+
+// --- ADMIN PAGE COMPONENT ---
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [practitioners, setPractitioners] = useState<PractitionerDetails[]>([]);
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
   const router = useRouter();
 
   const fetchData = useCallback(async () => {
@@ -28,11 +42,10 @@ export default function AdminPage() {
       setLoading(true);
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
-        router.push('/'); // Redirect if not logged in
+        router.push('/');
         return;
       }
       
-      // First, verify if the current user is an admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -47,16 +60,19 @@ export default function AdminPage() {
       
       setIsAdmin(true);
 
-      // If user is admin, fetch all practitioners and their active connections
-      const { data, error } = await supabase.rpc('get_all_practitioner_details');
+      const practitionerPromise = supabase.rpc('get_all_practitioner_details');
+      const ticketsPromise = supabase.rpc('get_all_support_tickets');
+      
+      const [practitionerResult, ticketsResult] = await Promise.all([practitionerPromise, ticketsPromise]);
 
-      if (error) throw error;
-      setPractitioners(data || []);
+      if (practitionerResult.error) throw practitionerResult.error;
+      setPractitioners(practitionerResult.data || []);
+
+      if (ticketsResult.error) throw ticketsResult.error;
+      setSupportTickets(ticketsResult.data || []);
 
     } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message);
-      }
+      if (error instanceof Error) alert(error.message);
     } finally {
       setLoading(false);
     }
@@ -65,6 +81,23 @@ export default function AdminPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  
+  const handleUpdateTicketStatus = async (ticketId: number, newStatus: SupportTicket['status']) => {
+    try {
+        const { error } = await supabase
+            .from('support_tickets')
+            .update({ status: newStatus })
+            .eq('id', ticketId);
+        if (error) throw error;
+        setSupportTickets(currentTickets => 
+            currentTickets.map(ticket => 
+                ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+            )
+        );
+    } catch (error) {
+        if (error instanceof Error) alert(`Failed to update status: ${error.message}`);
+    }
+  };
 
   const handleRemoveSponsor = async (connection_id: number) => {
     if (!confirm('Are you sure you want to remove this sponsor connection? This action cannot be undone.')) {
@@ -76,18 +109,14 @@ export default function AdminPage() {
 
       const { error } = await supabase.functions.invoke('admin-remove-sponsor-connection', {
         body: { connection_id },
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
 
       if (error) throw error;
       alert('Sponsor connection removed successfully.');
-      fetchData(); // Refresh the list
+      fetchData();
     } catch (error) {
-      if (error instanceof Error) {
-        alert('Error: ' + error.message);
-      }
+      if (error instanceof Error) alert('Error: ' + error.message);
     }
   };
 
@@ -101,18 +130,14 @@ export default function AdminPage() {
       
       const { error } = await supabase.functions.invoke('admin-remove-practitioner', {
         body: { practitioner_id },
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
 
       if (error) throw error;
       alert('Practitioner deleted successfully.');
-      fetchData(); // Refresh the list
+      fetchData();
     } catch (error) {
-      if (error instanceof Error) {
-        alert('Error: ' + error.message);
-      }
+      if (error instanceof Error) alert('Error: ' + error.message);
     }
   };
 
@@ -139,52 +164,116 @@ export default function AdminPage() {
         </Link>
       <div className="mb-6">
         <h1 className="text-4xl font-bold">Admin Panel</h1>
-        <p className="text-gray-500">Manage practitioners and their connections.</p>
+        <p className="text-gray-500">Manage practitioners, support tickets, and other system settings.</p>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Practitioner Management</CardTitle>
-          <CardDescription>View all practitioners and perform administrative actions.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Practitioner</TableHead>
-                <TableHead>Active Sponsor</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {practitioners.length > 0 ? practitioners.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    <div className="font-medium">{p.full_name}</div>
-                    <div className="text-sm text-gray-500">{p.email}</div>
-                  </TableCell>
-                  <TableCell>{p.sponsor_name || 'None'}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    {p.connection_id && (
-                       <Button variant="outline" size="sm" onClick={() => handleRemoveSponsor(p.connection_id!)}>
-                         Remove Sponsor
-                       </Button>
-                    )}
-                    <Button variant="destructive" size="sm" onClick={() => handleRemovePractitioner(p.id)}>
-                      Delete Practitioner
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-gray-500">
-                    No practitioners found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+
+      <Tabs defaultValue="practitioners">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="practitioners">Practitioner Management</TabsTrigger>
+          <TabsTrigger value="support">Support Tickets</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="practitioners">
+          <Card>
+            <CardHeader>
+              <CardTitle>Practitioner Management</CardTitle>
+              <CardDescription>View all practitioners and perform administrative actions.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Practitioner</TableHead>
+                    <TableHead>Active Sponsor</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {practitioners.length > 0 ? practitioners.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <div className="font-medium">{p.full_name}</div>
+                        <div className="text-sm text-gray-500">{p.email}</div>
+                      </TableCell>
+                      <TableCell>{p.sponsor_name || 'None'}</TableCell>
+                      <TableCell className="text-right space-x-2">
+                        {p.connection_id && (
+                           <Button variant="outline" size="sm" onClick={() => handleRemoveSponsor(p.connection_id!)}>
+                             Remove Sponsor
+                           </Button>
+                        )}
+                        <Button variant="destructive" size="sm" onClick={() => handleRemovePractitioner(p.id)}>
+                          Delete Practitioner
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-gray-500">
+                        No practitioners found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="support">
+          <Card>
+            <CardHeader>
+              <CardTitle>Support Ticket Management</CardTitle>
+              <CardDescription>View and respond to user-submitted support tickets.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {supportTickets.length > 0 ? supportTickets.map((ticket) => (
+                    <TableRow key={ticket.id}>
+                      <TableCell>
+                        <div className="font-medium">{ticket.user_full_name}</div>
+                        <div className="text-sm text-gray-500">{ticket.user_email}</div>
+                      </TableCell>
+                      <TableCell>{ticket.subject}</TableCell>
+                      <TableCell>{new Date(ticket.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <Select 
+                          value={ticket.status} 
+                          onValueChange={(value) => handleUpdateTicketStatus(ticket.id, value as SupportTicket['status'])}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Set Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Open">Open</SelectItem>
+                            <SelectItem value="In Progress">In Progress</SelectItem>
+                            <SelectItem value="Closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-gray-500">
+                        No support tickets found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
