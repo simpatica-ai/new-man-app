@@ -21,13 +21,10 @@ export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const router = useRouter();
 
-  // ## Handles the phone number formatting
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // 1. Get only the digits from the input
     const digits = e.target.value.replace(/\D/g, '');
     let formattedNumber = '';
 
-    // 2. Apply the (XXX) XXX-XXXX format
     if (digits.length > 0) {
       formattedNumber = `(${digits.substring(0, 3)}`;
     }
@@ -37,8 +34,6 @@ export default function Home() {
     if (digits.length >= 7) {
       formattedNumber += `-${digits.substring(6, 10)}`;
     }
-
-    // 3. Update the state
     setPhoneNumber(formattedNumber);
   };
 
@@ -48,7 +43,6 @@ export default function Home() {
       let sessionData;
       try {
         const response = await supabase.auth.getSession();
-        console.log('getSession response:', response);
         sessionData = response.data;
         if (response.error) {
           console.error('Session fetch error:', response.error.message);
@@ -62,66 +56,31 @@ export default function Home() {
         return;
       }
       setSession(sessionData.session);
-      console.log('Session fetched:', sessionData.session ? 'Valid' : 'None');
+      
       if (sessionData.session?.user) {
         console.log('User found, fetching profile for:', sessionData.session.user.id);
         try {
+          // ## UPDATED: Query the new 'profile_with_email' view
           const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select(`
-              id,
-              full_name,
-              role,
-              user_data:users (
-                email
-              )
-            `)
+            .from('profile_with_email')
+            .select('*') // The view gives us all the columns we need directly
             .eq('id', sessionData.session.user.id)
             .single();
+
           if (profileError) {
-            if (profileError.code === 'PGRST116') {
-              console.warn('No profile found for user:', sessionData.session.user.id);
-              const { error: insertError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: sessionData.session.user.id,
-                  full_name: sessionData.session.user.user_metadata?.full_name || 'Unknown User'
-                });
-              if (insertError) {
-                console.error('Profile creation error:', insertError.message);
-              } else {
-                const { data: newProfile } = await supabase
-                  .from('profiles')
-                  .select(`
-                    id,
-                    full_name,
-                    role,
-                    user_data:users (
-                      email
-                    )
-                  `)
-                  .eq('id', sessionData.session.user.id)
-                  .single();
-                if (newProfile) console.log('New profile found:', newProfile);
-              }
-            } else {
-              console.error('Profile fetch error:', profileError.message, profileError.details);
-            }
+            // No need to handle PGRST116 separately anymore for creating a profile,
+            // as the view will simply return no rows if the profile doesn't exist yet.
+            // The trigger is the source of truth for profile creation.
+            console.error('Profile fetch error:', profileError.message, profileError.details);
           } else if (profile) {
-            console.log('Profile found:', profile);
-            const profileWithEmail = {
-              ...profile,
-              email: profile.user_data?.email || null
-            };
-            delete profileWithEmail.user_data;
-            console.log('Profile with email:', profileWithEmail);
+            // ## UPDATED: The 'profile' object is already flat, no need to process it
+            console.log('Profile with email found:', profile);
           }
         } catch (fetchError) {
             if (fetchError instanceof Error)
           console.error('Profile fetch failed:', fetchError.message);
         }
       }
-      console.log('Setting loading to false');
       setLoading(false);
       setIsLogin(!sessionData.session);
     }
@@ -131,35 +90,7 @@ export default function Home() {
     const handleAuthStateChange = async (_event: string, session: Session | null) => {
       console.log('Handling auth state change:', _event);
       setSession(session);
-      if (session?.user) {
-        try {
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          if (userError) {
-            console.error('getUser error:', userError.message);
-            return;
-          }
-          if (userData.user) {
-            const fullName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || '';
-            if (fullName) {
-              const { error } = await supabase
-                .from('profiles')
-                .update({ full_name: fullName })
-                .eq('id', session.user.id);
-              if (error) {
-                console.error('Profile update error:', error.message);
-              } else {
-                console.log('Profile updated successfully for:', session.user.id);
-              }
-            }
-          } else {
-            console.warn('User not fully authenticated, skipping profile update');
-          }
-        } catch (error) {
-          console.error('Auth state change error:', error instanceof Error ? error.message : 'Unknown error');
-        }
-      }
       if (!session) {
-        console.log('User signed out');
         setIsLogin(true);
       } else {
         setIsLogin(false);
@@ -169,7 +100,7 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,19 +126,15 @@ export default function Home() {
         options: {
           data: {
             full_name: fullName,
-            // ## Send only the digits to the backend
             phone_number: phoneNumber.replace(/\D/g, '') || null
           },
           emailRedirectTo: 'http://localhost:3000'
         }
       };
-      console.log('Sign-up payload:', payload);
-
+      
       const { data, error } = await supabase.auth.signUp(payload);
-      console.log('Sign-up response:', { data, error });
 
       if (error) {
-        console.error('Sign-up error details:', error.message, error.name, error.status);
         throw error;
       }
 
@@ -340,7 +267,6 @@ export default function Home() {
                     id="signup-phone"
                     type="tel"
                     value={phoneNumber}
-                    // ## Use the new formatting handler
                     onChange={handlePhoneChange}
                     placeholder="(123) 456-7890"
                     maxLength={14}
