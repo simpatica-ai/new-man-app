@@ -230,7 +230,6 @@ export default function Dashboard({ session }: { session: Session }) {
     <Card className="mb-8">
         <CardHeader>
             <CardTitle>Sponsor Hub</CardTitle>
-            {/* ## FIX: Replaced ' with &apos; */}
             <CardDescription>Review invitations and access your practitioners&apos; journals.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -256,8 +255,9 @@ export default function Dashboard({ session }: { session: Session }) {
                               <div className="flex items-center gap-4">
                                 <span><strong>{p.practitioner_name || 'Practitioner'}</strong></span>
                                 <div className="flex items-center gap-2">
-                                  {p.has_unread_memos && <FileText className="h-5 w-5 text-green-600" title="Unread Memos" />}
-                                  {p.has_unread_chats && <MessageSquare className="h-5 w-5 text-blue-600" title="Unread Chats" />}
+                                  {/* ## FIX: Wrapped icons in a span to apply the title for tooltip */}
+                                  {p.has_unread_memos && <span title="Unread Memos"><FileText className="h-5 w-5 text-green-600" /></span>}
+                                  {p.has_unread_chats && <span title="Unread Chats"><MessageSquare className="h-5 w-5 text-blue-600" /></span>}
                                 </div>
                               </div>
                               <Link href={`/sponsor/journal/${p.practitioner_id}`}>
@@ -374,7 +374,6 @@ export default function Dashboard({ session }: { session: Session }) {
               </Button>
             </Link>
           )}
-          {/* ## ADDED GET SUPPORT BUTTON HERE ## */}
           <Link href="/get-support"><Button variant="outline">Get Support</Button></Link>
           <Link href="/account-settings"><Button variant="outline">Settings</Button></Link>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
