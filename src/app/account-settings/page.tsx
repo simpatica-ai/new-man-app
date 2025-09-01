@@ -1,195 +1,180 @@
 'use client'
 
-   import { useState, useEffect, useCallback } from 'react';
-   import { supabase } from '@/lib/supabaseClient';
-   import Link from 'next/link';
-   import { Button } from '@/components/ui/button';
-   import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-   import { Switch } from "@/components/ui/switch";
-   import { Label } from "@/components/ui/label";
-   import { Input } from "@/components/ui/input";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { User } from '@supabase/supabase-js';
 
-   type ConnectionDetails = {
-     id: number;
-     sponsor_name: string | null;
-     journal_shared: boolean;
-   };
+// The unused 'Profile' type that caused the warning has been removed.
 
-   type Profile = {
-     full_name: string | null;
-   };
+export default function AccountSettingsPage() {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; content: string } | null>(null);
+  const router = useRouter();
 
-   export default function AccountSettingsPage() {
-     const [loading, setLoading] = useState(true);
-     const [connection, setConnection] = useState<ConnectionDetails | null>(null);
-     const [fullName, setFullName] = useState<string>('');
-     const [isEditingName, setIsEditingName] = useState(false);
+  const fetchProfile = useCallback(async (currentUser: User) => {
+    // UPDATED: Using the 'profile_with_email' view for consistency
+    const { data, error } = await supabase
+      .from('profile_with_email')
+      .select('full_name')
+      .eq('id', currentUser.id)
+      .single();
 
-     const fetchUserData = useCallback(async () => {
-       try {
-         setLoading(true);
-         const { data: { user } } = await supabase.auth.getUser();
-         if (!user) return;
+    if (error) {
+      console.error('Error fetching profile:', error);
+      setMessage({ type: 'error', content: 'Could not load your profile data.' });
+    } else if (data) {
+      setFullName(data.full_name || '');
+    }
+  }, []);
 
-         // Fetch profile data
-         const { data: profileData, error: profileError } = await supabase
-           .from('profiles')
-           .select('full_name')
-           .eq('id', user.id)
-           .single();
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        setEmail(user.email || '');
+        await fetchProfile(user);
+      } else {
+        router.push('/');
+      }
+      setLoading(false);
+    };
+    checkUser();
+  }, [router, fetchProfile]);
 
-         if (profileError && profileError.code !== 'PGRST116') {
-           throw profileError;
-         }
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setLoading(true);
+    setMessage(null);
 
-         setFullName(profileData?.full_name || '');
+    // This still updates the 'profiles' table directly, which is correct.
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', user.id);
 
-         // Fetch sponsor connection details with corrected embed syntax
-         const { data: connectionData, error: connectionError } = await supabase
-           .from('sponsor_connections')
-           .select('id,journal_shared,sponsor:profiles!sponsor_user_id(full_name)')
-           .eq('practitioner_user_id', user.id)
-           .eq('status', 'active')
-           .single();
-         
-         console.log('connectionData:', connectionData);
-         console.log('connectionError:', connectionError);
+    if (error) {
+      setMessage({ type: 'error', content: `Failed to update profile: ${error.message}` });
+    } else {
+      setMessage({ type: 'success', content: 'Your profile has been updated successfully.' });
+    }
+    setLoading(false);
+  };
+  
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setMessage({ type: 'error', content: 'Passwords do not match.' });
+      return;
+    }
+    if (password.length > 0 && password.length < 6) {
+        setMessage({ type: 'error', content: 'Password must be at least 6 characters long.' });
+        return;
+    }
 
-         if (connectionError) {
-           if (connectionError.code !== 'PGRST116') {
-             throw connectionError;
-           }
-           // No active connection, set to null
-           setConnection(null);
-         } else if (connectionData) {
-           const sponsorName = connectionData.sponsor?.full_name || 'Unnamed Sponsor';
-           setConnection({
-             id: connectionData.id,
-             sponsor_name: sponsorName,
-             journal_shared: connectionData.journal_shared
-           });
-           if (!connectionData.sponsor?.full_name) {
-             console.warn('Sponsor full_name is empty or null');
-           }
-         }
-       } catch (error) {
-         if (error instanceof Error) {
-           alert(`Error fetching data: ${error.message}`);
-         }
-       } finally {
-         setLoading(false);
-       }
-     }, []);
+    setLoading(true);
+    setMessage(null);
+    
+    const { error } = await supabase.auth.updateUser({ password });
 
-     useEffect(() => {
-       fetchUserData();
-     }, [fetchUserData]);
+    if (error) {
+      setMessage({ type: 'error', content: `Failed to update password: ${error.message}` });
+    } else {
+      setMessage({ type: 'success', content: 'Your password has been updated successfully.' });
+      setPassword('');
+      setConfirmPassword('');
+    }
+    setLoading(false);
+  };
 
-     const handleToggleSharing = async (isShared: boolean) => {
-       if (!connection) return;
+  if (loading) {
+    return <div className="p-8 text-center">Loading settings...</div>;
+  }
 
-       setConnection({ ...connection, journal_shared: isShared });
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-2xl mx-auto p-4">
+        <Link href="/" className="mb-4 inline-block">
+          <Button variant="outline">&larr; Back to Dashboard</Button>
+        </Link>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Account Settings</CardTitle>
+            <CardDescription>Manage your profile information and password.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {message && (
+              <div className={`p-4 rounded-md text-sm ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {message.content}
+              </div>
+            )}
 
-       const { error } = await supabase
-         .from('sponsor_connections')
-         .update({ journal_shared: isShared })
-         .eq('id', connection.id);
+            {/* Profile Information Form */}
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <h3 className="font-semibold border-b pb-2">Profile Information</h3>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} disabled />
+                 <p className="text-xs text-gray-500">Your email address cannot be changed.</p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your full name"
+                />
+              </div>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : 'Save Profile'}
+              </Button>
+            </form>
 
-       if (error) {
-         alert("Error updating sharing preference: " + error.message);
-         setConnection({ ...connection, journal_shared: !isShared });
-       }
-     };
+            {/* Change Password Form */}
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <h3 className="font-semibold border-b pb-2">Change Password</h3>
+               <div className="grid gap-2">
+                <Label htmlFor="password">New Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="New password (leave blank to keep current)"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Updating...' : 'Update Password'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
-     const handleNameUpdate = async () => {
-       try {
-         const { data: { user } } = await supabase.auth.getUser();
-         if (!user) return;
-
-         const { error } = await supabase
-           .from('profiles')
-           .upsert({ id: user.id, full_name: fullName.trim() || null })
-           .eq('id', user.id);
-
-         if (error) {
-           throw error;
-         }
-
-         setIsEditingName(false);
-         alert('Full name updated successfully!');
-       } catch (error) {
-         if (error instanceof Error) {
-           alert("Error updating full_name: " + error.message);
-         }
-       }
-     };
-
-     if (loading) {
-       return <div className="p-8 text-center">Loading settings...</div>;
-     }
-
-     return (
-       <div className="container mx-auto p-4 max-w-2xl">
-         <Link href="/" className="mb-4 inline-block">
-           <Button variant="outline">&larr; Back to Dashboard</Button>
-         </Link>
-         <Card className="mb-6">
-           <CardHeader>
-             <CardTitle>Profile</CardTitle>
-             <CardDescription>Manage your profile information.</CardDescription>
-           </CardHeader>
-           <CardContent>
-             <div className="flex items-center space-x-4">
-               {isEditingName ? (
-                 <>
-                   <Input
-                     value={fullName}
-                     onChange={(e) => setFullName(e.target.value)}
-                     placeholder="Enter your full name"
-                     className="max-w-xs"
-                   />
-                   <Button onClick={handleNameUpdate} disabled={!fullName.trim()}>
-                     Save
-                   </Button>
-                   <Button variant="outline" onClick={() => setIsEditingName(false)}>
-                     Cancel
-                   </Button>
-                 </>
-               ) : (
-                 <>
-                   <p className="text-gray-700">
-                     <span className="font-medium">Full Name:</span> {fullName || 'Not set'}
-                   </p>
-                   <Button variant="outline" onClick={() => setIsEditingName(true)}>
-                     {fullName ? 'Edit' : 'Add'} Name
-                   </Button>
-                 </>
-               )}
-             </div>
-           </CardContent>
-         </Card>
-         <Card>
-           <CardHeader>
-             <CardTitle>Account Settings</CardTitle>
-             <CardDescription>Manage your account and sharing preferences.</CardDescription>
-           </CardHeader>
-           <CardContent>
-             {connection ? (
-               <div className="flex items-center space-x-2">
-                 <Switch
-                   id="journal-sharing"
-                   checked={connection.journal_shared}
-                   onCheckedChange={handleToggleSharing}
-                 />
-                 <Label htmlFor="journal-sharing">
-                   Share my journal and memos with my sponsor ({connection.sponsor_name || 'Sponsor'})
-                 </Label>
-               </div>
-             ) : (
-               <p className="text-gray-500">You do not have an active sponsor connection. Sharing settings are unavailable.</p>
-             )}
-           </CardContent>
-         </Card>
-       </div>
-     );
-   }

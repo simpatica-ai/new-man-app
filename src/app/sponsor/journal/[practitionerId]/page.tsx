@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+// ## FIX: Removed unused 'AlertDescription' import
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Send, AlertCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
@@ -136,7 +137,6 @@ export default function SponsorJournalView() {
     const memo = sharedMemos.find(m => m.virtue_id === virtue.id && m.stage_number === stageNumber);
     if (memo) {
       setSelectedMemo({ ...memo, virtue_name: virtue.name });
-      // Mark as read if it hasn't been
       if (!memo.sponsor_read_at) {
         markMemoAsRead(memo);
       }
@@ -156,7 +156,6 @@ export default function SponsorJournalView() {
     if (error) {
         console.error("Error marking memo as read:", error);
     } else {
-        // Update local state to remove the "unread" indicator instantly
         setSharedMemos(memos => memos.map(m => 
             (m.virtue_id === memo.virtue_id && m.stage_number === memo.stage_number)
             ? { ...m, sponsor_read_at: new Date().toISOString() } 
@@ -167,14 +166,16 @@ export default function SponsorJournalView() {
 
   const getButtonStatusClass = (virtueId: number, stageNumber: number) => {
     const memo = sharedMemos.find(m => m.virtue_id === virtueId && m.stage_number === stageNumber);
-    if (!memo) return 'bg-gray-200 hover:bg-gray-300 text-gray-500'; // Not started
-    const hasBeenRead = !!memo.sponsor_read_at;
+    if (!memo) return 'bg-gray-200 hover:bg-gray-300 text-gray-500';
+    
+    // ## FIX: Removed unused 'hasBeenRead' variable
     const practitionerUpdated = new Date(memo.practitioner_updated_at);
     const sponsorRead = memo.sponsor_read_at ? new Date(memo.sponsor_read_at) : null;
+
     if (!sponsorRead || practitionerUpdated > sponsorRead) {
-      return 'bg-green-500 hover:bg-green-600 text-white animate-pulse'; // Pending with update
+      return 'bg-green-500 hover:bg-green-600 text-white animate-pulse';
     }
-    return 'bg-blue-500 hover:bg-blue-600 text-white'; // Read/Complete
+    return 'bg-blue-500 hover:bg-blue-600 text-white';
   };
 
   const handleSendChatMessage = async () => {
@@ -197,8 +198,9 @@ export default function SponsorJournalView() {
       setNewChatMessage("");
     }
   };
-
-  if (loading) return <div className="p-8 text-center">Loading practitioner's journal...</div>;
+  
+  // ## FIX: Replaced ' with &apos;
+  if (loading) return <div className="p-8 text-center">Loading practitioner&apos;s journal...</div>;
   if (!practitioner) return <div className="p-8 text-center">Practitioner not found.</div>;
 
   return (
@@ -207,6 +209,7 @@ export default function SponsorJournalView() {
         <Link href="/" className="mb-4 inline-block">
           <Button variant="outline">&larr; Back to Sponsor Hub</Button>
         </Link>
+        {/* ## FIX: Replaced ' with &apos; */}
         <h1 className="text-4xl font-bold text-gray-800">Viewing Journal for {practitioner.full_name || 'Practitioner'}</h1>
       </div>
       

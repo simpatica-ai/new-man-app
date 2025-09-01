@@ -230,7 +230,8 @@ export default function Dashboard({ session }: { session: Session }) {
     <Card className="mb-8">
         <CardHeader>
             <CardTitle>Sponsor Hub</CardTitle>
-            <CardDescription>Review invitations and access your practitioners' journals.</CardDescription>
+            {/* ## FIX: Replaced ' with &apos; */}
+            <CardDescription>Review invitations and access your practitioners&apos; journals.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             {invitations.length > 0 && (

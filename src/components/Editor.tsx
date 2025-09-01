@@ -1,12 +1,13 @@
 'use client'
 
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, Editor } from '@tiptap/react' // ## FIX: Import the 'Editor' type
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline' // Import Underline
+import Underline from '@tiptap/extension-underline'
 import { Button } from './ui/button'
 
 // --- Toolbar Component ---
-const Toolbar = ({ editor }: { editor: any | null }) => {
+// ## FIX: Replaced 'any' with the specific 'Editor' type
+const Toolbar = ({ editor }: { editor: Editor | null }) => {
   if (!editor) return null
 
   return (
@@ -18,7 +19,6 @@ const Toolbar = ({ editor }: { editor: any | null }) => {
       >
         Bold
       </Button>
-      {/* Add Italic Button */}
       <Button
         onClick={() => editor.chain().focus().toggleItalic().run()}
         variant={editor.isActive('italic') ? 'default' : 'outline'}
@@ -26,7 +26,6 @@ const Toolbar = ({ editor }: { editor: any | null }) => {
       >
         Italic
       </Button>
-      {/* Add Underline Button */}
       <Button
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         variant={editor.isActive('underline') ? 'default' : 'outline'}
@@ -66,7 +65,6 @@ const TiptapEditor = ({ content, onChange }: { content: string, onChange: (html:
       StarterKit.configure({
         // configure extensions as needed
       }),
-      // Add Underline to extensions
       Underline,
     ],
     content: content,

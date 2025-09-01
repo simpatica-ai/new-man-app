@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { AlertCircle, Send } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import TiptapEditor from '@/components/Editor' // Import the new Tiptap editor
+import TiptapEditor from '@/components/Editor'
 import DOMPurify from 'dompurify'
 
 // --- Type Definitions ---
@@ -27,7 +27,7 @@ type Virtue = {
   author_reflection: string | null; 
   virtue_stages: Stage[] 
 }
-type StageMemo = { stage_number: number; memo_text: string | null }
+// Removed unused 'StageMemo' type
 type JournalEntry = { id: number; entry_text: string; created_at: string }
 type ChatMessage = { id: number; sender_id: string; message_text: string; created_at: string; sender_name: string | null; read_at: string | null }
 
@@ -199,7 +199,7 @@ export default function VirtueJournalPage() {
         virtue_id: virtue.id,
         stage_number: stageNumber,
         memo_text: memoText,
-        practitioner_updated_at: new Date().toISOString(), // Set the update timestamp
+        practitioner_updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id, virtue_id, stage_number'
       });
@@ -516,7 +516,7 @@ export default function VirtueJournalPage() {
             <CardHeader><CardTitle>About {virtue.name}</CardTitle></CardHeader>
             <CardContent className="prose max-w-none">
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(virtue.description) }} />
-              <h3>Author's Reflection</h3>
+              <h3>Author&apos;s Reflection</h3>
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(virtue.author_reflection || '<em>No reflection available.</em>') }} />
               <h3>Story of Virtue</h3>
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(virtue.story_of_virtue || '<em>No story available.</em>') }} />
