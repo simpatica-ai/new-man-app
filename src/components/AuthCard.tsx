@@ -1,0 +1,151 @@
+'use client';
+
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+export function AuthCard() {
+  const [loading, setLoading] = useState(false);
+  const [isLoginView, setIsLoginView] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+
+  const handleAuthAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    if (isLoginView) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMessage({ type: 'error', text: error.message });
+    } else {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } }
+      });
+      if (error) {
+        setMessage({ type: 'error', text: error.message });
+      } else {
+        setMessage({ type: 'success', text: 'Check your email for a confirmation link!' });
+      }
+    }
+    setLoading(false);
+  };
+
+  // ## FUNCTION TO HANDLE GOOGLE SIGN-IN ##
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+            redirectTo: window.location.origin // Redirect back to the app after auth
+        }
+    });
+    if (error) {
+        setMessage({ type: 'error', text: error.message });
+        setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border-stone-200">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-semibold text-stone-800 tracking-tight">
+          {isLoginView ? 'Welcome Back' : 'Create an Account'}
+        </CardTitle>
+        <CardDescription className="text-stone-600 pt-1">
+          {isLoginView ? 'Continue your path of personal growth.' : 'Join to start your virtuous life.'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <form onSubmit={handleAuthAction} className="space-y-4">
+          {!isLoginView && (
+            <div className="grid gap-1.5">
+              <Label htmlFor="fullName" className="text-stone-700">Full Name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your full name"
+                required
+                className="bg-stone-50 border-stone-300"
+              />
+            </div>
+          )}
+          <div className="grid gap-1.5">
+            <Label htmlFor="email" className="text-stone-700">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className="bg-stone-50 border-stone-300"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="password" className="text-stone-700">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className="bg-stone-50 border-stone-300"
+            />
+          </div>
+          {message && (
+            <p className={`text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>
+              {message.text}
+            </p>
+          )}
+          <Button type="submit" className="w-full bg-stone-700 hover:bg-stone-800 text-white text-base py-6 rounded-lg" disabled={loading}>
+            {loading ? 'Processing...' : (isLoginView ? 'Sign In' : 'Create Account')}
+          </Button>
+        </form>
+
+        {/* ## SEPARATOR AND GOOGLE BUTTON ADDED HERE ## */}
+        <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-stone-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white/0 backdrop-blur-sm px-2 text-stone-500">Or continue with</span>
+            </div>
+        </div>
+
+        <Button 
+          variant="outline" 
+          className="w-full text-stone-700 border-stone-300 hover:bg-stone-50 text-base py-6 rounded-lg" 
+          onClick={signInWithGoogle} 
+          disabled={loading}
+        >
+            Sign In with Google
+        </Button>
+
+        <div className="mt-6 text-center text-sm text-stone-600">
+          {isLoginView ? "New to your journey?" : "Already have an account?"}{' '}
+          <button
+            onClick={() => {
+              setIsLoginView(!isLoginView);
+              setMessage(null);
+            }}
+            className="font-semibold text-stone-800 hover:text-stone-900 underline"
+          >
+            {isLoginView ? 'Start your journey' : 'Sign In'}
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+

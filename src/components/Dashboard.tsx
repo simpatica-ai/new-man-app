@@ -230,7 +230,7 @@ export default function Dashboard({ session }: { session: Session }) {
     <Card className="mb-8">
         <CardHeader>
             <CardTitle>Sponsor Hub</CardTitle>
-            <CardDescription>Review invitations and access your practitioners&apos; journals.</CardDescription>
+            <CardDescription>Review invitations and access your practitioner&apos;s journals.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             {invitations.length > 0 && (
@@ -255,9 +255,8 @@ export default function Dashboard({ session }: { session: Session }) {
                               <div className="flex items-center gap-4">
                                 <span><strong>{p.practitioner_name || 'Practitioner'}</strong></span>
                                 <div className="flex items-center gap-2">
-                                  {/* ## FIX: Wrapped icons in a span to apply the title for tooltip */}
-                                  {p.has_unread_memos && <span title="Unread Memos"><FileText className="h-5 w-5 text-green-600" /></span>}
-                                  {p.has_unread_chats && <span title="Unread Chats"><MessageSquare className="h-5 w-5 text-blue-600" /></span>}
+                                  <span title="Unread Memos">{p.has_unread_memos && <FileText className="h-5 w-5 text-green-600" />}</span>
+                                  <span title="Unread Chats">{p.has_unread_chats && <MessageSquare className="h-5 w-5 text-blue-600" />}</span>
                                 </div>
                               </div>
                               <Link href={`/sponsor/journal/${p.practitioner_id}`}>
@@ -355,8 +354,6 @@ export default function Dashboard({ session }: { session: Session }) {
     </div>
   );
   
-  // This logic determines if the user is a "pure sponsor"
-  // (i.e., they are a sponsor but not also a practitioner).
   const isPureSponsor = isSponsor && !hasSponsorConnection;
 
   return (
@@ -367,13 +364,7 @@ export default function Dashboard({ session }: { session: Session }) {
             <p className="text-gray-600">Signed in as: {session.user.email}</p>
         </div>
         <div className="flex items-center space-x-2">
-          {!isSponsor && (
-            <Link href="/manage-sponsor">
-              <Button variant="outline">
-                {hasSponsorConnection ? 'Manage Sponsor' : 'Add Sponsor'}
-              </Button>
-            </Link>
-          )}
+          {/* ## REMOVED MANAGE SPONSOR BUTTON ## */}
           <Link href="/get-support"><Button variant="outline">Get Support</Button></Link>
           <Link href="/account-settings"><Button variant="outline">Settings</Button></Link>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
@@ -384,10 +375,7 @@ export default function Dashboard({ session }: { session: Session }) {
         <p>Loading dashboard...</p>
       ) : (
         <>
-          {/* Always show Sponsor Hub if the user has any sponsor-related tasks */}
           {(isSponsor || invitations.length > 0) && <SponsorDashboard />}
-          
-          {/* Only show the Practitioner dashboard if the user is NOT a "pure sponsor" */}
           {!isPureSponsor && <PractitionerDashboard />}
         </>
       )}
