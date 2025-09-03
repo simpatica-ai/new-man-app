@@ -6,148 +6,63 @@ import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { FileText, MessageSquare, ArrowRight } from 'lucide-react'
+import { UserCheck, BookOpen, Edit, Settings, LogOut, LifeBuoy } from 'lucide-react'
 
 // --- TYPE DEFINITIONS ---
-type StageProgress = {
-  virtue_id: number;
-  stage_number: number;
-  status: 'not_started' | 'in_progress' | 'completed';
-}
-
-type Virtue = {
-  id: number;
-  name: string;
-  description: string;
-  short_description: string | null;
-  priority_score?: number;
-  defect_intensity?: number;
-};
-
-type Connection = {
-    id: number;
-    status: 'pending' | 'active';
-    practitioner_name: string | null;
-    practitioner_id: string;
-}
-
-type PractitionerAlert = {
-  practitioner_id: string;
-  practitioner_name: string;
-  has_unread_memos: boolean;
-  has_unread_chats: boolean;
-}
-
-// --- DATA for calculation ---
-const defects = [
-    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
-    { name: "Apathy", virtues: ["Compassion", "Responsibility"] },
-    { name: "Arrogance", virtues: ["Humility", "Respect"] },
-    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"] },
-    { name: "Bitterness", virtues: ["Gratitude", "Compassion"] },
-    { name: "Blaming others", virtues: ["Responsibility", "Honesty"] },
-    { name: "Boastfulness", virtues: ["Humility"] },
-    { name: "Close-mindedness", virtues: ["Humility", "Respect"] },
-    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Conceit", virtues: ["Humility"] },
-    { name: "Cowardice", virtues: ["Vulnerability", "Courage"] },
-    { name: "Cruelty", virtues: ["Compassion", "Respect"] },
-    { name: "Deceit", virtues: ["Honesty", "Integrity"] },
-    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"] },
-    { name: "Dishonesty", virtues: ["Honesty", "Integrity"] },
-    { name: "Disrespect", virtues: ["Respect", "Compassion"] },
-    { name: "Distrust", virtues: ["Vulnerability", "Honesty"] },
-    { name: "Egotism", virtues: ["Humility", "Respect"] },
-    { name: "Envy", virtues: ["Gratitude", "Contentment"] },
-    { name: "Fearfulness", virtues: ["Vulnerability", "Courage"] },
-    { name: "Greed", virtues: ["Gratitude", "Generosity"] },
-    { name: "Haughtiness", virtues: ["Humility", "Respect"] },
-    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"] },
-    { name: "Impatience", virtues: ["Patience", "Mindfulness"] },
-    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Indifference", virtues: ["Compassion", "Responsibility"] },
-    { name: "Ingratitude", virtues: ["Gratitude"] },
-    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"] },
-    { name: "Intolerance", virtues: ["Respect", "Compassion"] },
-    { name: "Irresponsibility", virtues: ["Responsibility"] },
-    { name: "Jealousy", virtues: ["Gratitude", "Contentment"] },
-    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"] },
-    { name: "Lack of empathy", virtues: ["Compassion"] },
-    { name: "Lack of gratitude", virtues: ["Gratitude"] },
-    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Laziness", virtues: ["Responsibility", "Effort"] },
-    { name: "Lying", virtues: ["Honesty", "Integrity"] },
-    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"] },
-    { name: "Narcissism", virtues: ["Humility", "Compassion"] },
-    { name: "Neglect", virtues: ["Responsibility", "Compassion"] },
-    { name: "Objectification", virtues: ["Respect", "Compassion"] },
-    { name: "Pride", virtues: ["Humility", "Respect"] },
-    { name: "Procrastination", virtues: ["Responsibility", "Effort"] },
-    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Resentment", virtues: ["Gratitude", "Compassion"] },
-    { name: "Rudeness", virtues: ["Respect", "Compassion"] },
-    { name: "Self-centeredness", virtues: ["Humility", "Compassion"] },
-    { name: "Self-righteousness", virtues: ["Humility", "Respect"] },
-    { name: "Selfishness", virtues: ["Compassion", "Generosity"] },
-    { name: "Stealing", virtues: ["Honesty", "Integrity"] },
-    { name: "Stubbornness", virtues: ["Humility", "Openness"] },
-    { name: "Superiority", virtues: ["Humility", "Respect"] },
-    { name: "Suspicion", virtues: ["Vulnerability", "Trust"] },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] },
-    { name: "Vindictiveness", virtues: ["Compassion", "Forgiveness"] },
-    { name: "Withdrawn behavior", virtues: ["Vulnerability", "Connection"] } 
-];
+type Profile = { full_name: string | null; }
+type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
+type Virtue = { id: number; name: string; description: string; short_description: string | null; priority_score?: number; };
+type Connection = { id: number; status: 'pending' | 'active'; sponsor_name: string | null; }
 
 // --- DASHBOARD COMPONENT ---
 export default function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
-  const [isSponsor, setIsSponsor] = useState(false);
-  const [hasSponsorConnection, setHasSponsorConnection] = useState(false);
-  
-  // State for Practitioner View
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [connection, setConnection] = useState<Connection | null>(null);
   const [virtues, setVirtues] = useState<Virtue[]>([]);
   const [assessmentTaken, setAssessmentTaken] = useState(false);
   const [progress, setProgress] = useState<Map<string, StageProgress['status']>>(new Map());
+  const [lastJournalEntry, setLastJournalEntry] = useState<string | null>(null);
 
-  // State for Sponsor View
-  const [invitations, setInvitations] = useState<Connection[]>([]);
-  const [practitionerAlerts, setPractitionerAlerts] = useState<PractitionerAlert[]>([]);
+  // Set the browser tab title
+  useEffect(() => { document.title = "New Man: Dashboard"; }, []);
 
+  // Combined and updated data fetching logic
   const getDashboardData = useCallback(async () => {
     try {
-      setLoading(true);
+      // setLoading(true) is only for the initial load, not for refetches.
+      // This prevents the whole screen from flashing a "loading" message on tab focus.
+      if (!virtues.length) {
+        setLoading(true);
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const invitesPromise = supabase.rpc('get_pending_invitations_for_sponsor', { sponsor_id_param: user.id });
-      const practitionerConnectionPromise = supabase.from('sponsor_connections').select('id').eq('practitioner_user_id', user.id).in('status', ['pending', 'active']).maybeSingle();
-      
-      const [invitesResult, practitionerConnectionResult] = await Promise.all([invitesPromise, practitionerConnectionPromise]);
-
-      if (invitesResult.error) throw invitesResult.error;
-      setInvitations(invitesResult.data || []);
-      
-      if (practitionerConnectionResult.error) throw practitionerConnectionResult.error;
-      setHasSponsorConnection(!!practitionerConnectionResult.data);
-
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-      const userIsSponsor = profile?.role === 'sponsor' || (invitesResult.data && invitesResult.data.length > 0);
-      setIsSponsor(userIsSponsor);
-
-      if (userIsSponsor) {
-        const { data: alerts, error: alertsError } = await supabase.rpc('get_sponsor_practitioner_alerts', { sponsor_id_param: user.id });
-        if (alertsError) throw alertsError;
-        setPractitionerAlerts(alerts || []);
-      }
-      
-      const virtuesPromise = supabase.from('virtues').select(`id, name, description, short_description`).order('id');
+      // Fetch all necessary data in parallel for performance
+      const profilePromise = supabase.from('profiles').select('full_name').eq('id', user.id).single();
+      const connectionPromise = supabase.rpc('get_practitioner_connection_details', { practitioner_id_param: user.id });
+      const virtuesPromise = supabase.from('virtues').select('id, name, description, short_description').order('id');
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', user.id).order('assessment_id', { ascending: false });
       const progressPromise = supabase.from('user_virtue_stage_progress').select('virtue_id, stage_number, status').eq('user_id', user.id);
+      const journalPromise = supabase.from('journal_entries').select('created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1);
+
+      const [profileResult, connectionResult, virtuesResult, assessmentResult, progressResult, journalResult] = await Promise.all([
+        profilePromise, connectionPromise, virtuesPromise, assessmentPromise, progressPromise, journalPromise
+      ]);
       
-      const [virtuesResult, assessmentResult, progressResult] = await Promise.all([virtuesPromise, assessmentPromise, progressPromise]);
+      if (profileResult.error) throw profileResult.error;
+      setProfile(profileResult.data);
+
+      if (connectionResult.error) throw connectionResult.error;
+      setConnection(connectionResult.data?.[0] || null);
       
+      if (journalResult.data && journalResult.data.length > 0) {
+        setLastJournalEntry(journalResult.data[0].created_at);
+      } else if (journalResult.error && journalResult.error.code !== 'PGRST116') {
+        throw journalResult.error;
+      }
+
       if (progressResult.error) throw progressResult.error;
       const progressMap = new Map<string, StageProgress['status']>();
       (progressResult.data || []).forEach(p => progressMap.set(`${p.virtue_id}-${p.stage_number}`, p.status as StageProgress['status']));
@@ -163,13 +78,8 @@ export default function Dashboard({ session }: { session: Session }) {
         setAssessmentTaken(true);
         const scoreMap = new Map<string, number>();
         results.forEach(r => { scoreMap.set(r.virtue_name, r.priority_score); });
-        const maxPossibleScores = new Map<string, number>();
-        baseVirtues.forEach(virtue => {
-            const relevantDefects = defects.filter(d => d.virtues.includes(virtue.name));
-            maxPossibleScores.set(virtue.name, relevantDefects.length * 25);
-        });
         const sortedVirtues = baseVirtues
-            .map(v => ({ ...v, priority_score: scoreMap.get(v.name) || 0, defect_intensity: ((scoreMap.get(v.name) || 0) / (maxPossibleScores.get(v.name) || 1)) * 10 }))
+            .map(v => ({ ...v, priority_score: scoreMap.get(v.name) || 0 }))
             .sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
         setVirtues(sortedVirtues);
       } else {
@@ -181,204 +91,163 @@ export default function Dashboard({ session }: { session: Session }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [virtues.length]);
 
+  // Effect for initial load and refreshing data on tab focus
   useEffect(() => {
     getDashboardData();
+    const handleFocus = () => getDashboardData();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [getDashboardData]);
 
-  const handleAcceptInvite = async (connectionId: number) => {
-      try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+  const handleSignOut = async () => { await supabase.auth.signOut(); };
 
-          const { error: connectionError } = await supabase
-            .from('sponsor_connections')
-            .update({ status: 'active' })
-            .eq('id', connectionId);
-
-          if (connectionError) throw connectionError;
-
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ role: 'sponsor' })
-            .eq('id', user.id);
-          
-          if (profileError) throw profileError;
-
-          alert('Connection accepted!');
-          getDashboardData();
-      } catch (error) {
-          if (error instanceof Error) alert(error.message);
-      }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const getStatusIndicatorClass = (virtueId: number, stage: number): string => {
+  const getStatusClasses = (virtueId: number, stage: number): string => {
     const status = progress.get(`${virtueId}-${stage}`);
     switch (status) {
-        case 'in_progress': return 'text-yellow-500';
-        case 'completed': return 'text-green-500';
-        default: return 'text-gray-400';
+        case 'in_progress': return 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200';
+        case 'completed': return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200';
+        default: return 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200';
     }
   };
 
-  const SponsorDashboard = () => (
-    <Card className="mb-8">
-        <CardHeader>
-            <CardTitle>Sponsor Hub</CardTitle>
-            <CardDescription>Review invitations and access your practitioner&apos;s journals.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-            {invitations.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2 text-blue-800">Pending Invitations</h3>
-                  <ul className="space-y-2">
-                      {invitations.map(invite => (
-                          <li key={invite.id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <span>Invitation from: <strong>{invite.practitioner_name || 'A new practitioner'}</strong></span>
-                              <Button size="sm" onClick={() => handleAcceptInvite(invite.id)}>Accept</Button>
-                          </li>
-                      ))}
-                  </ul>
-                </div>
-            )}
-            {practitionerAlerts.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2">Actively Sponsoring</h3>
-                  <ul className="space-y-2">
-                      {practitionerAlerts.map(p => (
-                          <li key={p.practitioner_id} className="flex justify-between items-center p-2 border rounded-md bg-white">
-                              <div className="flex items-center gap-4">
-                                <span><strong>{p.practitioner_name || 'Practitioner'}</strong></span>
-                                <div className="flex items-center gap-2">
-                                  <span title="Unread Memos">{p.has_unread_memos && <FileText className="h-5 w-5 text-green-600" />}</span>
-                                  <span title="Unread Chats">{p.has_unread_chats && <MessageSquare className="h-5 w-5 text-blue-600" />}</span>
-                                </div>
-                              </div>
-                              <Link href={`/sponsor/journal/${p.practitioner_id}`}>
-                                <Button size="sm" variant="outline">View Journal</Button>
-                              </Link>
-                          </li>
-                      ))}
-                  </ul>
-                </div>
-            )}
-        </CardContent>
-    </Card>
-  );
+  const calculateDaysSince = (dateString: string | null): number | null => {
+      if (!dateString) return null;
+      const lastDate = new Date(dateString);
+      const today = new Date();
+      lastDate.setHours(0,0,0,0);
+      today.setHours(0,0,0,0);
+      const differenceInTime = today.getTime() - lastDate.getTime();
+      return Math.floor(differenceInTime / (1000 * 3600 * 24));
+  }
+  
+  // --- SUB-COMPONENTS for the modern layout ---
 
-  const PractitionerDashboard = () => (
-    <div className="space-y-8">
-        {!assessmentTaken && (
-            <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                        <h3 className="font-semibold text-lg text-blue-900">Personalize Your Journey</h3>
-                        <p className="text-blue-800">Take the Character Defects Inventory to prioritize your virtues based on your unique needs.</p>
-                    </div>
-                    <Link href="/assessment">
-                        <Button className="bg-blue-600 hover:bg-blue-700 flex-shrink-0">
-                            Take the Assessment <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </Link>
-                </CardContent>
-            </Card>
-        )}
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">
-                    {assessmentTaken ? "Your Prioritized Virtues" : "Virtues for Practice"}
-                </h2>
-                {assessmentTaken && (
-                    <Link href="/assessment">
-                        <Button variant="outline" size="sm">Retake Assessment</Button>
-                    </Link>
-                )}
-            </div>
-          {virtues.map((virtue) => (
-            <Card key={virtue.id} className="bg-white">
-                <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-grow md:w-2/3">
-                        <h3 className="font-bold text-lg text-brand-header">{virtue.name}</h3>
-                        <p className="text-brand-text text-sm mb-2">{virtue.short_description || virtue.description}</p>
-                        {assessmentTaken && (
-                            <>
-                                <div className="flex items-center gap-2 text-sm font-medium">
-                                    <span>Defect Intensity: {(virtue.defect_intensity || 0).toFixed(1)} / 10</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                                    <div className={`h-2.5 rounded-full ${
-                                        (virtue.defect_intensity || 0) > 7.5 ? 'bg-red-600' :
-                                        (virtue.defect_intensity || 0) > 5 ? 'bg-orange-500' :
-                                        (virtue.defect_intensity || 0) > 2.5 ? 'bg-yellow-400' : 'bg-green-500'
-                                    }`} style={{ width: `${(virtue.defect_intensity || 0) * 10}%` }}></div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <div className="flex-shrink-0 md:w-1/3">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button className="w-full">Begin Virtue Work</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                                <DropdownMenuItem asChild>
-                                    <Link href={`/journal/${virtue.id}?stage=1`} className="flex items-center gap-2">
-                                        <span className={`text-lg ${getStatusIndicatorClass(virtue.id, 1)}`}>●</span>
-                                        <span>Stage 1 - Dismantling</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                     <Link href={`/journal/${virtue.id}?stage=2`} className="flex items-center gap-2">
-                                        <span className={`text-lg ${getStatusIndicatorClass(virtue.id, 2)}`}>●</span>
-                                        <span>Stage 2 - Building</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                     <Link href={`/journal/${virtue.id}?stage=3`} className="flex items-center gap-2">
-                                        <span className={`text-lg ${getStatusIndicatorClass(virtue.id, 3)}`}>●</span>
-                                        <span>Stage 3 - Maintaining</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </CardContent>
-            </Card>
-          ))}
+  const VirtueRow = ({ virtue }: { virtue: Virtue }) => (
+    <li className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg bg-white shadow-sm">
+      <div className="flex-shrink-0 flex items-center gap-4 w-full md:w-auto">
+        <div className="relative w-16 h-16 flex items-center justify-center">
+          <svg className="w-full h-full" viewBox="0 0 36 36"><path className="text-stone-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /><path className="text-amber-600" strokeDasharray={`${(virtue.priority_score || 0) * 10}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
+          <span className="absolute text-xl font-semibold text-stone-700">{((virtue.priority_score || 0) / 10).toFixed(1)}</span>
         </div>
-    </div>
+        <div className="md:hidden flex-grow"><h3 className="font-semibold text-lg text-stone-800">{virtue.name}</h3></div>
+      </div>
+      <div className="flex-grow w-full">
+          <h3 className="hidden md:block font-semibold text-lg text-stone-800">{virtue.name}</h3>
+          <p className="text-stone-600 text-sm mb-3">{virtue.short_description || virtue.description}</p>
+          <div className="flex flex-wrap gap-2">
+            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 1 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 1)}>Stage 1</Button></Link>
+            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 2 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 2)}>Stage 2</Button></Link>
+            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 3 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 3)}>Stage 3</Button></Link>
+          </div>
+      </div>
+    </li>
   );
   
-  const isPureSponsor = isSponsor && !hasSponsorConnection;
+  const ActionCards = () => {
+    const daysSinceJournal = calculateDaysSince(lastJournalEntry);
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                    <UserCheck className="h-8 w-8 text-amber-700" />
+                    <div><CardTitle className="text-stone-800">Sponsor Connection</CardTitle></div>
+                </CardHeader>
+                <CardContent>
+                    {connection ? (
+                        <div>
+                            <p className="text-sm text-stone-600">Connected with:</p>
+                            <p className="font-semibold text-stone-800">{connection.sponsor_name || 'Your Sponsor'}</p>
+                            <p className={`text-sm font-medium capitalize ${connection.status === 'active' ? 'text-green-600' : 'text-amber-600'}`}>{connection.status}</p>
+                        </div>
+                    ) : (
+                        <div>
+                            <p className="text-sm text-stone-600 mb-2">You have not connected with a sponsor yet.</p>
+                            <Link href="/account-settings"><Button size="sm" variant="outline">Invite a Sponsor</Button></Link>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                    <BookOpen className="h-8 w-8 text-amber-700" />
+                    <div><CardTitle className="text-stone-800">Assessment</CardTitle></div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-stone-600 mb-2">{assessmentTaken ? 'Your virtues are prioritized. You can retake the assessment anytime.' : 'Prioritize your virtues by taking the assessment.'}</p>
+                    <Link href="/assessment"><Button size="sm" variant="outline">{assessmentTaken ? 'Retake Assessment' : 'Take Assessment'}</Button></Link>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                    <Edit className="h-8 w-8 text-amber-700" />
+                    <div><CardTitle className="text-stone-800">Journal</CardTitle></div>
+                </CardHeader>
+                <CardContent>
+                    {daysSinceJournal !== null ? (
+                         <p className="text-sm text-stone-600">
+                           Your last journal entry was <span className="font-bold text-stone-800">{daysSinceJournal === 0 ? 'today' : `${daysSinceJournal} day${daysSinceJournal > 1 ? 's' : ''} ago`}</span>.
+                         </p>
+                    ) : (
+                        <p className="text-sm text-stone-600">Start your journey by writing your first journal entry.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    )
+  };
+
+  const ProgressLegend = () => (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600 bg-stone-100 p-2 rounded-md">
+      <strong>Legend:</strong>
+      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-stone-200 border border-stone-300"></div><span>Not Started</span></div>
+      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-200 border border-amber-300"></div><span>In Progress</span></div>
+      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-green-200 border border-green-300"></div><span>Completed</span></div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-gray-600">Signed in as: {session.user.email}</p>
+    <div className="min-h-screen bg-stone-50">
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-10">
+        <div className="container mx-auto p-4 flex justify-between items-center">
+          <div>
+              <h1 className="text-xl font-semibold text-stone-800">
+                {profile?.full_name ? `Welcome, ${profile.full_name}` : 'Dashboard'}
+              </h1>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Link href="/get-support"><Button title="Get Support" variant="ghost" size="icon"><LifeBuoy className="h-5 w-5" /></Button></Link>
+            <Link href="/account-settings"><Button title="Settings" variant="ghost" size="icon"><Settings className="h-5 w-5" /></Button></Link>
+            <Button onClick={handleSignOut} title="Sign Out" variant="ghost" size="icon"><LogOut className="h-5 w-5" /></Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          {/* ## REMOVED MANAGE SPONSOR BUTTON ## */}
-          <Link href="/get-support"><Button variant="outline">Get Support</Button></Link>
-          <Link href="/account-settings"><Button variant="outline">Settings</Button></Link>
-          <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
-        </div>
-      </div>
+      </header>
 
-      {loading ? (
-        <p>Loading dashboard...</p>
-      ) : (
-        <>
-          {(isSponsor || invitations.length > 0) && <SponsorDashboard />}
-          {!isPureSponsor && <PractitionerDashboard />}
-        </>
-      )}
+      <main className="container mx-auto p-4 md:p-8">
+        {loading ? (
+          <p className="text-center text-stone-500">Loading dashboard...</p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2 space-y-4">
+               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 p-3 bg-white rounded-lg border">
+                  <h2 className="text-2xl font-light text-stone-800">
+                    {assessmentTaken ? "Your Prioritized Virtues" : "Virtues for Practice"}
+                  </h2>
+                  <ProgressLegend />
+                </div>
+                <ul className="space-y-4">
+                  {virtues.map((virtue) => <VirtueRow key={virtue.id} virtue={virtue} />)}
+                </ul>
+            </div>
+            <div className="lg:col-span-1 lg:sticky lg:top-24">
+                <ActionCards />
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   )
 }
