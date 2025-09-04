@@ -13,8 +13,9 @@ import { AlertCircle, Send } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import DOMPurify from 'dompurify'
+import JournalComponent from '@/components/JournalComponent'
 
-// --- Type Definitions (Merged from Legacy and Modern versions) ---
+// --- Type Definitions ---
 type Prompt = { id: number; prompt_text: string }
 type Affirmation = { id: number; text: string }
 type Stage = { 
@@ -46,6 +47,8 @@ export default function VirtueDetailPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [newChatMessage, setNewChatMessage] = useState("")
   const [activeTab, setActiveTab] = useState("stage-1")
+  // ## FIX 1: State to track the last viewed stage for prompts ##
+  const [displayedStageNumber, setDisplayedStageNumber] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
   const [connectionId, setConnectionId] = useState<number | null>(null)
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
@@ -54,12 +57,20 @@ export default function VirtueDetailPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // ## FIX: Robustly get the virtue ID from the URL. ##
-  // This checks for common naming conventions ('id' or 'virtueId')
-  // to ensure the component works correctly regardless of the folder name.
   const virtueId = params.id || params.virtueId;
-  
   const stageQuery = searchParams.get('stage');
+
+  useEffect(() => {
+    if (virtue) {
+      document.title = `New-Man-App: Virtue - ${virtue.name}`;
+    }
+  }, [virtue]);
+
+  const affirmations: Affirmation[] = [
+    { id: 1, text: "I approach situations with an open mind, ready to learn." },
+    { id: 2, text: "I value the contributions of others and acknowledge their worth." },
+    { id: 3, text: "I accept my limitations and ask for help when needed." },
+  ]
 
   const fetchPageData = useCallback(async () => {
     if (!virtueId) {
@@ -72,7 +83,6 @@ export default function VirtueDetailPage() {
       if (!user) { router.push('/'); return; }
       setCurrentUserId(user.id);
 
-      // Correctly fetch all necessary data for the rich UI
       const virtuePromise = supabase
         .from('virtues')
         .select('*, virtue_stages(*, stage_prompts(*), affirmations(*))')
@@ -110,7 +120,6 @@ export default function VirtueDetailPage() {
       if (connectionResult.error) throw connectionResult.error;
       if (connectionResult.data) {
         setConnectionId(connectionResult.data.id);
-        // Fetch chat messages now that we have a connection ID
         const { data: rawMessages, error: messagesError } = await supabase
           .from('sponsor_chat_messages')
           .select('id, sender_id, message_text, created_at, read_at')
@@ -129,10 +138,13 @@ export default function VirtueDetailPage() {
         }
       }
       
+      const initialStage = parseInt(stageQuery || '1');
       if (stageQuery && ['1', '2', '3'].includes(stageQuery)) {
         setActiveTab(`stage-${stageQuery}`);
+        setDisplayedStageNumber(initialStage);
       } else if (virtueResult.data?.virtue_stages.length > 0) {
-        setActiveTab(`stage-${virtueResult.data.virtue_stages[0].stage_number}`);
+        setActiveTab(`stage-1`);
+        setDisplayedStageNumber(1);
       }
 
     } catch (error) {
@@ -194,32 +206,50 @@ export default function VirtueDetailPage() {
     }
   }
   
+  // ## FIX 1: This now uses displayedStageNumber so prompts don't disappear ##
   const activeStageData = useMemo(() => {
-    const stageNumber = parseInt(activeTab.split('-')[1]);
-    if (isNaN(stageNumber)) return null;
-    return virtue?.virtue_stages.find(s => s.stage_number === stageNumber);
-  }, [activeTab, virtue]);
+    return virtue?.virtue_stages.find(s => s.stage_number === displayedStageNumber);
+  }, [displayedStageNumber, virtue]);
+
+  // ## FIX 1: Custom handler to update the correct state ##
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    if (tabValue.startsWith('stage-')) {
+      const stageNum = parseInt(tabValue.split('-')[1]);
+      setDisplayedStageNumber(stageNum);
+    }
+  };
 
   if (loading) return <div className="p-8 text-center">Loading Workspace...</div>
   if (!virtue) return <div className="p-8 text-center">Virtue not found.</div>
 
-  const StageContent = ({ stage }: { stage: Stage }) => (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle>My Private Memo for {stage.title}</CardTitle>
-        <CardDescription>Use the prompts above to guide your reflection.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <TiptapEditor
-          content={memos.get(stage.stage_number) || ''}
-          onChange={(html) => setMemos(prev => new Map(prev).set(stage.stage_number, html))}
-        />
-        <div className="flex justify-end items-center gap-4">
-          <Button onClick={() => handleSaveMemo(stage.stage_number)}>Save Memo (Draft)</Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const StageContent = ({ stage }: { stage: Stage }) => {
+    // ## FIX 2: Empathetic, growth-oriented titles ##
+    const empatheticTitles: { [key: number]: string } = {
+      1: "My Private Memo for Stage 1: Gently Exploring Areas for Growth",
+      2: "My Private Memo for Stage 2: Building New, Healthy Habits",
+      3: "My Private Memo for Stage 3: Maintaining Your Progress with Grace"
+    };
+    const cardTitle = empatheticTitles[stage.stage_number] || `My Private Memo for ${stage.title}`;
+
+    return (
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>{cardTitle}</CardTitle>
+          <CardDescription>Use the prompts above to guide your reflection. Your thoughts here are private.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <TiptapEditor
+            content={memos.get(stage.stage_number) || ''}
+            onChange={(html) => setMemos(prev => new Map(prev).set(stage.stage_number, html))}
+          />
+          <div className="flex justify-end items-center gap-4">
+            <Button onClick={() => handleSaveMemo(stage.stage_number)}>Save Memo (Draft)</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -238,7 +268,7 @@ export default function VirtueDetailPage() {
               <Carousel className="w-full max-w-lg mx-auto relative">
                 <CarouselContent>
                   {activeStageData?.stage_prompts?.length ? activeStageData.stage_prompts.map((prompt) => (
-                    <CarouselItem key={prompt.id}><div className="p-1 h-24 flex items-center justify-center"><p className="text-lg italic text-gray-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
+                    <CarouselItem key={prompt.id}><div className="p-1 h-24 flex items-start justify-center overflow-y-auto"><p className="text-lg italic text-gray-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
                   )) : (
                     <CarouselItem><div className="p-1 h-24 flex items-center justify-center"><p className="text-gray-500">No prompts for this stage.</p></div></CarouselItem>
                   )}
@@ -253,7 +283,7 @@ export default function VirtueDetailPage() {
             <CardContent>
               <Carousel className="w-full max-w-lg mx-auto relative">
                 <CarouselContent>
-                  {activeStageData?.affirmations?.length ? activeStageData.affirmations.map((affirmation) => (
+                  {affirmations.length > 0 ? affirmations.map((affirmation) => (
                     <CarouselItem key={affirmation.id}><div className="p-1 h-24 flex items-center justify-center"><p className="text-lg italic text-gray-700 text-center">{affirmation.text}</p></div></CarouselItem>
                   )) : (
                     <CarouselItem><div className="p-1 h-24 flex items-center justify-center"><p className="text-gray-500">No affirmations for this stage.</p></div></CarouselItem>
@@ -266,7 +296,7 @@ export default function VirtueDetailPage() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className={`grid w-full gap-2 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
             <TabsTrigger value="stage-1">Dismantling</TabsTrigger>
             <TabsTrigger value="stage-2">Building</TabsTrigger>
@@ -282,15 +312,16 @@ export default function VirtueDetailPage() {
 
           {[1, 2, 3].map(stageNum => (
             <TabsContent key={stageNum} value={`stage-${stageNum}`}>
-              <StageContent stage={virtue.virtue_stages.find(s=>s.stage_number === stageNum)!} />
+              {virtue.virtue_stages.find(s=>s.stage_number === stageNum) && 
+                <StageContent stage={virtue.virtue_stages.find(s=>s.stage_number === stageNum)!} />
+              }
             </TabsContent>
           ))}
           
           <TabsContent value="journal">
             <Card className="mt-6">
-              <CardHeader><CardTitle>General Journal</CardTitle><CardDescription>Your private, daily journal entries, shared across all virtues.</CardDescription></CardHeader>
-              <CardContent>
-                 <iframe src="/journal" className="w-full h-[80vh] border rounded-md" title="My General Journal" />
+              <CardContent className="pt-6">
+                <JournalComponent />
               </CardContent>
             </Card>
           </TabsContent>
@@ -319,3 +350,4 @@ export default function VirtueDetailPage() {
     </div>
   )
 }
+

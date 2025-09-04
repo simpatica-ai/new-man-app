@@ -1,90 +1,98 @@
-'use client'
+// src/components/Editor.tsx
+"use client";
 
-import { useEditor, EditorContent, Editor } from '@tiptap/react' // ## FIX: Import the 'Editor' type
-import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
-import { Button } from './ui/button'
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Bold, Italic, Underline, Heading1, Heading2, Heading3 } from 'lucide-react';
+import React from 'react';
 
 // --- Toolbar Component ---
-// ## FIX: Replaced 'any' with the specific 'Editor' type
-const Toolbar = ({ editor }: { editor: Editor | null }) => {
-  if (!editor) return null
+const Toolbar = ({ editor }: { editor: any }) => {
+  if (!editor) {
+    return null;
+  }
+
+  const toggleBold = () => editor.chain().focus().toggleBold().run();
+  const toggleItalic = () => editor.chain().focus().toggleItalic().run();
+  const toggleUnderline = () => editor.chain().focus().toggleUnderline().run();
+  const toggleH1 = () => editor.chain().focus().toggleHeading({ level: 1 }).run();
+  const toggleH2 = () => editor.chain().focus().toggleHeading({ level: 2 }).run();
+  const toggleH3 = () => editor.chain().focus().toggleHeading({ level: 3 }).run();
+
+  const isActive = (type: string, opts?: {}) => editor.isActive(type, opts) ? 'is-active' : '';
 
   return (
-    <div className="border border-gray-300 rounded-t-lg p-2 bg-gray-50 flex gap-2">
-      <Button
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        variant={editor.isActive('bold') ? 'default' : 'outline'}
-        size="sm"
-      >
-        Bold
-      </Button>
-      <Button
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        variant={editor.isActive('italic') ? 'default' : 'outline'}
-        size="sm"
-      >
-        Italic
-      </Button>
-      <Button
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-        variant={editor.isActive('underline') ? 'default' : 'outline'}
-        size="sm"
-      >
-        Underline
-      </Button>
-      <Button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        variant={editor.isActive('heading', { level: 1 }) ? 'default' : 'outline'}
-        size="sm"
-      >
-        H1
-      </Button>
-      <Button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        variant={editor.isActive('heading', { level: 2 }) ? 'default' : 'outline'}
-        size="sm"
-      >
-        H2
-      </Button>
-       <Button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        variant={editor.isActive('heading', { level: 3 }) ? 'default' : 'outline'}
-        size="sm"
-      >
-        H3
-      </Button>
+    <div className="flex items-center gap-2 border border-stone-300 bg-stone-50 p-2 rounded-t-md">
+      <button onClick={toggleBold} className={`p-2 rounded hover:bg-stone-200 ${isActive('bold')}`}>
+        <Bold className="h-4 w-4" />
+      </button>
+      <button onClick={toggleItalic} className={`p-2 rounded hover:bg-stone-200 ${isActive('italic')}`}>
+        <Italic className="h-4 w-4" />
+      </button>
+      <button onClick={toggleUnderline} className={`p-2 rounded hover:bg-stone-200 ${isActive('underline')}`}>
+        <Underline className="h-4 w-4" />
+      </button>
+      <div className="w-px h-6 bg-stone-300 mx-1"></div>
+      <button onClick={toggleH1} className={`p-2 rounded hover:bg-stone-200 ${isActive('heading', { level: 1 })}`}>
+        <Heading1 className="h-4 w-4" />
+      </button>
+      <button onClick={toggleH2} className={`p-2 rounded hover:bg-stone-200 ${isActive('heading', { level: 2 })}`}>
+        <Heading2 className="h-4 w-4" />
+      </button>
+      <button onClick={toggleH3} className={`p-2 rounded hover:bg-stone-200 ${isActive('heading', { level: 3 })}`}>
+        <Heading3 className="h-4 w-4" />
+      </button>
+      <style jsx>{`
+        .is-active {
+          background-color: #e7e5e4; /* stone-200 */
+        }
+      `}</style>
     </div>
-  )
-}
+  );
+};
+
 
 // --- Main Editor Component ---
-const TiptapEditor = ({ content, onChange }: { content: string, onChange: (html: string) => void }) => {
+interface TiptapEditorProps {
+  content: string;
+  onChange: (html: string) => void;
+}
+
+const TiptapEditor = ({ content, onChange }: TiptapEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // configure extensions as needed
+        heading: {
+          levels: [1, 2, 3],
+        },
       }),
-      Underline,
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      onChange(editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: 'prose max-w-none p-4 min-h-[300px] bg-white border border-gray-300 rounded-b-lg focus:outline-none',
+        class: 'prose prose-stone max-w-none p-4 min-h-[200px] border-x border-b border-stone-300 rounded-b-md focus:outline-none bg-white',
       },
     },
+    // --- THIS IS THE FIX ---
+    // This tells Tiptap to wait until it's on the client-side to render.
     immediatelyRender: false,
-  })
+  });
+
+  // This check prevents rendering until the editor is fully initialized.
+  if (!editor) {
+    return null;
+  }
 
   return (
     <div>
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
-  )
-}
+  );
+};
 
-export default TiptapEditor
+export default TiptapEditor;
+
