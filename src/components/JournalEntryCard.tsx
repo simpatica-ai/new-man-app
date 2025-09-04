@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import TiptapEditor from '@/components/Editor';
 import { Button } from '@/components/ui/button';
 import DOMPurify from 'dompurify';
+import { Edit, Trash2 } from 'lucide-react';
 
 type JournalEntryCardProps = {
   entry: {
@@ -33,6 +34,14 @@ export default function JournalEntryCard({ entry, onUpdate, onDelete }: JournalE
     setIsEditing(false);
   };
 
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      setIsSaving(true); // Disable buttons during delete
+      await onDelete(entry.id);
+      // No need to set isSaving back to false, as the component will be removed from the list
+    }
+  };
+
   // Sanitize HTML content before rendering
   const sanitizedContent = DOMPurify.sanitize(entry.content);
 
@@ -57,9 +66,12 @@ export default function JournalEntryCard({ entry, onUpdate, onDelete }: JournalE
         <div>
           <div className="flex justify-between items-start mb-4">
             <h3 className="font-semibold text-stone-700">Entry from {entry.date}</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                Edit
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} disabled={isSaving}>
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleDelete} disabled={isSaving} className="text-red-500 hover:text-red-600">
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
