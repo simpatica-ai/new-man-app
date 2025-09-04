@@ -31,3 +31,14 @@ entrypoint = "./functions/update-journal-entry/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/update-journal-entry/*.html" ]
+
+[functions.complete-virtue-stage]
+enabled = true
+verify_jwt = true
+import_map = "./functions/complete-virtue-stage/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/complete-virtue-stage/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/complete-virtue-stage/*.html" ]

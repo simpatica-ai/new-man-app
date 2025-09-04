@@ -76,18 +76,21 @@ const TiptapEditor = ({ content, onChange }: TiptapEditorProps) => {
         class: 'prose prose-stone max-w-none p-4 min-h-[200px] border-x border-b border-stone-300 rounded-b-md focus:outline-none bg-white',
       },
     },
-    // --- THIS IS THE FIX ---
-    // This tells Tiptap to wait until it's on the client-side to render.
     immediatelyRender: false,
   });
 
-  // This check prevents rendering until the editor is fully initialized.
   if (!editor) {
     return null;
   }
 
   return (
     <div>
+      {/* --- CSS FIX: This style tag addresses the ProseMirror console warning --- */}
+      <style jsx global>{`
+        .ProseMirror {
+          white-space: pre-wrap;
+        }
+      `}</style>
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>

@@ -6,54 +6,45 @@ import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { UserCheck, BookOpen, Edit, Settings, LogOut, LifeBuoy } from 'lucide-react'
+import { UserCheck, BookOpen, Edit } from 'lucide-react'
+import AppHeader from './AppHeader'
 
 // --- TYPE DEFINITIONS ---
 type Profile = { full_name: string | null; }
 type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
-type Virtue = { id: number; name: string; description: string; short_description: string | null; priority_score?: number; };
+// ## FIX: Added virtue_score to the Virtue type ##
+type Virtue = { id: number; name: string; description: string; short_description: string | null; virtue_score?: number; };
 type Connection = { id: number; status: 'pending' | 'active'; sponsor_name: string | null; }
 
 // --- DASHBOARD COMPONENT ---
 export default function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [virtues, setVirtues] = useState<Virtue[]>([]);
   const [assessmentTaken, setAssessmentTaken] = useState(false);
   const [progress, setProgress] = useState<Map<string, StageProgress['status']>>(new Map());
   const [lastJournalEntry, setLastJournalEntry] = useState<string | null>(null);
 
-  // Set the browser tab title
   useEffect(() => { document.title = "New Man: Dashboard"; }, []);
 
-  // Combined and updated data fetching logic
+  // ## FIX: Dependency array is now empty for stability, ensuring focus listener always refetches correctly ##
   const getDashboardData = useCallback(async () => {
     try {
-      // setLoading(true) is only for the initial load, not for refetches.
-      // This prevents the whole screen from flashing a "loading" message on tab focus.
-      if (!virtues.length) {
-        setLoading(true);
-      }
+      setLoading(true); 
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch all necessary data in parallel for performance
-      const profilePromise = supabase.from('profiles').select('full_name').eq('id', user.id).single();
       const connectionPromise = supabase.rpc('get_practitioner_connection_details', { practitioner_id_param: user.id });
       const virtuesPromise = supabase.from('virtues').select('id, name, description, short_description').order('id');
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', user.id).order('assessment_id', { ascending: false });
       const progressPromise = supabase.from('user_virtue_stage_progress').select('virtue_id, stage_number, status').eq('user_id', user.id);
       const journalPromise = supabase.from('journal_entries').select('created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1);
 
-      const [profileResult, connectionResult, virtuesResult, assessmentResult, progressResult, journalResult] = await Promise.all([
-        profilePromise, connectionPromise, virtuesPromise, assessmentPromise, progressPromise, journalPromise
+      const [connectionResult, virtuesResult, assessmentResult, progressResult, journalResult] = await Promise.all([
+        connectionPromise, virtuesPromise, assessmentPromise, progressPromise, journalPromise
       ]);
       
-      if (profileResult.error) throw profileResult.error;
-      setProfile(profileResult.data);
-
       if (connectionResult.error) throw connectionResult.error;
       setConnection(connectionResult.data?.[0] || null);
       
@@ -78,10 +69,13 @@ export default function Dashboard({ session }: { session: Session }) {
         setAssessmentTaken(true);
         const scoreMap = new Map<string, number>();
         results.forEach(r => { scoreMap.set(r.virtue_name, r.priority_score); });
+        
+        // ## FIX: Invert score (10 - defect score) and sort by lowest virtue score first ##
         const sortedVirtues = baseVirtues
-            .map(v => ({ ...v, priority_score: scoreMap.get(v.name) || 0 }))
-            .sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
+            .map(v => ({ ...v, virtue_score: 10 - (scoreMap.get(v.name) || 0) }))
+            .sort((a, b) => (a.virtue_score || 0) - (b.virtue_score || 0));
         setVirtues(sortedVirtues);
+
       } else {
         setAssessmentTaken(false);
         setVirtues(baseVirtues);
@@ -91,17 +85,14 @@ export default function Dashboard({ session }: { session: Session }) {
     } finally {
       setLoading(false);
     }
-  }, [virtues.length]);
+  }, []); 
 
-  // Effect for initial load and refreshing data on tab focus
   useEffect(() => {
     getDashboardData();
     const handleFocus = () => getDashboardData();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [getDashboardData]);
-
-  const handleSignOut = async () => { await supabase.auth.signOut(); };
 
   const getStatusClasses = (virtueId: number, stage: number): string => {
     const status = progress.get(`${virtueId}-${stage}`);
@@ -122,17 +113,19 @@ export default function Dashboard({ session }: { session: Session }) {
       return Math.floor(differenceInTime / (1000 * 3600 * 24));
   }
   
-  // --- SUB-COMPONENTS for the modern layout ---
-
   const VirtueRow = ({ virtue }: { virtue: Virtue }) => (
     <li className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg bg-white shadow-sm">
-      <div className="flex-shrink-0 flex items-center gap-4 w-full md:w-auto">
-        <div className="relative w-16 h-16 flex items-center justify-center">
-          <svg className="w-full h-full" viewBox="0 0 36 36"><path className="text-stone-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /><path className="text-amber-600" strokeDasharray={`${(virtue.priority_score || 0) * 10}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
-          <span className="absolute text-xl font-semibold text-stone-700">{((virtue.priority_score || 0) / 10).toFixed(1)}</span>
+      {/* ## FIX: Score circle is now only shown if assessment has been taken ## */}
+      {assessmentTaken && (
+        <div className="flex-shrink-0 flex items-center gap-4 w-full md:w-auto">
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            {/* ## FIX: SVG now uses virtue_score ## */}
+            <svg className="w-full h-full" viewBox="0 0 36 36"><path className="text-stone-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /><path className="text-amber-600" strokeDasharray={`${(virtue.virtue_score || 0) * 10}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
+            <span className="absolute text-xl font-semibold text-stone-700">{(virtue.virtue_score || 0).toFixed(1)}</span>
+          </div>
+          <div className="md:hidden flex-grow"><h3 className="font-semibold text-lg text-stone-800">{virtue.name}</h3></div>
         </div>
-        <div className="md:hidden flex-grow"><h3 className="font-semibold text-lg text-stone-800">{virtue.name}</h3></div>
-      </div>
+      )}
       <div className="flex-grow w-full">
           <h3 className="hidden md:block font-semibold text-lg text-stone-800">{virtue.name}</h3>
           <p className="text-stone-600 text-sm mb-3">{virtue.short_description || virtue.description}</p>
@@ -176,7 +169,7 @@ export default function Dashboard({ session }: { session: Session }) {
                     <div><CardTitle className="text-stone-800">Assessment</CardTitle></div>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-stone-600 mb-2">{assessmentTaken ? 'Your virtues are prioritized. You can retake the assessment anytime.' : 'Prioritize your virtues by taking the assessment.'}</p>
+                    <p className="text-sm text-stone-600 mb-2">{assessmentTaken ? 'Your virtues are prioritized. You can retake the assessment anytime.' : 'Take the assessment to prioritize your virtues.'}</p>
                     <Link href="/assessment"><Button size="sm" variant="outline">{assessmentTaken ? 'Retake Assessment' : 'Take Assessment'}</Button></Link>
                 </CardContent>
             </Card>
@@ -188,12 +181,13 @@ export default function Dashboard({ session }: { session: Session }) {
                 </CardHeader>
                 <CardContent>
                     {daysSinceJournal !== null ? (
-                         <p className="text-sm text-stone-600">
-                           Your last journal entry was <span className="font-bold text-stone-800">{daysSinceJournal === 0 ? 'today' : `${daysSinceJournal} day${daysSinceJournal > 1 ? 's' : ''} ago`}</span>.
+                         <p className="text-sm text-stone-600 mb-2">
+                           Your last entry was <span className="font-bold text-stone-800">{daysSinceJournal === 0 ? 'today' : `${daysSinceJournal} day${daysSinceJournal > 1 ? 's' : ''} ago`}</span>.
                          </p>
                     ) : (
-                        <p className="text-sm text-stone-600">Start your journey by writing your first journal entry.</p>
+                        <p className="text-sm text-stone-600 mb-2">Start your journey with your first journal entry.</p>
                     )}
+                    <Link href="/journal"><Button size="sm" variant="outline">Go to Journal</Button></Link>
                 </CardContent>
             </Card>
         </div>
@@ -211,20 +205,7 @@ export default function Dashboard({ session }: { session: Session }) {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-10">
-        <div className="container mx-auto p-4 flex justify-between items-center">
-          <div>
-              <h1 className="text-xl font-semibold text-stone-800">
-                {profile?.full_name ? `Welcome, ${profile.full_name}` : 'Dashboard'}
-              </h1>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Link href="/get-support"><Button title="Get Support" variant="ghost" size="icon"><LifeBuoy className="h-5 w-5" /></Button></Link>
-            <Link href="/account-settings"><Button title="Settings" variant="ghost" size="icon"><Settings className="h-5 w-5" /></Button></Link>
-            <Button onClick={handleSignOut} title="Sign Out" variant="ghost" size="icon"><LogOut className="h-5 w-5" /></Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="container mx-auto p-4 md:p-8">
         {loading ? (
@@ -251,4 +232,3 @@ export default function Dashboard({ session }: { session: Session }) {
     </div>
   )
 }
-
