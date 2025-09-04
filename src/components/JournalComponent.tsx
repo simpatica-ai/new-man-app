@@ -79,7 +79,7 @@ export default function JournalComponent() {
     }
   };
 
-  const handleDeleteEntry = async (_entryId: number) => {
+  const handleDeleteEntry = async () => {
     // This is a placeholder for future functionality
     alert("Delete functionality has not been implemented yet.");
   };

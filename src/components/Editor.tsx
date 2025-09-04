@@ -19,7 +19,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
   const toggleH2 = () => editor.chain().focus().toggleHeading({ level: 2 }).run();
   const toggleH3 = () => editor.chain().focus().toggleHeading({ level: 3 }).run();
 
-  const isActive = (type: string, opts?: Record<string, any>) => editor.isActive(type, opts) ? 'is-active' : '';
+  const isActive = (type: string, opts?: Record<string, unknown>) => editor.isActive(type, opts) ? 'is-active' : '';
 
   return (
     <div className="flex items-center gap-2 border border-stone-300 bg-stone-50 p-2 rounded-t-md">

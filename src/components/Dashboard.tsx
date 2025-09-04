@@ -10,7 +10,6 @@ import AppHeader from './AppHeader'
 import WelcomeModal from './WelcomeModal'
 
 // --- TYPE DEFINITIONS ---
-type Profile = { full_name: string | null; has_completed_first_assessment?: boolean; }
 type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
 type Virtue = { id: number; name: string; description: string; short_description: string | null; virtue_score?: number; };
 type Connection = { id: number; status: 'pending' | 'active'; sponsor_name: string | null; }
