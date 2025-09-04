@@ -8,51 +8,59 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { UserCheck, BookOpen, Edit } from 'lucide-react'
 import AppHeader from './AppHeader'
+import WelcomeModal from './WelcomeModal'
 
 // --- TYPE DEFINITIONS ---
-type Profile = { full_name: string | null; }
+type Profile = { full_name: string | null; has_completed_first_assessment?: boolean; }
 type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
-// ## FIX: Added virtue_score to the Virtue type ##
 type Virtue = { id: number; name: string; description: string; short_description: string | null; virtue_score?: number; };
 type Connection = { id: number; status: 'pending' | 'active'; sponsor_name: string | null; }
 
 // --- DASHBOARD COMPONENT ---
 export default function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [virtues, setVirtues] = useState<Virtue[]>([]);
   const [assessmentTaken, setAssessmentTaken] = useState(false);
   const [progress, setProgress] = useState<Map<string, StageProgress['status']>>(new Map());
   const [lastJournalEntry, setLastJournalEntry] = useState<string | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => { document.title = "New Man: Dashboard"; }, []);
 
-  // ## FIX: Dependency array is now empty for stability, ensuring focus listener always refetches correctly ##
   const getDashboardData = useCallback(async () => {
     try {
       setLoading(true); 
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
+      
+      const profilePromise = supabase.from('profiles').select('full_name, has_completed_first_assessment').eq('id', user.id).single();
       const connectionPromise = supabase.rpc('get_practitioner_connection_details', { practitioner_id_param: user.id });
       const virtuesPromise = supabase.from('virtues').select('id, name, description, short_description').order('id');
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', user.id).order('assessment_id', { ascending: false });
       const progressPromise = supabase.from('user_virtue_stage_progress').select('virtue_id, stage_number, status').eq('user_id', user.id);
       const journalPromise = supabase.from('journal_entries').select('created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1);
 
-      const [connectionResult, virtuesResult, assessmentResult, progressResult, journalResult] = await Promise.all([
-        connectionPromise, virtuesPromise, assessmentPromise, progressPromise, journalPromise
+      const [profileResult, connectionResult, virtuesResult, assessmentResult, progressResult, journalResult] = await Promise.all([
+        profilePromise, connectionPromise, virtuesPromise, assessmentPromise, progressPromise, journalPromise
       ]);
       
+      if (profileResult.error) throw profileResult.error;
+      setProfile(profileResult.data);
+      if (profileResult.data && !profileResult.data.has_completed_first_assessment) {
+         if (!sessionStorage.getItem('onboardingSkipped')) {
+            setShowWelcomeModal(true);
+         }
+      }
+
       if (connectionResult.error) throw connectionResult.error;
       setConnection(connectionResult.data?.[0] || null);
       
       if (journalResult.data && journalResult.data.length > 0) {
         setLastJournalEntry(journalResult.data[0].created_at);
-      } else if (journalResult.error && journalResult.error.code !== 'PGRST116') {
-        throw journalResult.error;
-      }
+      } else if (journalResult.error && journalResult.error.code !== 'PGRST116') throw journalResult.error;
 
       if (progressResult.error) throw progressResult.error;
       const progressMap = new Map<string, StageProgress['status']>();
@@ -70,7 +78,6 @@ export default function Dashboard({ session }: { session: Session }) {
         const scoreMap = new Map<string, number>();
         results.forEach(r => { scoreMap.set(r.virtue_name, r.priority_score); });
         
-        // ## FIX: Invert score (10 - defect score) and sort by lowest virtue score first ##
         const sortedVirtues = baseVirtues
             .map(v => ({ ...v, virtue_score: 10 - (scoreMap.get(v.name) || 0) }))
             .sort((a, b) => (a.virtue_score || 0) - (b.virtue_score || 0));
@@ -94,6 +101,11 @@ export default function Dashboard({ session }: { session: Session }) {
     return () => window.removeEventListener('focus', handleFocus);
   }, [getDashboardData]);
 
+  const handleCloseModal = () => {
+    setShowWelcomeModal(false);
+    sessionStorage.setItem('onboardingSkipped', 'true');
+  }
+
   const getStatusClasses = (virtueId: number, stage: number): string => {
     const status = progress.get(`${virtueId}-${stage}`);
     switch (status) {
@@ -115,11 +127,9 @@ export default function Dashboard({ session }: { session: Session }) {
   
   const VirtueRow = ({ virtue }: { virtue: Virtue }) => (
     <li className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg bg-white shadow-sm">
-      {/* ## FIX: Score circle is now only shown if assessment has been taken ## */}
       {assessmentTaken && (
         <div className="flex-shrink-0 flex items-center gap-4 w-full md:w-auto">
           <div className="relative w-16 h-16 flex items-center justify-center">
-            {/* ## FIX: SVG now uses virtue_score ## */}
             <svg className="w-full h-full" viewBox="0 0 36 36"><path className="text-stone-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /><path className="text-amber-600" strokeDasharray={`${(virtue.virtue_score || 0) * 10}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
             <span className="absolute text-xl font-semibold text-stone-700">{(virtue.virtue_score || 0).toFixed(1)}</span>
           </div>
@@ -206,6 +216,7 @@ export default function Dashboard({ session }: { session: Session }) {
   return (
     <div className="min-h-screen bg-stone-50">
       <AppHeader />
+      <WelcomeModal isOpen={showWelcomeModal} onClose={handleCloseModal} />
 
       <main className="container mx-auto p-4 md:p-8">
         {loading ? (
@@ -213,12 +224,14 @@ export default function Dashboard({ session }: { session: Session }) {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-4">
-               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 p-3 bg-white rounded-lg border">
-                  <h2 className="text-2xl font-light text-stone-800">
-                    {assessmentTaken ? "Your Prioritized Virtues" : "Virtues for Practice"}
-                  </h2>
-                  <ProgressLegend />
+               
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 p-3 bg-white rounded-lg border">
+                    <h2 className="text-2xl font-light text-stone-800">
+                      Your Prioritized Virtues
+                    </h2>
+                    <ProgressLegend />
                 </div>
+
                 <ul className="space-y-4">
                   {virtues.map((virtue) => <VirtueRow key={virtue.id} virtue={virtue} />)}
                 </ul>

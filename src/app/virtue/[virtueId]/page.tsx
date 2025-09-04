@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { AlertCircle, Send, CheckCircle } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle, Edit } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
@@ -33,22 +33,48 @@ type Virtue = {
   virtue_stages: Stage[] 
 }
 type ChatMessage = { id: number; sender_id: string; message_text: string; created_at: string; sender_name: string | null; read_at: string | null }
+type StageStatus = 'not_started' | 'in_progress' | 'completed';
 
 // --- Standalone StageContent Component for Performance ---
-const StageContent = ({ stage, memoContent, onMemoChange, onSaveMemo, onCompleteStage, isCompleted }: { 
+const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage }: { 
   stage: Stage, 
   memoContent: string, 
+  status: StageStatus,
   onMemoChange: (html: string) => void,
-  onSaveMemo: () => void,
-  onCompleteStage: () => void,
-  isCompleted: boolean
+  onSaveMemo: () => Promise<void>,
+  onCompleteStage: () => Promise<void>,
+  onEditStage: () => Promise<void>
 }) => {
+    const [isSaving, setIsSaving] = useState(false);
+    
     const empatheticTitles: { [key: number]: string } = {
       1: "My Private Memo for Stage 1: Gently Exploring Areas for Growth",
       2: "My Private Memo for Stage 2: Building New, Healthy Habits",
       3: "My Private Memo for Stage 3: Maintaining Your Progress with Grace"
     };
     const cardTitle = empatheticTitles[stage.stage_number] || `My Private Memo for ${stage.title}`;
+
+    const handleSave = async () => {
+      setIsSaving(true);
+      await onSaveMemo();
+      setIsSaving(false);
+    }
+    
+    const handleComplete = async () => {
+      setIsSaving(true);
+      await onCompleteStage();
+      setIsSaving(false);
+    }
+
+    const StatusBadge = () => {
+        if (status === 'completed') {
+            return <div className="flex items-center gap-2 text-green-600 font-semibold"><CheckCircle size={18} /><span>Completed</span></div>
+        }
+        if (status === 'in_progress') {
+            return <div className="flex items-center gap-2 text-amber-600 font-semibold"><Edit size={18} /><span>In Progress</span></div>
+        }
+        return null;
+    }
 
     return (
       <Card className="mt-6">
@@ -62,15 +88,15 @@ const StageContent = ({ stage, memoContent, onMemoChange, onSaveMemo, onComplete
             onChange={onMemoChange}
           />
           <div className="flex justify-end items-center gap-4">
-            {isCompleted ? (
-               <div className="flex items-center gap-2 text-green-600 font-semibold">
-                  <CheckCircle size={20} />
-                  <span>Stage Completed</span>
-               </div>
+            <div className="flex-grow">
+              <StatusBadge />
+            </div>
+            {status === 'completed' ? (
+              <Button variant="outline" onClick={onEditStage}>Edit Completed Memo</Button>
             ) : (
               <>
-                <Button variant="outline" onClick={onSaveMemo}>Save Memo (Draft)</Button>
-                <Button onClick={onCompleteStage}>Mark as Complete</Button>
+                <Button variant="outline" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Memo (Draft)'}</Button>
+                <Button onClick={handleComplete} disabled={isSaving}>{isSaving ? 'Saving...' : 'Mark as Complete'}</Button>
               </>
             )}
           </div>
@@ -84,7 +110,7 @@ export default function VirtueDetailPage() {
   const [loading, setLoading] = useState(true)
   const [virtue, setVirtue] = useState<Virtue | null>(null)
   const [memos, setMemos] = useState<Map<number, string>>(new Map())
-  const [progress, setProgress] = useState<Map<string, string>>(new Map())
+  const [progress, setProgress] = useState<Map<string, StageStatus>>(new Map())
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [newChatMessage, setNewChatMessage] = useState("")
   const [activeTab, setActiveTab] = useState("stage-1")
@@ -123,34 +149,12 @@ export default function VirtueDetailPage() {
       if (!user) { router.push('/'); return; }
       setCurrentUserId(user.id);
 
-      const virtuePromise = supabase
-        .from('virtues')
-        .select('*, virtue_stages(*, stage_prompts(*), affirmations(*))')
-        .eq('id', virtueId)
-        .single();
-      
-      const memosPromise = supabase
-        .from('user_virtue_stage_memos')
-        .select('stage_number, memo_text')
-        .eq('user_id', user.id)
-        .eq('virtue_id', virtueId);
+      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*), affirmations(*))').eq('id', virtueId).single();
+      const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', virtueId);
+      const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', virtueId);
+      const connectionPromise = supabase.from('sponsor_connections').select('id').or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`).eq('status', 'active').maybeSingle();
 
-      const progressPromise = supabase
-        .from('user_virtue_stage_progress')
-        .select('stage_number, status')
-        .eq('user_id', user.id)
-        .eq('virtue_id', virtueId);
-
-      const connectionPromise = supabase
-        .from('sponsor_connections')
-        .select('id')
-        .or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      const [virtueResult, memosResult, progressResult, connectionResult] = await Promise.all([
-        virtuePromise, memosPromise, progressPromise, connectionPromise
-      ]);
+      const [virtueResult, memosResult, progressResult, connectionResult] = await Promise.all([virtuePromise, memosPromise, progressPromise, connectionPromise]);
 
       if (virtueResult.error) throw virtueResult.error;
       if (virtueResult.data) {
@@ -164,8 +168,8 @@ export default function VirtueDetailPage() {
       setMemos(memosMap);
 
       if (progressResult.error) throw progressResult.error;
-      const progressMap = new Map<string, string>();
-      (progressResult.data || []).forEach(p => progressMap.set(`${virtueId}-${p.stage_number}`, p.status));
+      const progressMap = new Map<string, StageStatus>();
+      (progressResult.data || []).forEach(p => progressMap.set(`${virtueId}-${p.stage_number}`, p.status as StageStatus));
       setProgress(progressMap);
       
       if (connectionResult.error) throw connectionResult.error;
@@ -199,10 +203,7 @@ export default function VirtueDetailPage() {
       }
 
     } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error fetching page data:", error);
-        alert("Error: " + error.message);
-      }
+      if (error instanceof Error) console.error("Error fetching page data:", error);
     } finally {
       setLoading(false);
     }
@@ -212,83 +213,53 @@ export default function VirtueDetailPage() {
     fetchPageData()
   }, [fetchPageData])
 
-  // ## FIX: This function now also updates the stage progress to 'in_progress' ##
+  const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
+    if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
+
+    return supabase
+      .from('user_virtue_stage_progress')
+      .upsert({
+          user_id: currentUserId,
+          virtue_id: virtue.id,
+          stage_number: stageNumber,
+          status: status
+      }, { onConflict: 'user_id, virtue_id, stage_number' });
+  };
+  
+  const handleEditStage = async (stageNumber: number) => {
+    const { error } = await updateStageStatus(stageNumber, 'in_progress');
+    if (error) console.error("Error updating status:", error.message);
+    await fetchPageData();
+  };
+
   const handleSaveMemo = async (stageNumber: number) => {
     const memoText = memos.get(stageNumber) || ""
     if (!currentUserId || !virtue) return
 
-    // Prepare to run two database operations at once
-    const promises = [];
-
-    // Operation 1: Save the memo text
-    const saveMemoPromise = supabase
-      .from('user_virtue_stage_memos')
-      .upsert({ 
+    const saveMemoPromise = supabase.from('user_virtue_stage_memos').upsert({ 
         user_id: currentUserId,
         virtue_id: virtue.id,
         stage_number: stageNumber,
         memo_text: memoText
-      }, { onConflict: 'user_id, virtue_id, stage_number' });
+    }, { onConflict: 'user_id, virtue_id, stage_number' });
     
-    promises.push(saveMemoPromise);
+    const updateProgressPromise = updateStageStatus(stageNumber, 'in_progress');
 
-    // Operation 2: Update progress, but only if not already completed
-    const currentStatus = progress.get(`${virtue.id}-${stageNumber}`);
-    if (currentStatus !== 'completed') {
-      const updateProgressPromise = supabase
-        .from('user_virtue_stage_progress')
-        .upsert({
-          user_id: currentUserId,
-          virtue_id: virtue.id,
-          stage_number: stageNumber,
-          status: 'in_progress'
-        }, { onConflict: 'user_id, virtue_id, stage_number' });
-      promises.push(updateProgressPromise);
-    }
-    
-    // Execute both operations
-    const [memoResult, progressResult] = await Promise.all(promises);
+    const [memoResult, progressResult] = await Promise.all([saveMemoPromise, updateProgressPromise]);
 
-    if (memoResult.error || (progressResult && progressResult.error)) {
-      alert("Error saving memo: " + (memoResult.error?.message || progressResult?.error?.message));
-    } else {
-      alert("Memo draft for Stage " + stageNumber + " saved successfully.");
-      fetchPageData(); // Refresh data to show new progress on this page
+    if (memoResult.error || progressResult.error) {
+      console.error("Error saving memo:", memoResult.error?.message || progressResult.error?.message);
     }
+    await fetchPageData();
   }
 
   const handleCompleteStage = async (stageNumber: number) => {
     if (!virtue) return;
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      alert("You must be logged in to complete a stage.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`https://ogucnankmxrakkxavelk.supabase.co/functions/v1/complete-virtue-stage`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ virtue_id: virtue.id, stage_number: stageNumber }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Failed to complete stage.");
-      }
-      
-      alert("Congratulations on completing this stage!");
-      fetchPageData();
-
-    } catch (error) {
-      if (error instanceof Error) alert(error.message);
-    }
+    const { error } = await updateStageStatus(stageNumber, 'completed');
+    if (error) console.error("Error completing stage:", error.message);
+    await fetchPageData();
   };
-
+  
   const handleSendChatMessage = async () => {
     if (!newChatMessage.trim() || !currentUserId || !connectionId) return;
 
@@ -303,7 +274,7 @@ export default function VirtueDetailPage() {
       .single()
 
     if (error) {
-      alert("Error sending message: " + error.message)
+      // No alert for errors
     } else if (newMessage) {
       const { data: { user } } = await supabase.auth.getUser();
       const senderName = user?.user_metadata.full_name || 'You';
@@ -312,15 +283,12 @@ export default function VirtueDetailPage() {
     }
   }
   
-  const activeStageData = useMemo(() => {
-    return virtue?.virtue_stages.find(s => s.stage_number === displayedStageNumber);
-  }, [displayedStageNumber, virtue]);
-
+  const activeStageData = useMemo(() => virtue?.virtue_stages.find(s => s.stage_number === displayedStageNumber), [displayedStageNumber, virtue]);
+  
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
     if (tabValue.startsWith('stage-')) {
-      const stageNum = parseInt(tabValue.split('-')[1]);
-      setDisplayedStageNumber(stageNum);
+      setDisplayedStageNumber(parseInt(tabValue.split('-')[1]));
     }
   };
 
@@ -340,12 +308,10 @@ export default function VirtueDetailPage() {
   return (
     <div className="min-h-screen bg-stone-50">
       <AppHeader />
-      
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-gray-800">{virtue.name} Workspace</h1>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2"><CardTitle>Prompts</CardTitle></CardHeader>
@@ -397,17 +363,18 @@ export default function VirtueDetailPage() {
 
           {[1, 2, 3].map(stageNum => {
              const stageData = virtue.virtue_stages.find(s=>s.stage_number === stageNum);
-             const isCompleted = progress.get(`${virtueId}-${stageNum}`) === 'completed';
+             const status = progress.get(`${virtueId}-${stageNum}`) || 'not_started';
              return (
                 <TabsContent key={stageNum} value={`stage-${stageNum}`}>
                   {stageData && 
                     <StageContent 
                       stage={stageData} 
                       memoContent={memos.get(stageNum) || ''}
+                      status={status}
                       onMemoChange={(html) => setMemos(prev => new Map(prev).set(stageNum, html))}
                       onSaveMemo={() => handleSaveMemo(stageNum)}
                       onCompleteStage={() => handleCompleteStage(stageNum)}
-                      isCompleted={isCompleted}
+                      onEditStage={() => handleEditStage(stageNum)}
                     />
                   }
                 </TabsContent>
@@ -415,11 +382,7 @@ export default function VirtueDetailPage() {
           })}
           
           <TabsContent value="journal">
-            <Card className="mt-6">
-              <CardContent className="pt-6">
-                <JournalComponent />
-              </CardContent>
-            </Card>
+            <Card className="mt-6"><CardContent className="pt-6"><JournalComponent /></CardContent></Card>
           </TabsContent>
 
           <TabsContent value="chat">
