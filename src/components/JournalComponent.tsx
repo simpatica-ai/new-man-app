@@ -79,9 +79,25 @@ export default function JournalComponent() {
     }
   };
 
-  const handleDeleteEntry = async () => {
-    // This is a placeholder for future functionality
-    alert("Delete functionality has not been implemented yet.");
+  const handleDeleteEntry = async (entryId: number) => {
+    try {
+      const { error } = await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Remove the deleted entry from the local state to update the UI
+      setEntries(currentEntries => currentEntries.filter(e => e.id !== entryId));
+
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`Failed to delete entry: ${error.message}`);
+      }
+    }
   };
 
   if (loading) return <p className="text-center text-stone-500 py-8">Loading journal entries...</p>;

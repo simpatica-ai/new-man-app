@@ -39,7 +39,7 @@ const HomePage = () => {
   }
 
   if (session) {
-    return <Dashboard session={session} />;
+    return <Dashboard />;
   }
 
   return (
