@@ -35,8 +35,12 @@ export default function JournalComponent() {
 
       if (error) throw error;
       setEntries(data || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred while fetching entries.");
+      }
     } finally {
       setLoading(false);
     }
@@ -75,7 +79,7 @@ export default function JournalComponent() {
     }
   };
 
-  const handleDeleteEntry = async (entryId: number) => {
+  const handleDeleteEntry = async (_entryId: number) => {
     // This is a placeholder for future functionality
     alert("Delete functionality has not been implemented yet.");
   };
@@ -119,11 +123,10 @@ export default function JournalComponent() {
         ) : (
           <div className="text-center bg-stone-100 border border-stone-200 rounded-xl p-8">
             <h3 className="text-xl font-semibold text-stone-700">No Entries Yet</h3>
-            <p className="text-stone-500 mt-2">Click "New Entry" to start your journal.</p>
+            <p className="text-stone-500 mt-2">Click &quot;New Entry&quot; to start your journal.</p>
           </div>
         )}
       </div>
     </div>
   );
 }
-

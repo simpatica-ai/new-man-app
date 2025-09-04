@@ -38,7 +38,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         </div>
         
         <div className="px-8 py-6">
-          <h3 className="mb-4 text-center font-semibold text-stone-700">Here's how your journey will unfold:</h3>
+          <h3 className="mb-4 text-center font-semibold text-stone-700">Here&apos;s how your journey will unfold:</h3>
           <div className="grid gap-4">
               <div className="flex items-start gap-4">
                   <div className="bg-amber-100 p-2 rounded-full mt-1"><Rocket className="h-5 w-5 text-amber-700"/></div>
@@ -51,7 +51,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                   <div className="bg-amber-100 p-2 rounded-full mt-1"><Milestone className="h-5 w-5 text-amber-700"/></div>
                   <div>
                       <h4 className="font-semibold text-stone-700">2. Work the Stages</h4>
-                      <p className="text-sm text-stone-600">For each virtue, you'll move through stages of dismantling, building, and maintaining healthy habits.</p>
+                      <p className="text-sm text-stone-600">For each virtue, you&apos;ll move through stages of dismantling, building, and maintaining healthy habits.</p>
                   </div>
               </div>
               <div className="flex items-start gap-4">
@@ -65,14 +65,14 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                   <div className="bg-amber-100 p-2 rounded-full mt-1"><UserPlus className="h-5 w-5 text-amber-700"/></div>
                   <div>
                       <h4 className="font-semibold text-stone-700">4. Invite a Sponsor</h4>
-                      <p className="text-sm text-stone-600">When you're ready, invite a sponsor to share your journey and receive guidance.</p>
+                      <p className="text-sm text-stone-600">When you&apos;re ready, invite a sponsor to share your journey and receive guidance.</p>
                   </div>
               </div>
               <div className="flex items-start gap-4">
                   <div className="bg-amber-100 p-2 rounded-full mt-1"><Award className="h-5 w-5 text-amber-700"/></div>
                   <div>
                       <h4 className="font-semibold text-stone-700">5. Track Your Progress</h4>
-                      <p className="text-sm text-stone-600">Retake the assessment at any time to visualize your growth. Eventually, you will be able to print a "Virtue Journey Book".</p>
+                      <p className="text-sm text-stone-600">Retake the assessment at any time to visualize your growth. Eventually, you will be able to print a &quot;Virtue Journey Book&quot;.</p>
                   </div>
               </div>
           </div>
@@ -80,7 +80,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         
         <DialogFooter className="sm:justify-between gap-2 p-6 bg-stone-50 rounded-b-lg">
           <Button type="button" variant="ghost" onClick={onClose}>
-            I'll Explore on My Own
+            I&apos;ll Explore on My Own
           </Button>
           <Link href="/assessment">
             <Button type="submit">Start My Assessment</Button>
@@ -90,4 +90,3 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
     </Dialog>
   )
 }
-

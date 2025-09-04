@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { Session } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { UserCheck, BookOpen, Edit } from 'lucide-react'
 import AppHeader from './AppHeader'
 import WelcomeModal from './WelcomeModal'
@@ -17,9 +16,8 @@ type Virtue = { id: number; name: string; description: string; short_description
 type Connection = { id: number; status: 'pending' | 'active'; sponsor_name: string | null; }
 
 // --- DASHBOARD COMPONENT ---
-export default function Dashboard({ session }: { session: Session }) {
+export default function Dashboard() {
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [virtues, setVirtues] = useState<Virtue[]>([]);
   const [assessmentTaken, setAssessmentTaken] = useState(false);
@@ -48,7 +46,6 @@ export default function Dashboard({ session }: { session: Session }) {
       ]);
       
       if (profileResult.error) throw profileResult.error;
-      setProfile(profileResult.data);
       if (profileResult.data && !profileResult.data.has_completed_first_assessment) {
          if (!sessionStorage.getItem('onboardingSkipped')) {
             setShowWelcomeModal(true);

@@ -1,13 +1,13 @@
 // src/components/Editor.tsx
 "use client";
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Bold, Italic, Underline, Heading1, Heading2, Heading3 } from 'lucide-react';
 import React from 'react';
 
 // --- Toolbar Component ---
-const Toolbar = ({ editor }: { editor: any }) => {
+const Toolbar = ({ editor }: { editor: Editor | null }) => {
   if (!editor) {
     return null;
   }
@@ -19,7 +19,7 @@ const Toolbar = ({ editor }: { editor: any }) => {
   const toggleH2 = () => editor.chain().focus().toggleHeading({ level: 2 }).run();
   const toggleH3 = () => editor.chain().focus().toggleHeading({ level: 3 }).run();
 
-  const isActive = (type: string, opts?: {}) => editor.isActive(type, opts) ? 'is-active' : '';
+  const isActive = (type: string, opts?: Record<string, any>) => editor.isActive(type, opts) ? 'is-active' : '';
 
   return (
     <div className="flex items-center gap-2 border border-stone-300 bg-stone-50 p-2 rounded-t-md">
@@ -98,4 +98,3 @@ const TiptapEditor = ({ content, onChange }: TiptapEditorProps) => {
 };
 
 export default TiptapEditor;
-
