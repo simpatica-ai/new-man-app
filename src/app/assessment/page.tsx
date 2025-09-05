@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Session } from '@supabase/supabase-js'
-import '../print.css';
+import VirtueRoseChart from '@/components/VirtueRoseChart'
+import AppHeader from '@/components/AppHeader'
+import '../print.css'
 
-const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"];
+const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
 
 const defects = [
     { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
@@ -60,21 +61,17 @@ const defects = [
     { name: "Stealing", virtues: ["Honesty", "Integrity"] },
     { name: "Superiority", virtues: ["Humility", "Respect"] },
     { name: "Unreliability", virtues: ["Responsibility", "Integrity"] }
-];
+]
 
-const harmLevelsMap: { [key: string]: number } = { None: 0, Minimal: 1, Moderate: 2, Significant: 3, Severe: 4 };
-const harmNumberToLabel: { [key: number]: string } = { 0: "None", 1: "Minimal", 2: "Moderate", 3: "Significant", 4: "Severe" };
+const harmLevelsMap: { [key: string]: number } = { None: 0, Minimal: 1, Moderate: 2, Significant: 3, Severe: 4 }
 
-type Ratings = { [key: string]: number };
-type HarmLevels = { [key: string]: string };
+type Ratings = { [key: string]: number }
+type HarmLevels = { [key: string]: string }
 type Result = { 
     virtue: string; 
     priority: number; 
-    averageRating: number;
-    maxHarm: number;
     defectIntensity: number;
-    defects: { name: string; score: number; harm: string }[] 
-};
+}
 
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
     defect: { name: string }, 
@@ -108,239 +105,206 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
             </Select>
         </div>
     </div>
-);
-
-const getBarColorClass = (rating: number): string => {
-    const percentage = (rating / 5) * 100;
-    if (percentage > 75) return 'bg-red-600 print-bar-red';
-    if (percentage > 50) return 'bg-orange-500 print-bar-orange';
-    if (percentage > 25) return 'bg-yellow-400 print-bar-yellow';
-    return 'bg-green-500 print-bar-green';
-};
+)
 
 export default function AssessmentPage() {
-    const [loading, setLoading] = useState(true);
-    const [ratings, setRatings] = useState<Ratings>({});
-    const [harmLevels, setHarmLevels] = useState<HarmLevels>({});
-    const [results, setResults] = useState<Result[] | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [session, setSession] = useState<Session | null>(null);
+    const [loading, setLoading] = useState(true)
+    const [ratings, setRatings] = useState<Ratings>({})
+    const [harmLevels, setHarmLevels] = useState<HarmLevels>({})
+    const [results, setResults] = useState<Result[] | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [session, setSession] = useState<Session | null>(null)
 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) throw sessionError;
-                setSession(session);
-                const user = session?.user;
-                if (!user) throw new Error("User not found");
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+                if (sessionError) throw sessionError
+                setSession(session)
+                const user = session?.user
+                if (!user) return
 
                 const { data: latestAssessment, error: assessmentError } = await supabase
                     .from('user_assessments').select('id').eq('user_id', user.id)
-                    .order('created_at', { ascending: false }).limit(1).maybeSingle();
-                if (assessmentError) throw assessmentError;
+                    .order('created_at', { ascending: false }).limit(1).maybeSingle()
+                if (assessmentError) throw assessmentError
 
                 if (latestAssessment) {
                     const { data: defectDetails, error: detailsError } = await supabase
                         .from('user_assessment_defects').select('defect_name, rating, harm_level')
-                        .eq('assessment_id', latestAssessment.id);
-                    if (detailsError) throw detailsError;
+                        .eq('assessment_id', latestAssessment.id)
+                    if (detailsError) throw detailsError
 
-                    const initialRatings: Ratings = {};
-                    const initialHarmLevels: HarmLevels = {};
+                    const initialRatings: Ratings = {}
+                    const initialHarmLevels: HarmLevels = {}
                     if (defectDetails) {
                         defectDetails.forEach(detail => {
-                            initialRatings[detail.defect_name] = detail.rating;
-                            initialHarmLevels[detail.defect_name] = detail.harm_level;
-                        });
+                            initialRatings[detail.defect_name] = detail.rating
+                            initialHarmLevels[detail.defect_name] = detail.harm_level
+                        })
                     }
-                    setRatings(initialRatings);
-                    setHarmLevels(initialHarmLevels);
+                    setRatings(initialRatings)
+                    setHarmLevels(initialHarmLevels)
                 }
             } catch (error) {
-                if (error instanceof Error) alert(`Error loading data: ${error.message}`);
+                if (error instanceof Error) alert(`Error loading data: ${error.message}`)
             } finally {
-                setLoading(false);
+                setLoading(false)
             }
-        };
-        fetchInitialData();
-    }, []);
+        }
+        fetchInitialData()
+    }, [])
 
     const handleRatingChange = (defectName: string, value: string) => {
-        setRatings(prev => ({ ...prev, [defectName]: parseInt(value) }));
-    };
+        setRatings(prev => ({ ...prev, [defectName]: parseInt(value) }))
+    }
 
     const handleHarmChange = (defectName: string, value: string) => {
-        setHarmLevels(prev => ({ ...prev, [defectName]: value }));
-    };
+        setHarmLevels(prev => ({ ...prev, [defectName]: value }))
+    }
 
     const handleSubmit = async () => {
-        setIsSubmitting(true);
+        setIsSubmitting(true)
         
-        // This is the definitive Vercel build fix, as diagnosed by Grok
-        type DefectDetail = {
-            name: string;
-            score: number;
-            harm: string;
-        };
-        const virtueScores: { [key: string]: { score: number; harm: number; defects: DefectDetail[], defectCount: number } } = {};
+        const virtueScores: { [key: string]: { score: number; harm: number; defectCount: number } } = {}
         
-        coreVirtuesList.forEach(v => { virtueScores[v] = { score: 0, harm: 0, defects: [], defectCount: 0 }; });
+        coreVirtuesList.forEach(v => { virtueScores[v] = { score: 0, harm: 0, defectCount: 0 } })
+
         defects.forEach(defect => {
-            const score = ratings[defect.name] || 1;
-            const harmValue = harmLevelsMap[harmLevels[defect.name] || "None"];
+            const score = ratings[defect.name] || 1
+            const harmValue = harmLevelsMap[harmLevels[defect.name] || "None"]
             defect.virtues.forEach(virtue => {
                 if(coreVirtuesList.includes(virtue)) {
-                    virtueScores[virtue].score += score;
-                    virtueScores[virtue].harm = Math.max(virtueScores[virtue].harm, harmValue);
-                    virtueScores[virtue].defectCount++;
-                    if (score > 1) {
-                        virtueScores[virtue].defects.push({ name: defect.name, score, harm: harmLevels[defect.name] || "None" });
-                    }
+                    virtueScores[virtue].score += score
+                    virtueScores[virtue].harm = Math.max(virtueScores[virtue].harm, harmValue)
+                    virtueScores[virtue].defectCount++
                 }
-            });
-        });
+            })
+        })
+
         const prioritizedVirtues = Object.entries(virtueScores)
             .map(([virtue, data]) => {
-                const rawPriority = data.score * (data.harm + 1);
-                const maxPossibleScore = data.defectCount * 25;
-                const defectIntensity = maxPossibleScore > 0 ? (rawPriority / maxPossibleScore) * 10 : 0;
+                const rawPriority = data.score * (data.harm + 1)
+                const maxPossibleScore = data.defectCount * 25 // 5 (max rating) * 5 (max harm + 1)
+                const defectIntensity = maxPossibleScore > 0 ? (rawPriority / maxPossibleScore) * 10 : 0
                 return { 
                     virtue, 
                     priority: rawPriority,
-                    averageRating: data.defects.length > 0 ? data.defects.reduce((sum, d) => sum + d.score, 0) / data.defects.length : 0,
-                    maxHarm: data.harm,
                     defectIntensity: defectIntensity,
-                    defects: data.defects 
-                };
+                }
             })
             .filter(v => v.priority > 0)
-            .sort((a, b) => b.priority - a.priority);
-        setResults(prioritizedVirtues);
+            .sort((a, b) => b.priority - a.priority)
+        setResults(prioritizedVirtues)
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("User not found");
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error("User not found")
+
             const { data: assessment, error: assessmentError } = await supabase
-                .from('user_assessments').insert({ user_id: user.id, assessment_type: 'initial' }).select().single();
-            if (assessmentError) throw assessmentError;
+                .from('user_assessments').insert({ user_id: user.id, assessment_type: 'initial' }).select().single()
+            if (assessmentError) throw assessmentError
+
             const defectRatingsToInsert = Object.entries(ratings).map(([defect_name, rating]) => ({
                 assessment_id: assessment.id, user_id: user.id, defect_name, rating,
                 harm_level: harmLevels[defect_name] || 'None',
-            }));
-             if (defectRatingsToInsert.length > 0) {
-                const { error: defectsError } = await supabase.from('user_assessment_defects').insert(defectRatingsToInsert);
-                if (defectsError) throw defectsError;
+            }))
+            if (defectRatingsToInsert.length > 0) {
+                const { error: defectsError } = await supabase.from('user_assessment_defects').insert(defectRatingsToInsert)
+                if (defectsError) throw defectsError
             }
+
             const resultsToInsert = prioritizedVirtues.map(result => ({
                 assessment_id: assessment.id, user_id: user.id,
                 virtue_name: result.virtue, priority_score: result.priority,
-            }));
+            }))
             if (resultsToInsert.length > 0) {
-                const { error: resultsError } = await supabase.from('user_assessment_results').insert(resultsToInsert);
-                if (resultsError) throw resultsError;
+                const { error: resultsError } = await supabase.from('user_assessment_results').insert(resultsToInsert)
+                if (resultsError) throw resultsError
             }
         } catch (error) {
             if (error instanceof Error) {
-                alert(`Error saving results: ${error.message}`);
+                alert(`Error saving results: ${error.message}`)
             } else {
-                alert('An unknown error occurred while saving results.');
+                alert('An unknown error occurred while saving results.')
             }
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false)
         }
-    };
+    }
     
     const handlePrint = () => {
-        window.print();
-    };
+        window.print()
+    }
 
     if (loading) {
-        return <div className="p-8 text-center">Loading assessment...</div>;
+        return <div className="p-8 text-center">Loading assessment...</div>
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <Card className="no-print">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Character Defects Inventory</CardTitle>
-                    <CardDescription>Rate each defect and its harm level. Virtues to develop will be revealed upon submission.</CardDescription>
-                </CardHeader>
-                <CardContent>
+        <>
+            <AppHeader />
+            <div className="container mx-auto p-4 md:p-8">
+                <div id="printable-area">
                     {!results ? (
-                        <>
-                            <div className="flex flex-col">
-                                {defects.map((defect) => (
-                                    <DefectRow 
-                                        key={defect.name} 
-                                        defect={defect} 
-                                        rating={ratings[defect.name]}
-                                        harmLevel={harmLevels[defect.name]}
-                                        onRatingChange={handleRatingChange}
-                                        onHarmChange={handleHarmChange}
-                                    />
-                                ))}
-                            </div>
-                            <div className="mt-6 flex flex-col md:flex-row gap-2">
-                                <Link href="/" className="flex-1">
-                                    <Button variant="outline" className="w-full">Back to Dashboard</Button>
-                                </Link>
-                                <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
-                                    {isSubmitting ? 'Saving...' : 'Reveal Virtues to Develop'}
-                                </Button>
-                            </div>
-                        </>
+                        <Card className="no-print">
+                            <CardHeader>
+                                <CardTitle className="text-2xl">Character Defects Inventory</CardTitle>
+                                <CardDescription>Rate each defect based on its frequency and the level of harm it causes. Your virtues to develop will be revealed upon submission.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col">
+                                    {defects.map((defect) => (
+                                        <DefectRow 
+                                            key={defect.name} 
+                                            defect={defect} 
+                                            rating={ratings[defect.name]}
+                                            harmLevel={harmLevels[defect.name]}
+                                            onRatingChange={handleRatingChange}
+                                            onHarmChange={handleHarmChange}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="mt-6 flex">
+                                    <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+                                        {isSubmitting ? 'Saving...' : 'Reveal Virtues to Develop'}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ) : (
                         <div>
-                             <div className="mt-6 flex gap-2 no-print">
-                                <Link href="/" className="inline-block">
-                                    <Button>Back to Dashboard</Button>
-                                </Link>
+                            <div className="print-header" style={{ display: 'none' }}>
+                                <h1 className="text-xl font-bold">New Man App</h1>
+                                <h2 className="text-lg">Character Defects Inventory Results</h2>
+                                <p className="text-sm text-gray-600">User: {session?.user?.email}</p>
+                                <p className="text-sm text-gray-600">Date: {new Date().toLocaleDateString()}</p>
+                            </div>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-xl font-bold">Your Prioritized Virtues</CardTitle>
+                                    <CardDescription>This chart shows your virtue scores based on your self-assessment. A lower score indicates a greater need for development in that area.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <VirtueRoseChart 
+                                        data={results.map((r) => ({ 
+                                            virtue: r.virtue, 
+                                            score: 10 - r.defectIntensity 
+                                        }))} 
+                                        size="large"
+                                    />
+                                </CardContent>
+                            </Card>
+
+                            <div className="mt-6 flex gap-2 no-print">
+                                <Button onClick={() => setResults(null)}>Edit Answers</Button>
                                 <Button variant="outline" onClick={handlePrint}>Print / Download PDF</Button>
                             </div>
                         </div>
                     )}
-                </CardContent>
-            </Card>
-
-            {results && (
-                 <div id="printable-area" className="mt-6">
-                    <div className="print-header" style={{ display: 'none' }}>
-                        <h1 className="text-xl font-bold">New Man App</h1>
-                        <h2 className="text-lg">Character Defects Inventory Results</h2>
-                        <p className="text-sm text-gray-600">User: {session?.user?.email}</p>
-                        <p className="text-sm text-gray-600">Date: {new Date().toLocaleDateString()}</p>
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Your Prioritized Virtues</h2>
-                    <p className="mb-4 text-sm">This assessment highlights the virtues that address your most frequent and harmful character defects.</p>
-                    <div className="space-y-4">
-                        {results.map(({ virtue, defectIntensity, averageRating, maxHarm }) => (
-                            <div key={virtue} className="p-3 border rounded-lg print-card">
-                                <div className="flex justify-between items-baseline">
-                                    <h3 className="text-base font-bold">{virtue}</h3>
-                                    <span className="text-xs font-semibold">Defect Intensity: {defectIntensity.toFixed(1)} / 10</span>
-                                </div>
-                                <div className="mt-2 grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="text-xs font-medium">Average Rating (Frequency)</Label>
-                                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                                            <div 
-                                                className={`h-2.5 rounded-full ${getBarColorClass(averageRating)}`}
-                                                style={{ width: `${(averageRating / 5) * 100}%` }}>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <Label className="text-xs font-medium">Maximum Harm Level</Label>
-                                        <p className="text-sm font-semibold">{harmNumberToLabel[maxHarm]}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
                 </div>
-            )}
-        </div>
-    );
+            </div>
+        </>
+    )
 }
-

@@ -5,9 +5,60 @@ import { supabase } from '@/lib/supabaseClient'
 import { Button } from './ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { UserCheck, BookOpen, Edit } from 'lucide-react'
+import { UserCheck, BookOpen, Edit, Sparkles } from 'lucide-react'
 import AppHeader from './AppHeader'
 import WelcomeModal from './WelcomeModal'
+import VirtueRoseChart from './VirtueRoseChart'
+
+// --- CONSTANTS ---
+const defects = [
+    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
+    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
+    { name: "Apathy", virtues: ["Compassion", "Responsibility"] },
+    { name: "Arrogance", virtues: ["Humility", "Respect"] },
+    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"] },
+    { name: "Bitterness", virtues: ["Gratitude", "Compassion"] },
+    { name: "Blaming others", virtues: ["Responsibility", "Honesty"] },
+    { name: "Boastfulness", virtues: ["Humility"] },
+    { name: "Close-mindedness", virtues: ["Humility", "Respect"] },
+    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"] },
+    { name: "Conceit", virtues: ["Humility"] },
+    { name: "Cruelty", virtues: ["Compassion", "Respect"] },
+    { name: "Deceit", virtues: ["Honesty", "Integrity"] },
+    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"] },
+    { name: "Dishonesty", virtues: ["Honesty", "Integrity"] },
+    { name: "Disrespect", virtues: ["Respect", "Compassion"] },
+    { name: "Distrust", virtues: ["Vulnerability", "Honesty"] },
+    { name: "Egotism", virtues: ["Humility", "Respect"] },
+    { name: "Haughtiness", virtues: ["Humility", "Respect"] },
+    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"] },
+    { name: "Impatience", virtues: ["Patience", "Mindfulness"] },
+    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"] },
+    { name: "Indifference", virtues: ["Compassion", "Responsibility"] },
+    { name: "Ingratitude", virtues: ["Gratitude"] },
+    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"] },
+    { name: "Intolerance", virtues: ["Respect", "Compassion"] },
+    { name: "Irresponsibility", virtues: ["Responsibility"] },
+    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"] },
+    { name: "Lack of empathy", virtues: ["Compassion"] },
+    { name: "Lack of gratitude", virtues: ["Gratitude"] },
+    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"] },
+    { name: "Lying", virtues: ["Honesty", "Integrity"] },
+    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"] },
+    { name: "Narcissism", virtues: ["Humility", "Compassion"] },
+    { name: "Neglect", virtues: ["Responsibility", "Compassion"] },
+    { name: "Objectification", virtues: ["Respect", "Compassion"] },
+    { name: "Pride", virtues: ["Humility", "Respect"] },
+    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"] },
+    { name: "Resentment", virtues: ["Gratitude", "Compassion"] },
+    { name: "Rudeness", virtues: ["Respect", "Compassion"] },
+    { name: "Self-centeredness", virtues: ["Humility", "Compassion"] },
+    { name: "Self-righteousness", virtues: ["Humility", "Respect"] },
+    { name: "Selfishness", virtues: ["Compassion"] },
+    { name: "Stealing", virtues: ["Honesty", "Integrity"] },
+    { name: "Superiority", virtues: ["Humility", "Respect"] },
+    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] }
+];
 
 // --- TYPE DEFINITIONS ---
 type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
@@ -71,14 +122,33 @@ export default function Dashboard() {
 
       if (results.length > 0) {
         setAssessmentTaken(true);
-        const scoreMap = new Map<string, number>();
-        results.forEach(r => { scoreMap.set(r.virtue_name, r.priority_score); });
         
-        const sortedVirtues = baseVirtues
-            .map(v => ({ ...v, virtue_score: 10 - (scoreMap.get(v.name) || 0) }))
-            .sort((a, b) => (a.virtue_score || 0) - (b.virtue_score || 0));
-        setVirtues(sortedVirtues);
+        const scoreMap = new Map<string, number>();
+        results.forEach(r => { 
+          if (!scoreMap.has(r.virtue_name)) {
+            scoreMap.set(r.virtue_name, r.priority_score); 
+          }
+        });
+        
+        const virtueDefectCounts = new Map<string, number>();
+        defects.forEach(defect => {
+          defect.virtues.forEach(virtueName => {
+            virtueDefectCounts.set(virtueName, (virtueDefectCounts.get(virtueName) || 0) + 1);
+          });
+        });
 
+        const sortedVirtues = baseVirtues
+            .map(v => {
+              const priorityScore = scoreMap.get(v.name) || 0;
+              const defectCount = virtueDefectCounts.get(v.name) || 0;
+              const maxPossiblePriority = defectCount * 25; // Max rating 5 * (Max harm 4 + 1) = 25
+              const defectIntensity = maxPossiblePriority > 0 ? (priorityScore / maxPossiblePriority) * 10 : 0;
+              const finalVirtueScore = Math.max(0, Math.min(10, 10 - defectIntensity));
+              return { ...v, virtue_score: finalVirtueScore };
+            })
+            .sort((a, b) => (a.virtue_score || 0) - (b.virtue_score || 0));
+        
+        setVirtues(sortedVirtues);
       } else {
         setAssessmentTaken(false);
         setVirtues(baseVirtues);
@@ -148,6 +218,42 @@ export default function Dashboard() {
     const daysSinceJournal = calculateDaysSince(lastJournalEntry);
     return (
         <div className="space-y-6">
+            <Card className="order-first">
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                    <BookOpen className="h-8 w-8 text-amber-700" />
+                    <div><CardTitle className="text-stone-800">Assessment</CardTitle></div>
+                </CardHeader>
+                <CardContent>
+                  {assessmentTaken && virtues.length > 0 ? (
+                    <>
+                      <Link href="/assessment" className="cursor-pointer block p-4">
+                        <VirtueRoseChart 
+                          data={virtues.map(v => ({
+                            virtue: v.name,
+                            score: v.virtue_score || 0
+                          }))}
+                          size="thumbnail"
+                          showLabels={false}
+                        />
+                      </Link>
+                      <div className="px-6 pb-4 pt-0 text-center">
+                        <p className="text-sm text-stone-600 mb-2">Click chart for details or to retake.</p>
+                        <Link href="/assessment"><Button size="sm" variant="outline">Retake Assessment</Button></Link>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-6">
+                      <div className="flex items-center gap-2 mb-3 text-amber-700">
+                        <Sparkles size={18} />
+                        <p className="text-sm font-medium">Discover your Virtue Rose</p>
+                      </div>
+                      <p className="text-sm text-stone-600 mb-3">Take the assessment to visualize your virtue strengths and areas for growth.</p>
+                      <Link href="/assessment"><Button size="sm" variant="outline">Take Assessment</Button></Link>
+                    </div>
+                  )}
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                     <UserCheck className="h-8 w-8 text-amber-700" />
@@ -166,17 +272,6 @@ export default function Dashboard() {
                             <Link href="/account-settings"><Button size="sm" variant="outline">Invite a Sponsor</Button></Link>
                         </div>
                     )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                    <BookOpen className="h-8 w-8 text-amber-700" />
-                    <div><CardTitle className="text-stone-800">Assessment</CardTitle></div>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-stone-600 mb-2">{assessmentTaken ? 'Your virtues are prioritized. You can retake the assessment anytime.' : 'Take the assessment to prioritize your virtues.'}</p>
-                    <Link href="/assessment"><Button size="sm" variant="outline">{assessmentTaken ? 'Retake Assessment' : 'Take Assessment'}</Button></Link>
                 </CardContent>
             </Card>
 

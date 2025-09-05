@@ -24,6 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* The RGraph script tags have been removed from here */}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

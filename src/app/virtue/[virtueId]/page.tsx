@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { AlertCircle, Send, CheckCircle, Edit } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, Sparkles } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
@@ -22,7 +22,6 @@ type Stage = {
   stage_number: number; 
   title: string; 
   stage_prompts: Prompt[];
-  affirmations: Affirmation[];
 }
 type Virtue = { 
   id: number; 
@@ -30,7 +29,8 @@ type Virtue = {
   description: string; 
   story_of_virtue: string | null; 
   author_reflection: string | null; 
-  virtue_stages: Stage[] 
+  virtue_stages: Stage[];
+  affirmations: Affirmation[]; // CORRECTED: Affirmations are linked to the virtue
 }
 type ChatMessage = { id: number; sender_id: string; message_text: string; created_at: string; sender_name: string | null; read_at: string | null }
 type StageStatus = 'not_started' | 'in_progress' | 'completed';
@@ -128,15 +128,9 @@ export default function VirtueDetailPage() {
 
   useEffect(() => {
     if (virtue) {
-      document.title = `New-Man-App: Virtue - ${virtue.name}`;
+      document.title = `New Man: Virtue - ${virtue.name}`;
     }
   }, [virtue]);
-
-  const affirmations: Affirmation[] = [
-    { id: 1, text: "I approach situations with an open mind, ready to learn." },
-    { id: 2, text: "I value the contributions of others and acknowledge their worth." },
-    { id: 3, text: "I accept my limitations and ask for help when needed." },
-  ]
 
   const fetchPageData = useCallback(async () => {
     if (!virtueId) {
@@ -149,7 +143,8 @@ export default function VirtueDetailPage() {
       if (!user) { router.push('/'); return; }
       setCurrentUserId(user.id);
 
-      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*), affirmations(*))').eq('id', virtueId).single();
+      // CORRECTED: Updated Supabase query to match the new schema
+      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*)), affirmations(*)').eq('id', virtueId).single();
       const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', virtueId);
       const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', virtueId);
       const connectionPromise = supabase.from('sponsor_connections').select('id').or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`).eq('status', 'active').maybeSingle();
@@ -309,102 +304,117 @@ export default function VirtueDetailPage() {
     <div className="min-h-screen bg-stone-50">
       <AppHeader />
       <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-gray-800">{virtue.name} Workspace</h1>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle>Prompts</CardTitle></CardHeader>
-            <CardContent>
-              <Carousel className="w-full max-w-lg mx-auto relative">
-                <CarouselContent>
-                  {activeStageData?.stage_prompts?.length ? activeStageData.stage_prompts.map((prompt) => (
-                    <CarouselItem key={prompt.id}><div className="p-1 h-24 flex items-start justify-center overflow-y-auto"><p className="text-lg italic text-gray-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
-                  )) : (
-                    <CarouselItem><div className="p-1 h-24 flex items-center justify-center"><p className="text-gray-500">No prompts for this stage.</p></div></CarouselItem>
-                  )}
-                </CarouselContent>
-                <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
-                <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
-              </Carousel>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardTitle>Affirmations</CardTitle></CardHeader>
-            <CardContent>
-              <Carousel className="w-full max-w-lg mx-auto relative">
-                <CarouselContent>
-                  {affirmations.length > 0 ? affirmations.map((affirmation) => (
-                    <CarouselItem key={affirmation.id}><div className="p-1 h-24 flex items-center justify-center"><p className="text-lg italic text-gray-700 text-center">{affirmation.text}</p></div></CarouselItem>
-                  )) : (
-                    <CarouselItem><div className="p-1 h-24 flex items-center justify-center"><p className="text-gray-500">No affirmations for this stage.</p></div></CarouselItem>
-                  )}
-                </CarouselContent>
-                <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
-                <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
-              </Carousel>
-            </CardContent>
-          </Card>
+        <div className="mb-8">
+          <h1 className="text-4xl font-light text-stone-800">{virtue.name} Workspace</h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className={`grid w-full gap-2 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
-            <TabsTrigger value="stage-1">Dismantling</TabsTrigger>
-            <TabsTrigger value="stage-2">Building</TabsTrigger>
-            <TabsTrigger value="stage-3">Maintaining</TabsTrigger>
-            <TabsTrigger value="journal">Journal</TabsTrigger>
-            {connectionId && (
-              <TabsTrigger value="chat" className="relative">
-                Sponsor Chat
-                {hasUnreadMessages && (<span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />)}
-              </TabsTrigger>
-            )}
-          </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+          {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
+          <div className="lg:col-span-3">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className={`grid w-full gap-2 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                <TabsTrigger value="stage-1">Dismantling</TabsTrigger>
+                <TabsTrigger value="stage-2">Building</TabsTrigger>
+                <TabsTrigger value="stage-3">Maintaining</TabsTrigger>
+                <TabsTrigger value="journal">Journal</TabsTrigger>
+                {connectionId && (
+                  <TabsTrigger value="chat" className="relative">
+                    Sponsor Chat
+                    {hasUnreadMessages && (<span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />)}
+                  </TabsTrigger>
+                )}
+              </TabsList>
 
-          {[1, 2, 3].map(stageNum => {
-             const stageData = virtue.virtue_stages.find(s=>s.stage_number === stageNum);
-             const status = progress.get(`${virtueId}-${stageNum}`) || 'not_started';
-             return (
-                <TabsContent key={stageNum} value={`stage-${stageNum}`}>
-                  {stageData && 
-                    <StageContent 
-                      stage={stageData} 
-                      memoContent={memos.get(stageNum) || ''}
-                      status={status}
-                      onMemoChange={(html) => setMemos(prev => new Map(prev).set(stageNum, html))}
-                      onSaveMemo={() => handleSaveMemo(stageNum)}
-                      onCompleteStage={() => handleCompleteStage(stageNum)}
-                      onEditStage={() => handleEditStage(stageNum)}
-                    />
-                  }
-                </TabsContent>
-             )
-          })}
-          
-          <TabsContent value="journal">
-            <Card className="mt-6"><CardContent className="pt-6"><JournalComponent /></CardContent></Card>
-          </TabsContent>
+              {[1, 2, 3].map(stageNum => {
+                const stageData = virtue.virtue_stages.find(s=>s.stage_number === stageNum);
+                const status = progress.get(`${virtueId}-${stageNum}`) || 'not_started';
+                return (
+                    <TabsContent key={stageNum} value={`stage-${stageNum}`}>
+                      {stageData && 
+                        <StageContent 
+                          stage={stageData} 
+                          memoContent={memos.get(stageNum) || ''}
+                          status={status}
+                          onMemoChange={(html) => setMemos(prev => new Map(prev).set(stageNum, html))}
+                          onSaveMemo={() => handleSaveMemo(stageNum)}
+                          onCompleteStage={() => handleCompleteStage(stageNum)}
+                          onEditStage={() => handleEditStage(stageNum)}
+                        />
+                      }
+                    </TabsContent>
+                )
+              })}
+              
+              <TabsContent value="journal">
+                <Card className="mt-6"><CardContent className="pt-6"><JournalComponent /></CardContent></Card>
+              </TabsContent>
 
-          <TabsContent value="chat">
-            <Card className="mt-6">
-              <CardHeader><CardTitle>Chat with your Sponsor</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 border p-4 rounded-md bg-stone-100 flex flex-col">
-                  {chatMessages.length > 0 ? chatMessages.map(message => (
-                    <div key={message.id} className={`p-3 rounded-lg shadow-sm flex flex-col ${ message.sender_id === currentUserId ? 'bg-blue-600 text-white self-end' : 'bg-white text-stone-800 self-start' } max-w-[70%]`}>
-                      <p className={`text-xs mb-1 ${ message.sender_id === currentUserId ? 'text-blue-200' : 'text-stone-500' }`}><strong>{message.sender_name}</strong> - {new Date(message.created_at).toLocaleTimeString()}</p>
-                      <p className="whitespace-pre-wrap">{message.message_text}</p>
+              <TabsContent value="chat">
+                <Card className="mt-6">
+                  <CardHeader><CardTitle>Chat with your Sponsor</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 border p-4 rounded-md bg-stone-100 flex flex-col">
+                      {chatMessages.length > 0 ? chatMessages.map(message => (
+                        <div key={message.id} className={`p-3 rounded-lg shadow-sm flex flex-col ${ message.sender_id === currentUserId ? 'bg-blue-600 text-white self-end' : 'bg-white text-stone-800 self-start' } max-w-[70%]`}>
+                          <p className={`text-xs mb-1 ${ message.sender_id === currentUserId ? 'text-blue-200' : 'text-stone-500' }`}><strong>{message.sender_name}</strong> - {new Date(message.created_at).toLocaleTimeString()}</p>
+                          <p className="whitespace-pre-wrap">{message.message_text}</p>
+                        </div>
+                      )) : (<Alert><AlertCircle className="h-4 w-4" /><AlertTitle>No Messages Yet</AlertTitle><AlertDescription>Start the conversation.</AlertDescription></Alert>)}
                     </div>
-                  )) : (<Alert><AlertCircle className="h-4 w-4" /><AlertTitle>No Messages Yet</AlertTitle><AlertDescription>Start the conversation.</AlertDescription></Alert>)}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Textarea className="flex-grow bg-white" placeholder="Type your message..." value={newChatMessage} onChange={(e) => setNewChatMessage(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChatMessage(); }}} />
-                  <Button onClick={handleSendChatMessage} size="icon" className="flex-shrink-0"><Send size={18} /></Button>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Textarea className="flex-grow bg-white" placeholder="Type your message..." value={newChatMessage} onChange={(e) => setNewChatMessage(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChatMessage(); }}} />
+                      <Button onClick={handleSendChatMessage} size="icon" className="flex-shrink-0"><Send size={18} /></Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* --- RIGHT COLUMN (SUPPORTING CARDS) --- */}
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                <Lightbulb className="h-8 w-8 text-amber-700" />
+                <div><CardTitle className="text-stone-800">Prompts</CardTitle></div>
+              </CardHeader>
+              <CardContent>
+                <Carousel className="w-full max-w-lg mx-auto relative">
+                  <CarouselContent>
+                    {activeStageData?.stage_prompts?.length ? activeStageData.stage_prompts.map((prompt) => (
+                      <CarouselItem key={prompt.id}><div className="p-1 h-28 flex items-center justify-center overflow-y-auto"><p className="text-base text-stone-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
+                    )) : (
+                      <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No prompts for this stage.</p></div></CarouselItem>
+                    )}
+                  </CarouselContent>
+                  <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
+                  <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
+                </Carousel>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                <Sparkles className="h-8 w-8 text-amber-700" />
+                <div><CardTitle className="text-stone-800">Affirmations</CardTitle></div>
+              </CardHeader>
+              <CardContent>
+                <Carousel className="w-full max-w-lg mx-auto relative">
+                  <CarouselContent>
+                    {/* CORRECTED: Pulling affirmations from the top-level virtue object */}
+                    {virtue?.affirmations?.length ? virtue.affirmations.map((affirmation) => (
+                      <CarouselItem key={affirmation.id}><div className="p-1 h-28 flex items-center justify-center"><p className="text-base text-stone-700 text-center">{affirmation.text}</p></div></CarouselItem>
+                    )) : (
+                      <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No affirmations for this virtue.</p></div></CarouselItem>
+                    )}
+                  </CarouselContent>
+                  <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
+                  <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
+                </Carousel>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </main>
     </div>
   )
