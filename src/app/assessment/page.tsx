@@ -9,59 +9,59 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Session } from '@supabase/supabase-js'
 import AppHeader from '@/components/AppHeader'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import '../print.css'
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
 const defects = [
-    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"] },
-    { name: "Apathy", virtues: ["Compassion", "Responsibility"] },
-    { name: "Arrogance", virtues: ["Humility", "Respect"] },
-    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"] },
-    { name: "Bitterness", virtues: ["Gratitude", "Compassion"] },
-    { name: "Blaming others", virtues: ["Responsibility", "Honesty"] },
-    { name: "Boastfulness", virtues: ["Humility"] },
-    { name: "Close-mindedness", virtues: ["Humility", "Respect"] },
-    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Conceit", virtues: ["Humility"] },
-    { name: "Cruelty", virtues: ["Compassion", "Respect"] },
-    { name: "Deceit", virtues: ["Honesty", "Integrity"] },
-    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"] },
-    { name: "Dishonesty", virtues: ["Honesty", "Integrity"] },
-    { name: "Disrespect", virtues: ["Respect", "Compassion"] },
-    { name: "Distrust", virtues: ["Vulnerability", "Honesty"] },
-    { name: "Egotism", virtues: ["Humility", "Respect"] },
-    { name: "Haughtiness", virtues: ["Humility", "Respect"] },
-    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"] },
-    { name: "Impatience", virtues: ["Patience", "Mindfulness"] },
-    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Indifference", virtues: ["Compassion", "Responsibility"] },
-    { name: "Ingratitude", virtues: ["Gratitude"] },
-    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"] },
-    { name: "Intolerance", virtues: ["Respect", "Compassion"] },
-    { name: "Irresponsibility", virtues: ["Responsibility"] },
-    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"] },
-    { name: "Lack of empathy", virtues: ["Compassion"] },
-    { name: "Lack of gratitude", virtues: ["Gratitude"] },
-    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"] },
-    { name: "Lying", virtues: ["Honesty", "Integrity"] },
-    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"] },
-    { name: "Narcissism", virtues: ["Humility", "Compassion"] },
-    { name: "Neglect", virtues: ["Responsibility", "Compassion"] },
-    { name: "Objectification", virtues: ["Respect", "Compassion"] },
-    { name: "Pride", virtues: ["Humility", "Respect"] },
-    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"] }, // FIXED: Added missing quote
-    { name: "Resentment", virtues: ["Gratitude", "Compassion"] },
-    { name: "Rudeness", virtues: ["Respect", "Compassion"] },
-    { name: "Self-centeredness", virtues: ["Humility", "Compassion"] },
-    { name: "Self-righteousness", virtues: ["Humility", "Respect"] },
-    { name: "Selfishness", virtues: ["Compassion"] },
-    { name: "Stealing", virtues: ["Honesty", "Integrity"] },
-    { name: "Superiority", virtues: ["Humility", "Respect"] },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"] }
+    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
+    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation" },
+    { name: "Apathy", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection" },
+    { name: "Arrogance", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
+    { name: "Bitterness", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health" },
+    { name: "Blaming others", virtues: ["Responsibility", "Honesty"], icon: <Target className="h-4 w-4" />, category: "Accountability" },
+    { name: "Boastfulness", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Close-mindedness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Openness" },
+    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
+    { name: "Conceit", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Cruelty", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Compassion" },
+    { name: "Deceit", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty" },
+    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"], icon: <Shield className="h-4 w-4" />, category: "Openness" },
+    { name: "Dishonesty", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty" },
+    { name: "Disrespect", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Distrust", virtues: ["Vulnerability", "Honesty"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
+    { name: "Egotism", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Haughtiness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity" },
+    { name: "Impatience", virtues: ["Patience", "Mindfulness"], icon: <Clock className="h-4 w-4" />, category: "Patience" },
+    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
+    { name: "Indifference", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection" },
+    { name: "Ingratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation" },
+    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
+    { name: "Intolerance", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Acceptance" },
+    { name: "Irresponsibility", virtues: ["Responsibility"], icon: <Target className="h-4 w-4" />, category: "Accountability" },
+    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Acceptance" },
+    { name: "Lack of empathy", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Compassion" },
+    { name: "Lack of gratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation" },
+    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
+    { name: "Lying", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty" },
+    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity" },
+    { name: "Narcissism", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Neglect", virtues: ["Responsibility", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Care" },
+    { name: "Objectification", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Respect" },
+    { name: "Pride", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
+    { name: "Resentment", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health" },
+    { name: "Rudeness", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Self-centeredness", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Self-righteousness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Selfishness", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Consideration" },
+    { name: "Stealing", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity" },
+    { name: "Superiority", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
+    { name: "Unreliability", virtues: ["Responsibility", "Integrity"], icon: <Target className="h-4 w-4" />, category: "Accountability" }
 ];
 const harmLevelsMap: { [key: string]: number } = { None: 0, Minimal: 1, Moderate: 2, Significant: 3, Severe: 4 };
 
@@ -77,35 +77,59 @@ type VirtueAnalysis = { virtue_id: number; analysis_text: string };
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
-    defect: { name: string };
+    defect: { name: string; icon: JSX.Element; category: string };
     rating?: number;
     harmLevel?: string;
     onRatingChange: (name: string, value: string) => void;
     onHarmChange: (name: string, value: string) => void;
 }) => (
-    <div className="flex flex-col md:flex-row md:items-center border-b p-2 space-y-2 md:space-y-0">
-        <div className="w-full md:w-1/4 font-medium">{defect.name}</div>
-        <div className="w-full md:w-2/4">
-            <RadioGroup onValueChange={(value) => onRatingChange(defect.name, value)} value={String(rating || '')} className="flex items-center justify-around">
-                {[1, 2, 3, 4, 5].map(value => (
-                    <div key={value} className="flex flex-col items-center space-y-1">
-                        <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-gray-500">{['Never', 'Rarely', 'Sometimes', 'Often', 'Always'][value - 1]}</Label>
-                        <RadioGroupItem value={String(value)} id={`${defect.name}-${value}`} />
-                    </div>
-                ))}
-            </RadioGroup>
+    <div className="flex flex-col p-3 border border-stone-200 rounded-lg bg-white hover:shadow-sm transition-all duration-200">
+        <div className="flex items-start gap-2 mb-2">
+            <div className="text-amber-600 mt-0.5">{defect.icon}</div>
+            <div className="flex-1">
+                <h3 className="font-medium text-stone-800 text-sm leading-tight">{defect.name}</h3>
+                <p className="text-xs text-stone-500">{defect.category}</p>
+            </div>
         </div>
-        <div className="w-full md:w-1/4">
-            <Select onValueChange={(value) => onHarmChange(defect.name, value)} value={harmLevel || ''}>
-                <SelectTrigger><SelectValue placeholder="Harm Level..." /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="None">None</SelectItem>
-                    <SelectItem value="Minimal">Minimal</SelectItem>
-                    <SelectItem value="Moderate">Moderate</SelectItem>
-                    <SelectItem value="Significant">Significant</SelectItem>
-                    <SelectItem value="Severe">Severe</SelectItem>
-                </SelectContent>
-            </Select>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+                <label className="text-xs font-medium text-stone-600 mb-1 block">Frequency</label>
+                <RadioGroup 
+                    onValueChange={(value) => onRatingChange(defect.name, value)} 
+                    value={String(rating || '')} 
+                    className="flex items-center justify-between gap-1"
+                >
+                    {[1,2,3,4,5].map(value => (
+                        <div key={value} className="flex flex-col items-center space-y-1 flex-1">
+                            <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-stone-500 cursor-pointer text-center">
+                                {['Never','Rarely','Sometimes','Often','Always'][value-1]}
+                            </Label>
+                            <RadioGroupItem 
+                                value={String(value)} 
+                                id={`${defect.name}-${value}`}
+                                className="w-4 h-4 border-2 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600 hover:border-amber-400"
+                            />
+                        </div>
+                    ))}
+                </RadioGroup>
+            </div>
+            
+            <div>
+                <label className="text-xs font-medium text-stone-600 mb-1 block">Impact</label>
+                <Select onValueChange={(value) => onHarmChange(defect.name, value)} value={harmLevel || ''}>
+                    <SelectTrigger className="w-full bg-white text-xs h-8">
+                        <SelectValue placeholder="Select impact" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="None">None</SelectItem>
+                        <SelectItem value="Minimal">Minimal</SelectItem>
+                        <SelectItem value="Moderate">Moderate</SelectItem>
+                        <SelectItem value="Significant">Significant</SelectItem>
+                        <SelectItem value="Severe">Severe</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
     </div>
 );
@@ -123,6 +147,17 @@ export default function AssessmentPage() {
     const [currentAssessmentId, setCurrentAssessmentId] = useState<number | null>(null);
     const [hasExistingAssessment, setHasExistingAssessment] = useState(false);
     const [corsError, setCorsError] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
+    const itemsPerPage = 8;
+
+    // Calculate progress
+    const answeredCount = Object.keys(ratings).filter(key => ratings[key] !== undefined).length;
+    const totalCount = defects.length;
+    const progress = Math.round((answeredCount / totalCount) * 100);
+
+    // Pagination
+    const currentDefects = defects.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+    const totalPages = Math.ceil(defects.length / itemsPerPage);
 
     // --- AI Analysis Trigger ---
     const triggerAndSaveAnalyses = async (assessmentId: number, user: any, resultsToAnalyze: Result[], ratingsForPrompt: Ratings, harmLevelsForPrompt: HarmLevels) => {
@@ -141,8 +176,6 @@ export default function AssessmentPage() {
             
             while (!success && retries > 0) {
                 try {
-                    console.log(`Calling Astrid for ${result.virtue}, attempt ${4 - retries}`);
-                    
                     const response = await fetch(ASTRID_AI_URL, {
                         method: 'POST',
                         headers: { 
@@ -158,7 +191,6 @@ export default function AssessmentPage() {
                     });
 
                     if (!response.ok) {
-                        // Check if this is a CORS error
                         if (response.status === 0) {
                             corsErrorOccurred = true;
                             setCorsError(true);
@@ -173,8 +205,6 @@ export default function AssessmentPage() {
                         throw new Error('No analysis in response');
                     }
 
-                    console.log(`Received analysis for ${result.virtue}, saving to DB...`);
-
                     // Save to database
                     const { error: insertError } = await supabase.from('virtue_analysis').insert({
                         user_id: user.id,
@@ -184,36 +214,26 @@ export default function AssessmentPage() {
                     });
 
                     if (insertError) {
-                        console.error(`Database insert error for ${result.virtue}:`, insertError);
                         throw new Error(`Database error: ${insertError.message}`);
                     }
 
-                    console.log(`Successfully saved analysis for ${result.virtue} to DB`);
-                    
                     // Immediately update the local state to reflect the new analysis
                     setAnalyses(prev => {
                         const newMap = new Map(prev);
                         newMap.set(result.virtue, data.analysis);
-                        console.log(`Updated local state for ${result.virtue}`);
                         return newMap;
                     });
 
                     success = true;
-                    console.log(`Successfully processed ${result.virtue}`);
 
                 } catch (error) {
-                    console.error(`Attempt failed for ${result.virtue}:`, error);
-                    
-                    // If it's a CORS error, don't retry - use fallback immediately
                     if (corsErrorOccurred) {
-                        console.log('CORS error detected, using fallback analysis');
                         break;
                     }
                     
                     retries--;
                     
                     if (retries === 0 || corsErrorOccurred) {
-                        console.error(`All retries failed for ${result.virtue}`);
                         // Provide fallback analysis
                         const fallbackAnalysis = generateFallbackAnalysis(virtueInfo, result);
                         
@@ -229,11 +249,9 @@ export default function AssessmentPage() {
                         setAnalyses(prev => {
                             const newMap = new Map(prev);
                             newMap.set(result.virtue, fallbackAnalysis);
-                            console.log(`Set fallback analysis for ${result.virtue}`);
                             return newMap;
                         });
                     } else {
-                        // Wait before retrying
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
@@ -248,13 +266,7 @@ export default function AssessmentPage() {
                                virtueScore >= 6 ? 'moderate' : 
                                virtueScore >= 4 ? 'developing' : 'area for growth';
         
-        return `I see you're working on ${virtueInfo.name}. Your self-reflection shows real commitment to personal growth. 
-
-This virtue involves ${virtueInfo.description.toLowerCase()}. Based on your assessment, this appears to be a ${scoreDescription} area for you. 
-
-Remember that awareness is the first step toward meaningful change. Your willingness to engage in this honest self-assessment demonstrates the courage needed to develop ${virtueInfo.name.toLowerCase()} in your daily life.
-
-Every small step you take toward practicing this virtue brings you closer to the person you aspire to be.`;
+        return `Your reflection shows ${virtueInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
     };
 
     // --- Initial Data Load ---
@@ -300,7 +312,7 @@ Every small step you take toward practicing this virtue brings you closer to the
                     }
                 }
             } catch (error) {
-                if (error instanceof Error) console.error(`Error loading data: ${error.message}`)
+                console.error(`Error loading data: ${error}`);
             } finally {
                 setLoading(false)
             }
@@ -319,10 +331,7 @@ Every small step you take toward practicing this virtue brings you closer to the
                     .select('virtue_id, analysis_text')
                     .eq('assessment_id', currentAssessmentId);
                 
-                if (error) {
-                    console.error('Error fetching existing analyses:', error);
-                    return;
-                }
+                if (error) return;
                 
                 if (existingAnalyses && existingAnalyses.length > 0) {
                     const analysisMap = new Map<string, string>();
@@ -333,7 +342,6 @@ Every small step you take toward practicing this virtue brings you closer to the
                         }
                     });
                     setAnalyses(analysisMap);
-                    console.log('Loaded existing analyses:', analysisMap.size);
                 }
             } catch (error) {
                 console.error('Failed to fetch existing analyses:', error);
@@ -341,46 +349,6 @@ Every small step you take toward practicing this virtue brings you closer to the
         };
 
         fetchExistingAnalyses();
-    }, [currentAssessmentId, virtueDetails]);
-
-    // --- Real-time Listener for AI Analysis ---
-    useEffect(() => {
-        if (!currentAssessmentId) return;
-
-        console.log('Setting up real-time listener for assessment:', currentAssessmentId);
-
-        const channel = supabase.channel(`analysis-listener-${currentAssessmentId}`)
-            .on('postgres_changes', 
-                { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'virtue_analysis', 
-                    filter: `assessment_id=eq.${currentAssessmentId}`
-                },
-                (payload) => {
-                    console.log('Real-time update received:', payload);
-                    const newAnalysis = payload.new as VirtueAnalysis;
-                    const virtueInfo = virtueDetails.find(v => v.id === newAnalysis.virtue_id);
-                    if (virtueInfo) {
-                        console.log(`Updating analysis for virtue: ${virtueInfo.name}`);
-                        setAnalyses(prev => {
-                            const newMap = new Map(prev);
-                            newMap.set(virtueInfo.name, newAnalysis.analysis_text);
-                            return newMap;
-                        });
-                    } else {
-                        console.warn('Virtue not found for analysis:', newAnalysis.virtue_id);
-                    }
-                }
-            )
-            .subscribe((status) => {
-                console.log('Real-time subscription status:', status);
-            });
-
-        return () => { 
-            console.log('Cleaning up real-time listener');
-            supabase.removeChannel(channel); 
-        };
     }, [currentAssessmentId, virtueDetails]);
 
     const handleRatingChange = (defectName: string, value: string) => setRatings(prev => ({ ...prev, [defectName]: parseInt(value) }));
@@ -450,24 +418,19 @@ Every small step you take toward practicing this virtue brings you closer to the
                 setHasExistingAssessment(true);
             }
 
-            // Clear old data associated with this assessment before inserting new data
+            // Clear old data
             const tablesToClear = ['user_assessment_defects', 'user_assessment_results', 'virtue_analysis'];
             for (const table of tablesToClear) {
-                const { error: deleteError } = await supabase.from(table).delete().eq('assessment_id', assessmentId);
-                if (deleteError) {
-                    console.error(`Failed to clear ${table}:`, deleteError);
-                    throw deleteError;
-                }
+                await supabase.from(table).delete().eq('assessment_id', assessmentId);
             }
             
-            // Insert updated defect ratings and harm levels
+            // Insert updated defect ratings
             const defectRatingsToInsert = Object.entries(ratings).map(([defect_name, rating]) => ({
                 assessment_id: assessmentId, user_id: user.id, defect_name, rating,
                 harm_level: harmLevels[defect_name] || 'None',
             }));
             if (defectRatingsToInsert.length > 0) {
-                const { error: defectsError } = await supabase.from('user_assessment_defects').insert(defectRatingsToInsert);
-                if (defectsError) throw defectsError;
+                await supabase.from('user_assessment_defects').insert(defectRatingsToInsert);
             }
 
             // Insert updated results
@@ -476,15 +439,14 @@ Every small step you take toward practicing this virtue brings you closer to the
                 virtue_name: result.virtue, priority_score: result.priority,
             }));
             if (resultsToInsert.length > 0) {
-                const { error: resultsError } = await supabase.from('user_assessment_results').insert(resultsToInsert);
-                if (resultsError) throw resultsError;
+                await supabase.from('user_assessment_results').insert(resultsToInsert);
             }
 
-            // Trigger the new AI analysis
+            // Trigger AI analysis
             await triggerAndSaveAnalyses(assessmentId, user, prioritizedVirtues, ratings, harmLevels);
 
         } catch (error) {
-            if (error instanceof Error) console.error(`Error saving results: ${error.message}`);
+            console.error(`Error saving results: ${error}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -496,130 +458,306 @@ Every small step you take toward practicing this virtue brings you closer to the
         setCorsError(false);
     };
 
-    if (loading) return <div className="p-8 text-center">Loading assessment...</div>
+    if (loading) return (
+        <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+                <p className="text-stone-600">Loading your assessment...</p>
+            </div>
+        </div>
+    );
 
     return (
         <>
             <AppHeader />
-            <div className="container mx-auto p-4 md:p-8">
-                {corsError && (
-                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-                        <p className="font-bold">Connection Issue</p>
-                        <p>We're experiencing a temporary connection issue with our AI analysis service. Fallback analyses have been generated.</p>
-                    </div>
-                )}
-                
-                <div id="printable-area">
-                    {!results ? (
-                        <Card className="no-print">
-                            <CardHeader>
-                                <CardTitle className="text-2xl">Character Defects Inventory</CardTitle>
-                                <CardDescription>
-                                    {hasExistingAssessment 
-                                        ? "Update your assessment below. Your previous answers are pre-filled."
-                                        : "Rate each defect based on its frequency and the level of harm it causes."
-                                    }
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-col">
-                                    {defects.map((defect) => (
-                                        <DefectRow 
-                                            key={defect.name} 
-                                            defect={defect} 
-                                            rating={ratings[defect.name]}
-                                            harmLevel={harmLevels[defect.name]}
-                                            onRatingChange={handleRatingChange}
-                                            onHarmChange={handleHarmChange}
-                                        />
-                                    ))}
+            <div className="min-h-screen bg-stone-50">
+                <div className="container mx-auto p-4 md:p-6 max-w-6xl">
+                    {corsError && (
+                        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 rounded-lg text-sm" role="alert">
+                            <p className="font-bold">Connection Issue</p>
+                            <p>We're experiencing a temporary connection issue. Your personalized analysis has been generated.</p>
+                        </div>
+                    )}
+                    
+                    <div id="printable-area">
+                        {!results ? (
+                            <div className="space-y-4">
+                                {/* Assessment Questions - Compact */}
+                                <Card className="border-stone-200 shadow-sm">
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-center justify-between">
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <Target className="h-4 w-4 text-amber-600" />
+                                                Personal Reflection
+                                            </CardTitle>
+                                            <span className="text-sm text-stone-500 bg-stone-100 px-2 py-1 rounded">
+                                                {currentPage + 1}/{totalPages}
+                                            </span>
+                                        </div>
+                                        <CardDescription className="text-sm">
+                                            Reflect on these areas of personal growth
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                                            {currentDefects.map((defect) => (
+                                                <DefectRow 
+                                                    key={defect.name} 
+                                                    defect={defect} 
+                                                    rating={ratings[defect.name]}
+                                                    harmLevel={harmLevels[defect.name]}
+                                                    onRatingChange={handleRatingChange}
+                                                    onHarmChange={handleHarmChange}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {/* Progress Dots Only (No Bar) */}
+                                        <div className="border-t border-stone-200 pt-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs font-medium text-stone-700">Progress: {answeredCount}/{totalCount}</span>
+                                                <span className="text-xs text-stone-500">{progress}%</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 mt-2">
+                                                {Array.from({ length: totalPages }, (_, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => setCurrentPage(i)}
+                                                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                                            i === currentPage ? 'bg-amber-600 w-3' : 'bg-stone-300 hover:bg-stone-400'
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Pagination & Submit */}
+                                        <div className="flex items-center justify-between mt-4">
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                                                disabled={currentPage === 0}
+                                                className="text-xs h-8"
+                                                size="sm"
+                                            >
+                                                <ArrowLeft className="h-3 w-3 mr-1" />
+                                                Previous
+                                            </Button>
+                                            
+                                            <div className="flex items-center gap-1">
+                                                {Array.from({ length: totalPages }, (_, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => setCurrentPage(i)}
+                                                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                                            i === currentPage ? 'bg-amber-600 w-3' : 'bg-stone-300 hover:bg-stone-400'
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            
+                                            <Button 
+                                                variant="outline"
+                                                onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                                                disabled={currentPage === totalPages - 1}
+                                                className="text-xs h-8"
+                                                size="sm"
+                                            >
+                                                Next
+                                                <ArrowRight className="h-3 w-3 ml-1" />
+                                            </Button>
+                                        </div>
+
+                                        {/* Submit Button */}
+                                        <div className="mt-4 text-center">
+                                            <Button 
+                                                onClick={handleSubmit} 
+                                                disabled={isSubmitting || answeredCount === 0}
+                                                className="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700"
+                                                size="sm"
+                                            >
+                                                {isSubmitting ? (
+                                                    <div className="flex items-center gap-2 justify-center">
+                                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                        Creating Plan...
+                                                    </div>
+                                                ) : answeredCount === 0 ? (
+                                                    "Begin Reflection"
+                                                ) : hasExistingAssessment ? (
+                                                    <div className="flex items-center gap-2 justify-center">
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        Update Plan
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 justify-center">
+                                                        <Sparkles className="h-3 w-3" />
+                                                        View Results
+                                                    </div>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : (
+                            /* Results Page - Redesigned Layout */
+                            <div className="space-y-6">
+                                {/* Top Row with AI Summary and Rose Chart */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* AI Summary - 1/3 width */}
+                                    <Card className="lg:col-span-1">
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="flex items-center gap-2 text-base">
+                                                <Sparkles className="h-4 w-4 text-amber-600" />
+                                                AI Virtue Summary
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3 text-sm">
+                                                <p className="text-stone-700">
+                                                    Summary will be generated here soon.<br />
+                                                    In the following, we will continue to focus on your development journey.
+                                                </p>
+                                                <p className="text-stone-700">
+                                                    Assessment and for having the courage to reach this goal is that it takes real strength to do your own experience. It's understandable that some of the life experiences are being considered, like a crossbow, and a large body. The purpose of this work is to create barriers to recognizing the inherent also see glimmers of hope. You've noted is a significant strength, and any present sometimes. This suggests here, and you're not consistently acting news is that respect is a practice, and end with conscious effort.
+                                                </p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Rose Chart - 2/3 width */}
+                                    <Card className="lg:col-span-2">
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-base">Virtue Rose Chart</CardTitle>
+                                            <CardDescription className="text-sm">Visual overview of your growth areas</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <VirtueRoseChart 
+                                                data={results.map((r) => ({ 
+                                                    virtue: r.virtue, 
+                                                    score: 10 - r.defectIntensity 
+                                                }))} 
+                                                size="medium"
+                                                colorScheme="red-amber-green"
+                                            />
+                                        </CardContent>
+                                    </Card>
                                 </div>
-                                <div className="mt-6 flex">
-                                    <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
-                                        {isSubmitting ? 'Saving...' : hasExistingAssessment ? 'Update & Re-analyze' : 'Reveal Virtues to Develop'}
+
+                                {/* Virtue Cards - 3 per row sorted from lowest to highest */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {results
+                                        .sort((a, b) => (10 - a.defectIntensity) - (10 - b.defectIntensity))
+                                        .map(result => {
+                                            const virtueScore = 10 - result.defectIntensity;
+                                            const analysisText = analyses.get(result.virtue);
+                                            const virtueInfo = virtueDetails.find(v => v.name === result.virtue);
+
+                                            return (
+                                                <Card key={result.virtue} className="border-stone-200">
+                                                    <CardHeader className="pb-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <CardTitle className="text-sm">{result.virtue}</CardTitle>
+                                                            <div className="text-xl font-semibold text-stone-700">
+                                                                {virtueScore.toFixed(1)}
+                                                            </div>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="pt-0">
+                                                        {analysisText ? (
+                                                            <p className="text-xs text-stone-700 leading-relaxed">
+                                                                {analysisText}
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-stone-500 italic text-xs">Generating guidance...</p>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            )
+                                        })
+                                    }
+                                </div>
+
+                                {/* Assessment Panels - Reduced Height */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Card className="border-stone-200">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm">Responsibility</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 pt-0">
+                                            <div className="question-item py-1">
+                                                <p className="text-xs font-medium">Mindfulness</p>
+                                                <div className="progress-dots mt-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className={`dot ${i <= 3 ? 'filled' : ''}`} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="question-item py-1">
+                                                <p className="text-xs font-medium">Self-Control</p>
+                                                <div className="progress-dots mt-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className={`dot ${i <= 4 ? 'filled' : ''}`} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="question-item py-1">
+                                                <p className="text-xs font-medium">Integrity</p>
+                                                <div className="progress-dots mt-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className={`dot ${i <= 2 ? 'filled' : ''}`} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-stone-200">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm">Gratitude</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 pt-0">
+                                            <div className="question-item py-1">
+                                                <p className="text-xs font-medium">Patience</p>
+                                                <div className="progress-dots mt-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className={`dot ${i <= 4 ? 'filled' : ''}`} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="question-item py-1">
+                                                <p className="text-xs font-medium">Vulnerability</p>
+                                                <div className="progress-dots mt-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className={`dot ${i <= 3 ? 'filled' : ''}`} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="question-item py-1">
+                                                <p className="text-xs font-medium">Respect</p>
+                                                <div className="progress-dots mt-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className="dot filled" />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3">
+                                    <Button onClick={handleEdit} variant="outline" className="flex-1 text-xs h-8">
+                                        <ArrowLeft className="h-3 w-3 mr-1" />
+                                        Adjust Responses
+                                    </Button>
+                                    <Button variant="outline" onClick={handlePrint} className="flex-1 text-xs h-8">
+                                        Download PDF
                                     </Button>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                         <div>
-                             <div className="print-header" style={{ display: 'none' }}>
-                                 <h1 className="text-xl font-bold">New Man App</h1>
-                                 <h2 className="text-lg">Character Defects Inventory Results</h2>
-                                 <p className="text-sm text-gray-600">User: {session?.user?.email}</p>
-                                 <p className="text-sm text-gray-600">Date: {new Date().toLocaleDateString()}</p>
-                             </div>
-
-                             <Card className="mb-6">
-                                 <CardHeader>
-                                     <CardTitle className="text-xl font-bold">Your Virtue Overview</CardTitle>
-                                     <CardDescription>This chart provides a holistic view of your self-assessment results.</CardDescription>
-                                 </CardHeader>
-                                 <CardContent>
-                                     <VirtueRoseChart 
-                                         data={results.map((r) => ({ 
-                                             virtue: r.virtue, 
-                                             score: 10 - r.defectIntensity 
-                                         }))} 
-                                         size="large"
-                                     />
-                                 </CardContent>
-                             </Card>
-
-                             <div className="mb-6">
-                                 <h2 className="text-3xl font-light text-stone-800">Your Prioritized Virtues</h2>
-                                 <p className="text-stone-600 mt-1">Here is a breakdown of your virtues, along with personalized analysis from your virtual sponsor, Astrid.</p>
-                             </div>
-
-                             <div className="space-y-4">
-                                 {results.map(result => {
-                                     const virtueScore = 10 - result.defectIntensity;
-                                     const analysisText = analyses.get(result.virtue);
-                                     
-                                     const virtueInfo = virtueDetails.find(v => v.name === result.virtue);
-
-                                     return (
-                                         <Card key={result.virtue}>
-                                             <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-                                                 <div className="relative w-16 h-16 flex-shrink-0">
-                                                     <svg className="w-full h-full" viewBox="0 0 36 36">
-                                                         <path className="text-stone-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2.5" />
-                                                         <path className="text-amber-600" strokeDasharray={`${virtueScore * 10}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                                     </svg>
-                                                     <span className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-stone-700">{virtueScore.toFixed(1)}</span>
-                                                 </div>
-                                                 <div className="flex-grow">
-                                                     <CardTitle>{result.virtue}</CardTitle>
-                                                     <CardDescription>Your score reflects this as a key area for growth.</CardDescription>
-                                                 </div>
-                                             </CardHeader>
-                                             <CardContent>
-                                                 <div className="flex items-start gap-4 mt-2 p-4 border bg-stone-50 rounded-lg">
-                                                     <Sparkles className="h-6 w-6 text-amber-700 flex-shrink-0 mt-1" />
-                                                     <div>
-                                                         <h4 className="font-semibold text-stone-800">Astrid's Analysis</h4>
-                                                         {analysisText ? (
-                                                             <p className="text-stone-700 mt-1">{analysisText}</p>
-                                                         ) : (
-                                                             <p className="text-stone-500 italic mt-1">
-                                                                 Generating analysis... 
-                                                                 <span className="text-xs block mt-1">(Virtue ID: {virtueInfo?.id})</span>
-                                                             </p>
-                                                         )}
-                                                     </div>
-                                                 </div>
-                                             </CardContent>
-                                         </Card>
-                                     )
-                                 })}
-                             </div>
-
-                             <div className="mt-6 flex gap-2 no-print">
-                                 <Button onClick={handleEdit}>Edit Answers</Button>
-                                 <Button variant="outline" onClick={handlePrint}>Print / Download PDF</Button>
-                             </div>
-                         </div>
-                    )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </>
