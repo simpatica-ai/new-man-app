@@ -21,7 +21,7 @@ const defects = [
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation" },
     { name: "Apathy", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection" },
     { name: "Arrogance", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respend"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
+    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
     { name: "Bitterness", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health" },
     { name: "Blaming others", virtues: ["Responsibility", "Honesty"], icon: <Target className="h-4 w-4" />, category: "Accountability" },
     { name: "Boastfulness", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
@@ -172,6 +172,8 @@ export default function AssessmentPage() {
     const [hasExistingAssessment, setHasExistingAssessment] = useState(false);
     const [corsError, setCorsError] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
+    const [summaryAnalysis, setSummaryAnalysis] = useState<string | null>(null);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const itemsPerPage = 8;
 
     // Calculate progress
@@ -281,6 +283,72 @@ export default function AssessmentPage() {
                 }
             }
         }
+
+        // After all virtue analyses are complete, trigger the summary analysis
+        await triggerSummaryAnalysis(assessmentId, user, resultsToAnalyze);
+    };
+
+    // --- Summary Analysis Trigger ---
+    const triggerSummaryAnalysis = async (assessmentId: number, user: any, resultsToAnalyze: Result[]) => {
+        setIsGeneratingSummary(true);
+        const SUMMARY_AI_URL = "https://get-summary-analysis-917009769018.us-central1.run.app";
+        
+        try {
+            // Prepare data for summary analysis
+            const analysesForSummary = Array.from(analyses.entries()).map(([virtue, analysis]) => ({
+                virtue,
+                analysis
+            }));
+
+            const response = await fetch(SUMMARY_AI_URL, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    analyses: analysesForSummary,
+                    prioritizedVirtues: resultsToAnalyze
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
+
+            const data = await response.json();
+            
+            if (!data.summary) {
+                throw new Error('No summary in response');
+            }
+
+            // Save to database
+            const { error: updateError } = await supabase
+                .from('user_assessments')
+                .update({ summary_analysis: data.summary })
+                .eq('id', assessmentId);
+
+            if (updateError) {
+                throw new Error(`Database error: ${updateError.message}`);
+            }
+
+            // Update local state
+            setSummaryAnalysis(data.summary);
+
+        } catch (error) {
+            console.error('Error generating summary analysis:', error);
+            // Provide fallback summary
+            const fallbackSummary = "A comprehensive summary could not be generated at this time. Please review your individual virtue analyses for insights into your personal growth areas.";
+            setSummaryAnalysis(fallbackSummary);
+            
+            // Still try to save the fallback
+            await supabase
+                .from('user_assessments')
+                .update({ summary_analysis: fallbackSummary })
+                .eq('id', assessmentId);
+        } finally {
+            setIsGeneratingSummary(false);
+        }
     };
 
     // Generate meaningful fallback analysis
@@ -290,59 +358,107 @@ export default function AssessmentPage() {
                                virtueScore >= 6 ? 'moderate' : 
                                virtueScore >= 4 ? 'developing' : 'area for growth';
         
-        return `Your reflection shows ${virtureInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
+        return `Your reflection shows ${virtueInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
     };
 
-    // --- Initial Data Load ---
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const { data: virtuesData, error: virtuesError } = await supabase.from('virtues').select('id, name, description');
-                if (virtuesError) throw virtuesError;
-                setVirtueDetails(virtuesData || []);
+        // --- Initial Data Load ---
+        useEffect(() => {
+            const fetchInitialData = async () => {
+                try {
+                    const { data: virtuesData, error: virtuesError } = await supabase.from('virtues').select('id, name, description');
+                    if (virtuesError) throw virtuesError;
+                    setVirtueDetails(virtuesData || []);
 
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) throw sessionError;
-                setSession(session);
-                const user = session?.user;
-                if (!user) return;
+                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    if (sessionError) throw sessionError;
+                    setSession(session);
+                    const user = session?.user;
+                    if (!user) return;
 
-                const { data: assessmentRecord, error: assessmentError } = await supabase
-                    .from('user_assessments').select('id').eq('user_id', user.id)
-                    .single();
-                
-                if (assessmentError && assessmentError.code !== 'PGRST116') throw assessmentError;
-
-                if (assessmentRecord) {
-                    setCurrentAssessmentId(assessmentRecord.id);
-                    setHasExistingAssessment(true);
+                    // Fetch assessment with summary_analysis
+                    const { data: assessmentRecord, error: assessmentError } = await supabase
+                        .from('user_assessments')
+                        .select('id, summary_analysis')
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .single();
                     
-                    const { data: defectsData, error: defectsError } = await supabase
-                        .from('user_assessment_defects')
-                        .select('defect_name, rating, harm_level')
-                        .eq('assessment_id', assessmentRecord.id);
+                    if (assessmentError && assessmentError.code !== 'PGRST116') throw assessmentError;
 
-                    if (defectsError) throw defectsError;
-                    
-                    if (defectsData && defectsData.length > 0) {
-                        const initialRatings: Ratings = {};
-                        const initialHarmLevels: HarmLevels = {};
-                        defectsData.forEach(defectData => {
-                            initialRatings[defectData.defect_name] = defectData.rating;
-                            initialHarmLevels[defectData.defect_name] = defectData.harm_level;
-                        });
-                        setRatings(initialRatings);
-                        setHarmLevels(initialHarmLevels);
+                    if (assessmentRecord) {
+                        setCurrentAssessmentId(assessmentRecord.id);
+                        setHasExistingAssessment(true);
+                        
+                        // Set summary analysis if it exists
+                        if (assessmentRecord.summary_analysis) {
+                            setSummaryAnalysis(assessmentRecord.summary_analysis);
+                        }
+                        
+                        // Fetch defect ratings
+                        const { data: defectsData, error: defectsError } = await supabase
+                            .from('user_assessment_defects')
+                            .select('defect_name, rating, harm_level')
+                            .eq('assessment_id', assessmentRecord.id);
+
+                        if (defectsError) throw defectsError;
+                        
+                        if (defectsData && defectsData.length > 0) {
+                            const initialRatings: Ratings = {};
+                            const initialHarmLevels: HarmLevels = {};
+                            defectsData.forEach(defectData => {
+                                initialRatings[defectData.defect_name] = defectData.rating;
+                                initialHarmLevels[defectData.defect_name] = defectData.harm_level;
+                            });
+                            setRatings(initialRatings);
+                            setHarmLevels(initialHarmLevels);
+                        }
+
+                        // Fetch existing analyses
+                        const { data: existingAnalyses, error: analysesError } = await supabase
+                            .from('virtue_analysis')
+                            .select('virtue_id, analysis_text')
+                            .eq('assessment_id', assessmentRecord.id);
+                        
+                        if (analysesError) throw analysesError;
+                        
+                        if (existingAnalyses && existingAnalyses.length > 0) {
+                            const analysisMap = new Map<string, string>();
+                            existingAnalyses.forEach(analysis => {
+                                const virtueInfo = virtueDetails.find(v => v.id === analysis.virtue_id);
+                                if (virtueInfo) {
+                                    analysisMap.set(virtueInfo.name, analysis.analysis_text);
+                                }
+                            });
+                            setAnalyses(analysisMap);
+                        }
+
+                        // Fetch results to display
+                        const { data: resultsData, error: resultsError } = await supabase
+                            .from('user_assessment_results')
+                            .select('virtue_name, priority_score')
+                            .eq('assessment_id', assessmentRecord.id)
+                            .order('priority_score', { ascending: false });
+                        
+                        if (resultsError) throw resultsError;
+                        
+                        if (resultsData && resultsData.length > 0) {
+                            const prioritizedVirtues = resultsData.map(result => ({
+                                virtue: result.virtue_name,
+                                priority: result.priority_score,
+                                defectIntensity: 10 - (result.priority_score / 250) // Approximate conversion
+                            }));
+                            setResults(prioritizedVirtues);
+                        }
                     }
+                } catch (error) {
+                    console.error(`Error loading data: ${error}`);
+                } finally {
+                    setLoading(false)
                 }
-            } catch (error) {
-                console.error(`Error loading data: ${error}`);
-            } finally {
-                setLoading(false)
             }
-        }
-        fetchInitialData()
-    }, []);
+            fetchInitialData()
+        }, []);
 
     // --- Fetch existing analyses on mount ---
     useEffect(() => {
@@ -395,6 +511,7 @@ export default function AssessmentPage() {
         setIsSubmitting(true);
         setAnalyses(new Map()); 
         setCorsError(false);
+        setSummaryAnalysis(null);
         
         const virtueScores: { [key: string]: { score: number; harm: number; defectCount: number } } = {};
         coreVirtuesList.forEach(v => { virtueScores[v] = { score: 0, harm: 0, defectCount: 0 } });
@@ -460,7 +577,7 @@ export default function AssessmentPage() {
             // Insert updated results
             const resultsToInsert = prioritizedVirtues.map(result => ({
                 assessment_id: assessmentId, user_id: user.id,
-                virtue_name: result.virture, priority_score: result.priority,
+                virtue_name: result.virtue, priority_score: result.priority,
             }));
             if (resultsToInsert.length > 0) {
                 await supabase.from('user_assessment_results').insert(resultsToInsert);
@@ -480,6 +597,7 @@ export default function AssessmentPage() {
         setResults(null);
         setAnalyses(new Map());
         setCorsError(false);
+        setSummaryAnalysis(null);
     };
 
     if (loading) return (
@@ -570,7 +688,7 @@ export default function AssessmentPage() {
                                             
                                             <Button 
                                                 variant="outline"
-                                                onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                                                onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))} 
                                                 disabled={currentPage === totalPages - 1}
                                                 className="text-xs h-8"
                                                 size="sm"
@@ -622,18 +740,23 @@ export default function AssessmentPage() {
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <Sparkles className="h-4 w-4 text-amber-600" />
                                                 AI Virtue Summary
+                                                {isGeneratingSummary && (
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600 ml-2"></div>
+                                                )}
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="space-y-3 text-sm">
-                                                <p className="text-stone-700">
-                                                    Summary will be generated here soon.<br />
-                                                    In the following, we will continue to focus on your development journey.
-                                                </p>
-                                                <p className="text-stone-700">
-                                                    Assessment and for having the courage to reach this goal is that it takes real strength to do your own experience. It's understandable that some of the life experiences are being considered, like a crossbow, and a large body. The purpose of this work is to create barriers to recognizing the inherent also see glimmers of hope. You've noted is a significant strength, and any present sometimes. This suggests here, and you're not consistently acting news is that respect is a practice, and end with conscious effort.
-                                                </p>
-                                            </div>
+                                            {summaryAnalysis ? (
+                                                <MarkdownRenderer content={summaryAnalysis} />
+                                            ) : isGeneratingSummary ? (
+                                                <div className="space-y-3 text-sm text-stone-500 italic">
+                                                    <p>Generating your comprehensive summary analysis...</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 text-sm text-stone-500 italic">
+                                                    <p>Your summary analysis will be generated soon.</p>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
 
@@ -668,20 +791,20 @@ export default function AssessmentPage() {
                                                 <Card key={result.virtue} className="border-stone-200">
                                                     <CardHeader className="pb-2">
                                                         <div className="flex items-center justify-between">
-                                                        <CardTitle className="text-sm">{result.virtue}</CardTitle>
-                                                        <div className="text-xl font-semibold text-stone-700">
-                                                            {virtueScore.toFixed(1)}
-                                                        </div>
+                                                            <CardTitle className="text-sm">{result.virtue}</CardTitle>
+                                                            <div className="text-xl font-semibold text-stone-700">
+                                                                {virtueScore.toFixed(1)}
+                                                            </div>
                                                         </div>
                                                     </CardHeader>
                                                     <CardContent className="pt-0">
                                                         {analysisText ? (
-                                                        <MarkdownRenderer content={analysisText} />
+                                                            <MarkdownRenderer content={analysisText} />
                                                         ) : (
-                                                        <p className="text-stone-500 italic text-xs">Generating guidance...</p>
+                                                            <p className="text-stone-500 italic text-xs">Generating guidance...</p>
                                                         )}
                                                     </CardContent>
-                                                    </Card>
+                                                </Card>
                                             )
                                         })
                                     }
