@@ -5,60 +5,136 @@
  */
 
 @media print {
-  /* Hide everything by default when printing */
-  body * {
-    visibility: hidden;
-    -webkit-print-color-adjust: exact !important; /* Force colors to print in Chrome/Safari */
-    color-adjust: exact !important; /* Standard property for other browsers */
+  /* Reset everything first */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: black !important;
+    background: white !important;
   }
 
-  /* Make only the designated printable area and its children visible */
-  #printable-area, #printable-area * {
-    visibility: visible;
-  }
-
-  /* Position the printable area to take up the full page */
-  #printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 20px;
-    margin: 0;
-  }
-
-  /* A utility class to hide elements from the printout (like buttons) */
-  .no-print {
+  /* Hide unnecessary elements */
+  .AppHeader, 
+  button,
+  [class*="border-"],
+  [class*="shadow-"],
+  .no-print,
+  .flex.gap-3 /* Action buttons */ {
     display: none !important;
   }
 
-  /* Styles for the print-only header */
-  .print-header {
-    display: block !important; /* Make it visible only on print */
-    text-align: center;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 1rem;
+  /* Show only the printable area */
+  #printable-area {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    visibility: visible !important;
   }
 
-  /* Clean up card styles for printing */
-  .print-card {
-    border: 1px solid #eee !important;
+  #printable-area * {
+    visibility: visible !important;
+  }
+
+  /* Container optimization */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Card styles for printing */
+  .card {
+    border: 1px solid #ccc !important;
     box-shadow: none !important;
-    page-break-inside: avoid; /* Prevent cards from splitting across pages */
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 1rem !important;
   }
-  
-  /* Ensure colored bars in charts are printed */
-  .print-bar-red { background-color: #dc2626 !important; }
-  .print-bar-orange { background-color: #f97316 !important; }
-  .print-bar-yellow { background-color: #facc15 !important; }
-  .print-bar-green { background-color: #22c55e !important; }
-  .print-bar-blue { background-color: #3b82f6 !important; }
 
+  /* Stack grid layouts for print */
+  .grid.grid-cols-1.lg\:grid-cols-3 {
+    display: block !important;
+  }
 
-  /* Prevent headings from being the last thing on a page */
-  h2, h3 {
+  .grid.grid-cols-1.lg\:grid-cols-3 > * {
+    margin-bottom: 1rem !important;
+    width: 100% !important;
+  }
+
+  /* Virtue cards - 2 columns for print */
+  .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Rose chart optimization */
+  .VirtueRoseChart {
+    transform: scale(0.7) !important;
+    transform-origin: center !important;
+    margin: 0 auto !important;
+    max-width: 300px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Text colors for print */
+  .text-stone-500, 
+  .text-stone-600, 
+  .text-stone-700,
+  .text-amber-600 {
+    color: black !important;
+  }
+
+  /* Hide decorative elements */
+  svg,
+  .border-t,
+  .flex.items-center.justify-between,
+  .flex.items-center.gap-1 {
+    display: none !important;
+  }
+
+  /* Force visible borders */
+  [class*="border-stone-200"] {
+    border: 1px solid #ccc !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1cm;
+    size: letter portrait;
+  }
+
+  /* Prevent unwanted page breaks */
+  h1, h2, h3, h4, h5, h6 {
     page-break-after: avoid;
+  }
+
+  /* Markdown content optimization */
+  .markdown-content {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Print header */
+  .print-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #000;
+    padding-bottom: 0.5rem;
+    font-size: 18px;
+    font-weight: bold;
   }
 }
 
+/* Utility class for print-only elements */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block !important;
+  }
+}
