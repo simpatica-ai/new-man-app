@@ -11,6 +11,7 @@ import { Session } from '@supabase/supabase-js'
 import AppHeader from '@/components/AppHeader'
 import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
+import ReactMarkdown from 'react-markdown'
 import '../print.css'
 
 // --- Data & Types ---
@@ -20,7 +21,7 @@ const defects = [
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation" },
     { name: "Apathy", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection" },
     { name: "Arrogance", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
+    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respend"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
     { name: "Bitterness", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health" },
     { name: "Blaming others", virtues: ["Responsibility", "Honesty"], icon: <Target className="h-4 w-4" />, category: "Accountability" },
     { name: "Boastfulness", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
@@ -133,6 +134,29 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
         </div>
     </div>
 );
+
+// --- Markdown Renderer Component ---
+const MarkdownRenderer = ({ content }: { content: string }) => {
+  return (
+    <div className="markdown-content text-sm text-stone-700">
+      <ReactMarkdown
+        components={{
+          h1: ({node, ...props}) => <h2 className="text-lg font-semibold mt-4 mb-2" {...props} />,
+          h2: ({node, ...props}) => <h3 className="text-base font-semibold mt-3 mb-1" {...props} />,
+          h3: ({node, ...props}) => <h4 className="text-sm font-semibold mt-2 mb-1" {...props} />,
+          p: ({node, ...props}) => <p className="mb-2 leading-relaxed" {...props} />,
+          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 pl-4" {...props} />,
+          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 pl-4" {...props} />,
+          li: ({node, ...props}) => <li className="mb-1" {...props} />,
+          strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+          em: ({node, ...props}) => <em className="italic" {...props} />,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+};
 
 // --- Main Assessment Page Component ---
 export default function AssessmentPage() {
@@ -266,7 +290,7 @@ export default function AssessmentPage() {
                                virtueScore >= 6 ? 'moderate' : 
                                virtueScore >= 4 ? 'developing' : 'area for growth';
         
-        return `Your reflection shows ${virtueInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
+        return `Your reflection shows ${virtureInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
     };
 
     // --- Initial Data Load ---
@@ -436,7 +460,7 @@ export default function AssessmentPage() {
             // Insert updated results
             const resultsToInsert = prioritizedVirtues.map(result => ({
                 assessment_id: assessmentId, user_id: user.id,
-                virtue_name: result.virtue, priority_score: result.priority,
+                virtue_name: result.virture, priority_score: result.priority,
             }));
             if (resultsToInsert.length > 0) {
                 await supabase.from('user_assessment_results').insert(resultsToInsert);
@@ -484,7 +508,7 @@ export default function AssessmentPage() {
                             <div className="space-y-4">
                                 {/* Assessment Questions - Compact */}
                                 <Card className="border-stone-200 shadow-sm">
-                                    <CardHeader className="pb-3">
+                                    <CardHeader className="pb-2">
                                         <div className="flex items-center justify-between">
                                             <CardTitle className="text-lg flex items-center gap-2">
                                                 <Target className="h-4 w-4 text-amber-600" />
@@ -494,12 +518,12 @@ export default function AssessmentPage() {
                                                 {currentPage + 1}/{totalPages}
                                             </span>
                                         </div>
-                                        <CardDescription className="text-sm">
+                                        <CardDescription className="text-sm mt-1">
                                             Reflect on these areas of personal growth
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="p-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                                    <CardContent className="p-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                                             {currentDefects.map((defect) => (
                                                 <DefectRow 
                                                     key={defect.name} 
@@ -513,12 +537,12 @@ export default function AssessmentPage() {
                                         </div>
 
                                         {/* Progress Dots Only (No Bar) */}
-                                        <div className="border-t border-stone-200 pt-4">
-                                            <div className="flex items-center justify-between mb-2">
+                                        <div className="border-t border-stone-200 pt-3">
+                                            <div className="flex items-center justify-between">
                                                 <span className="text-xs font-medium text-stone-700">Progress: {answeredCount}/{totalCount}</span>
                                                 <span className="text-xs text-stone-500">{progress}%</span>
                                             </div>
-                                            <div className="flex items-center gap-1 mt-2">
+                                            <div className="flex items-center gap-1 mt-1">
                                                 {Array.from({ length: totalPages }, (_, i) => (
                                                     <button
                                                         key={i}
@@ -532,7 +556,7 @@ export default function AssessmentPage() {
                                         </div>
 
                                         {/* Pagination & Submit */}
-                                        <div className="flex items-center justify-between mt-4">
+                                        <div className="flex items-center justify-between mt-3">
                                             <Button 
                                                 variant="outline" 
                                                 onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
@@ -543,18 +567,6 @@ export default function AssessmentPage() {
                                                 <ArrowLeft className="h-3 w-3 mr-1" />
                                                 Previous
                                             </Button>
-                                            
-                                            <div className="flex items-center gap-1">
-                                                {Array.from({ length: totalPages }, (_, i) => (
-                                                    <button
-                                                        key={i}
-                                                        onClick={() => setCurrentPage(i)}
-                                                        className={`w-1.5 h-1.5 rounded-full transition-all ${
-                                                            i === currentPage ? 'bg-amber-600 w-3' : 'bg-stone-300 hover:bg-stone-400'
-                                                        }`}
-                                                    />
-                                                ))}
-                                            </div>
                                             
                                             <Button 
                                                 variant="outline"
@@ -569,7 +581,7 @@ export default function AssessmentPage() {
                                         </div>
 
                                         {/* Submit Button */}
-                                        <div className="mt-4 text-center">
+                                        <div className="mt-3 text-center">
                                             <Button 
                                                 onClick={handleSubmit} 
                                                 disabled={isSubmitting || answeredCount === 0}
@@ -638,13 +650,12 @@ export default function AssessmentPage() {
                                                     score: 10 - r.defectIntensity 
                                                 }))} 
                                                 size="medium"
-                                                colorScheme="red-amber-green"
                                             />
                                         </CardContent>
                                     </Card>
                                 </div>
 
-                                {/* Virtue Cards - 3 per row sorted from lowest to highest */}
+                                {/* Virtue Cards - 3 per row sorted from lowest to highest (ALL virtues including Responsibility and Gratitude) */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {results
                                         .sort((a, b) => (10 - a.defectIntensity) - (10 - b.defectIntensity))
@@ -657,92 +668,23 @@ export default function AssessmentPage() {
                                                 <Card key={result.virtue} className="border-stone-200">
                                                     <CardHeader className="pb-2">
                                                         <div className="flex items-center justify-between">
-                                                            <CardTitle className="text-sm">{result.virtue}</CardTitle>
-                                                            <div className="text-xl font-semibold text-stone-700">
-                                                                {virtueScore.toFixed(1)}
-                                                            </div>
+                                                        <CardTitle className="text-sm">{result.virtue}</CardTitle>
+                                                        <div className="text-xl font-semibold text-stone-700">
+                                                            {virtueScore.toFixed(1)}
+                                                        </div>
                                                         </div>
                                                     </CardHeader>
                                                     <CardContent className="pt-0">
                                                         {analysisText ? (
-                                                            <p className="text-xs text-stone-700 leading-relaxed">
-                                                                {analysisText}
-                                                            </p>
+                                                        <MarkdownRenderer content={analysisText} />
                                                         ) : (
-                                                            <p className="text-stone-500 italic text-xs">Generating guidance...</p>
+                                                        <p className="text-stone-500 italic text-xs">Generating guidance...</p>
                                                         )}
                                                     </CardContent>
-                                                </Card>
+                                                    </Card>
                                             )
                                         })
                                     }
-                                </div>
-
-                                {/* Assessment Panels - Reduced Height */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Card className="border-stone-200">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm">Responsibility</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 pt-0">
-                                            <div className="question-item py-1">
-                                                <p className="text-xs font-medium">Mindfulness</p>
-                                                <div className="progress-dots mt-1">
-                                                    {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className={`dot ${i <= 3 ? 'filled' : ''}`} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="question-item py-1">
-                                                <p className="text-xs font-medium">Self-Control</p>
-                                                <div className="progress-dots mt-1">
-                                                    {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className={`dot ${i <= 4 ? 'filled' : ''}`} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="question-item py-1">
-                                                <p className="text-xs font-medium">Integrity</p>
-                                                <div className="progress-dots mt-1">
-                                                    {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className={`dot ${i <= 2 ? 'filled' : ''}`} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="border-stone-200">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm">Gratitude</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 pt-0">
-                                            <div className="question-item py-1">
-                                                <p className="text-xs font-medium">Patience</p>
-                                                <div className="progress-dots mt-1">
-                                                    {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className={`dot ${i <= 4 ? 'filled' : ''}`} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="question-item py-1">
-                                                <p className="text-xs font-medium">Vulnerability</p>
-                                                <div className="progress-dots mt-1">
-                                                    {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className={`dot ${i <= 3 ? 'filled' : ''}`} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="question-item py-1">
-                                                <p className="text-xs font-medium">Respect</p>
-                                                <div className="progress-dots mt-1">
-                                                    {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className="dot filled" />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
                                 </div>
 
                                 {/* Action Buttons */}
