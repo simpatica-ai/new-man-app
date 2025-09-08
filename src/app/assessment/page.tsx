@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React from 'react';
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +14,12 @@ import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, A
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
+import { saveAs } from 'file-saver'
+import { pdf } from '@react-pdf/renderer'
+import VirtueAssessmentPDF from './VirtueAssessmentPDF';
+import PrintableVirtueRoseChart from '@/components/PrintableVirtueRoseChart'
+import { convertChartToImage } from '@/utils/chartToImage'
+import PrintButton from '@/components/PrintButton';
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
@@ -174,6 +181,8 @@ export default function AssessmentPage() {
     const [currentPage, setCurrentPage] = useState(0);
     const [summaryAnalysis, setSummaryAnalysis] = useState<string | null>(null);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [userName, setUserName] = useState<string>('');
+
     const itemsPerPage = 8;
 
     // Calculate progress
@@ -361,109 +370,122 @@ export default function AssessmentPage() {
         return `Your reflection shows ${virtueInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
     };
 
-        // --- Initial Data Load ---
-        useEffect(() => {
-            const fetchInitialData = async () => {
-                try {
-                    const { data: virtuesData, error: virtuesError } = await supabase.from('virtues').select('id, name, description');
-                    if (virtuesError) throw virtuesError;
-                    setVirtueDetails(virtuesData || []);
+    // --- Initial Data Load ---
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                const { data: virtuesData, error: virtuesError } = await supabase.from('virtues').select('id, name, description');
+                if (virtuesError) throw virtuesError;
+                setVirtueDetails(virtuesData || []);
 
-                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                    if (sessionError) throw sessionError;
-                    setSession(session);
-                    const user = session?.user;
-                    if (!user) return;
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) throw sessionError;
+                setSession(session);
+                const user = session?.user;
+                if (!user) return;
 
-                    // Fetch assessment with summary_analysis
-                    const { data: assessmentRecord, error: assessmentError } = await supabase
-                        .from('user_assessments')
-                        .select('id, summary_analysis')
-                        .eq('user_id', user.id)
-                        .order('created_at', { ascending: false })
-                        .limit(1)
-                        .single();
-                    
-                    if (assessmentError && assessmentError.code !== 'PGRST116') throw assessmentError;
+                // Fetch user profile to get the name
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('full_name')
+                    .eq('id', user.id)
+                    .single();
 
-                    if (assessmentRecord) {
-                        setCurrentAssessmentId(assessmentRecord.id);
-                        setHasExistingAssessment(true);
-                        
-                        // Set summary analysis if it exists
-                        if (assessmentRecord.summary_analysis) {
-                            setSummaryAnalysis(assessmentRecord.summary_analysis);
-                        }
-                        
-                        // Fetch defect ratings
-                        const { data: defectsData, error: defectsError } = await supabase
-                            .from('user_assessment_defects')
-                            .select('defect_name, rating, harm_level')
-                            .eq('assessment_id', assessmentRecord.id);
-
-                        if (defectsError) throw defectsError;
-                        
-                        if (defectsData && defectsData.length > 0) {
-                            const initialRatings: Ratings = {};
-                            const initialHarmLevels: HarmLevels = {};
-                            defectsData.forEach(defectData => {
-                                initialRatings[defectData.defect_name] = defectData.rating;
-                                initialHarmLevels[defectData.defect_name] = defectData.harm_level;
-                            });
-                            setRatings(initialRatings);
-                            setHarmLevels(initialHarmLevels);
-                        }
-
-                        // Fetch existing analyses
-                        const { data: existingAnalyses, error: analysesError } = await supabase
-                            .from('virtue_analysis')
-                            .select('virtue_id, analysis_text')
-                            .eq('assessment_id', assessmentRecord.id);
-                        
-                        if (analysesError) throw analysesError;
-                        
-                        if (existingAnalyses && existingAnalyses.length > 0) {
-                            const analysisMap = new Map<string, string>();
-                            existingAnalyses.forEach(analysis => {
-                                const virtueInfo = virtueDetails.find(v => v.id === analysis.virtue_id);
-                                if (virtueInfo) {
-                                    analysisMap.set(virtueInfo.name, analysis.analysis_text);
-                                }
-                            });
-                            setAnalyses(analysisMap);
-                        }
-
-                        // Fetch results to display
-                        const { data: resultsData, error: resultsError } = await supabase
-                            .from('user_assessment_results')
-                            .select('virtue_name, priority_score')
-                            .eq('assessment_id', assessmentRecord.id)
-                            .order('priority_score', { ascending: false });
-                        
-                        if (resultsError) throw resultsError;
-                        
-                        if (resultsData && resultsData.length > 0) {
-                            const prioritizedVirtues = resultsData.map(result => ({
-                                virtue: result.virtue_name,
-                                priority: result.priority_score,
-                                defectIntensity: 10 - (result.priority_score / 250) // Approximate conversion
-                            }));
-                            setResults(prioritizedVirtues);
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Error loading data: ${error}`);
-                } finally {
-                    setLoading(false)
+                if (!profileError && profile?.full_name) {
+                    setUserName(profile.full_name);
+                } else {
+                    setUserName('User'); // Fallback
                 }
+
+                // Fetch assessment with summary_analysis
+                const { data: assessmentRecord, error: assessmentError } = await supabase
+                    .from('user_assessments')
+                    .select('id, summary_analysis')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                
+                if (assessmentError && assessmentError.code !== 'PGRST116') throw assessmentError;
+
+                if (assessmentRecord) {
+                    setCurrentAssessmentId(assessmentRecord.id);
+                    setHasExistingAssessment(true);
+                    
+                    // Set summary analysis if it exists
+                    if (assessmentRecord.summary_analysis) {
+                        setSummaryAnalysis(assessmentRecord.summary_analysis);
+                    }
+                    
+                    // Fetch defect ratings
+                    const { data: defectsData, error: defectsError } = await supabase
+                        .from('user_assessment_defects')
+                        .select('defect_name, rating, harm_level')
+                        .eq('assessment_id', assessmentRecord.id);
+
+                    if (defectsError) throw defectsError;
+                    
+                    if (defectsData && defectsData.length > 0) {
+                        const initialRatings: Ratings = {};
+                        const initialHarmLevels: HarmLevels = {};
+                        defectsData.forEach(defectData => {
+                            initialRatings[defectData.defect_name] = defectData.rating;
+                            initialHarmLevels[defectData.defect_name] = defectData.harm_level;
+                        });
+                        setRatings(initialRatings);
+                        setHarmLevels(initialHarmLevels);
+                    }
+
+                    // Fetch existing analyses
+                    const { data: existingAnalyses, error: analysesError } = await supabase
+                        .from('virtue_analysis')
+                        .select('virtue_id, analysis_text')
+                        .eq('assessment_id', assessmentRecord.id);
+                    
+                    if (analysesError) throw analysesError;
+                    
+                    if (existingAnalyses && existingAnalyses.length > 0) {
+                        const analysisMap = new Map<string, string>();
+                        existingAnalyses.forEach(analysis => {
+                            const virtueInfo = virtuesData?.find(v => v.id === analysis.virtue_id);
+                            if (virtueInfo) {
+                                analysisMap.set(virtueInfo.name, analysis.analysis_text);
+                            }
+                        });
+                        setAnalyses(analysisMap);
+                    }
+
+                    // Fetch results to display
+                    const { data: resultsData, error: resultsError } = await supabase
+                        .from('user_assessment_results')
+                        .select('virtue_name, priority_score, defect_intensity')
+                        .eq('assessment_id', assessmentRecord.id)
+                        .order('priority_score', { ascending: false });
+                    
+                    if (resultsError) throw resultsError;
+                    
+                    if (resultsData && resultsData.length > 0) {
+                        const prioritizedVirtues = resultsData.map(result => ({
+                            virtue: result.virtue_name,
+                            priority: result.priority_score,
+                            defectIntensity: result.defect_intensity || 0
+                        }));
+                        setResults(prioritizedVirtues);
+                    }
+                }
+            } catch (error) {
+                console.error(`Error loading data: ${error}`);
+            } finally {
+                setLoading(false)
             }
-            fetchInitialData()
-        }, []);
+        }
+        fetchInitialData()
+    }, []);
 
     // --- Fetch existing analyses on mount ---
     useEffect(() => {
         const fetchExistingAnalyses = async () => {
-            if (!currentAssessmentId) return;
+            if (!currentAssessmentId || virtueDetails.length === 0) return;
             
             try {
                 const { data: existingAnalyses, error } = await supabase
@@ -528,11 +550,17 @@ export default function AssessmentPage() {
             });
         });
 
+        // Calculate priority scores
+        const maxFrequencyScore = 5;
+        const maxHarmMultiplier = 5;
+        
         const prioritizedVirtues = Object.entries(virtueScores)
             .map(([virtue, data]) => {
                 const rawPriority = data.score * (data.harm + 1);
-                const maxPossibleScore = data.defectCount * 25;
-                const defectIntensity = maxPossibleScore > 0 ? (rawPriority / maxPossibleScore) * 10 : 0;
+                const maxPossibleForVirtue = (data.defectCount * maxFrequencyScore) * maxHarmMultiplier;
+                const defectIntensity = maxPossibleForVirtue > 0 ? 
+                    (rawPriority / maxPossibleForVirtue) * 10 : 0;
+                    
                 return { virtue, priority: rawPriority, defectIntensity };
             })
             .filter(v => v.priority > 0)
@@ -576,8 +604,11 @@ export default function AssessmentPage() {
 
             // Insert updated results
             const resultsToInsert = prioritizedVirtues.map(result => ({
-                assessment_id: assessmentId, user_id: user.id,
-                virtue_name: result.virtue, priority_score: result.priority,
+                assessment_id: assessmentId, 
+                user_id: user.id,
+                virtue_name: result.virtue, 
+                priority_score: result.priority,
+                defect_intensity: result.defectIntensity,
             }));
             if (resultsToInsert.length > 0) {
                 await supabase.from('user_assessment_results').insert(resultsToInsert);
@@ -722,20 +753,28 @@ export default function AssessmentPage() {
                                                     <div className="flex items-center gap-2 justify-center">
                                                         <Sparkles className="h-3 w-3" />
                                                         View Results
-                                                    </div>
+                                              </div>
                                                 )}
                                             </Button>
                                         </div>
                                     </CardContent>
                                 </Card>
                             </div>
-                        ) : (
+                            ) : (
                             /* Results Page - Redesigned Layout */
                             <div className="space-y-6">
+                                {/* Print header - only shows when printing */}
+                                <div className="hidden print:block print-header">
+                                    <h1 className="text-2xl font-bold mb-2">New Man New Behaviors Virtue Assessment</h1>
+                                    <p className="text-sm text-gray-600 subtitle">Personal Growth and Development Report</p>
+                                    <p className="text-xs text-gray-500 date">Generated on {new Date().toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-400 mt-2">Confidential - For Personal Development Use Only</p>
+                                </div>
+
                                 {/* Top Row with AI Summary and Rose Chart */}
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 summary-chart-row">
                                     {/* AI Summary - 1/3 width */}
-                                    <Card className="lg:col-span-1">
+                                    <Card className="lg:col-span-1 ai-summary-card">
                                         <CardHeader className="pb-3">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <Sparkles className="h-4 w-4 text-amber-600" />
@@ -759,27 +798,27 @@ export default function AssessmentPage() {
                                             )}
                                         </CardContent>
                                     </Card>
-
-                                    {/* Rose Chart - 2/3 width */}
-                                    <Card className="lg:col-span-2">
+                                        {/* Rose Chart - 2/3 width */}
+                                        <Card className="lg:col-span-2">
                                         <CardHeader className="pb-3">
                                             <CardTitle className="text-base">Virtue Rose Chart</CardTitle>
                                             <CardDescription className="text-sm">Visual overview of your growth areas</CardDescription>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="flex justify-center">
                                             <VirtueRoseChart 
-                                                data={results.map((r) => ({ 
-                                                    virtue: r.virtue, 
-                                                    score: 10 - r.defectIntensity 
-                                                }))} 
-                                                size="medium"
+                                            data={results.map((r) => ({ 
+                                                virtue: r.virtue, 
+                                                score: 10 - r.defectIntensity 
+                                            }))} 
+                                            size="medium"
+                                            data-testid="virtue-chart"
                                             />
                                         </CardContent>
                                     </Card>
                                 </div>
 
-                                {/* Virtue Cards - 3 per row sorted from lowest to highest (ALL virtues including Responsibility and Gratitude) */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {/* Virtue Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 virtue-cards-grid">
                                     {results
                                         .sort((a, b) => (10 - a.defectIntensity) - (10 - b.defectIntensity))
                                         .map(result => {
@@ -788,12 +827,13 @@ export default function AssessmentPage() {
                                             const virtueInfo = virtueDetails.find(v => v.name === result.virtue);
 
                                             return (
-                                                <Card key={result.virtue} className="border-stone-200">
+                                                <Card key={result.virtue} className="border-stone-200 print:break-inside-avoid">
                                                     <CardHeader className="pb-2">
                                                         <div className="flex items-center justify-between">
-                                                            <CardTitle className="text-sm">{result.virtue}</CardTitle>
-                                                            <div className="text-xl font-semibold text-stone-700">
+                                                            <CardTitle className="text-sm font-semibold">{result.virtue}</CardTitle>
+                                                            <div className="virtue-score">
                                                                 {virtueScore.toFixed(1)}
+                                                                <span className="score-label">/10</span>
                                                             </div>
                                                         </div>
                                                     </CardHeader>
@@ -816,13 +856,15 @@ export default function AssessmentPage() {
                                         <ArrowLeft className="h-3 w-3 mr-1" />
                                         Adjust Responses
                                     </Button>
-                                    <Button variant="outline" onClick={handlePrint} className="flex-1 text-xs h-8">
-                                        Download PDF
-                                    </Button>
+                                    <PrintButton 
+                                        results={results}
+                                        analyses={analyses}
+                                        summaryAnalysis={summaryAnalysis}
+                                        userName={userName}
+                                    />
                                 </div>
                             </div>
-                        )}
-                    </div>
+)}                    </div>
                 </div>
             </div>
         </>

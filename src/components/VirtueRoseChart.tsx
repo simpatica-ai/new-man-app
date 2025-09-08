@@ -1,7 +1,7 @@
 // src/components/VirtueRoseChart.tsx
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface VirtueData {
   virtue: string;
@@ -10,34 +10,128 @@ interface VirtueData {
 
 interface VirtueRoseChartProps {
   data: VirtueData[];
-  size?: 'thumbnail' | 'large';
+  size?: 'thumbnail' | 'medium' | 'large';
   showLabels?: boolean;
+  className?: string;
+  forPdf?: boolean; // New prop to indicate if this is for PDF export
 }
 
-export default function VirtueRoseChart({ data, size = 'large', showLabels = true }: VirtueRoseChartProps) {
+export default function VirtueRoseChart({ 
+  data, 
+  size = 'large', 
+  showLabels = true, 
+  className = '',
+  forPdf = false // Default to false
+}: VirtueRoseChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [tooltip, setTooltip] = useState<{virtue: string; score: number; x: number; y: number} | null>(null);
   
   // Dimensions based on size
-  const dimensions = size === 'thumbnail' ? 300 : 600;
+  const dimensions = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
   const center = dimensions / 2;
-  const radius = center - (showLabels ? 70 : 30); // Reduced padding when labels are hidden
+  const radius = center - 5; // Removed all padding, chart will fill the container
   
   /**
-   * Generates earthy colors based on score (red, orange, amber with stone quality)
-   * - 0 to 3.33: Terra Cotta (reddish-brown)
-   * - 3.33 to 6.67: Burnt Orange (earthy orange)
-   * - 6.67 to 10: Sandstone (light stone)
+   * Generates earthy colors based on score (red, amber, green with earth tones)
+   * - 0 to 3.33: Earth Red (low score)
+   * - 3.33 to 6.67: Earth Amber (medium score)
+   * - 6.67 to 10: Earth Green (high score)
    */
   const getColorByScore = (score: number): string => {
     const sanitizedScore = Math.max(0, Math.min(10, Number(score)));
     
     if (sanitizedScore <= 3.33) {
-      return 'rgba(179, 82, 54, 0.8)'; // Terra Cotta
+      return 'rgba(179, 82, 54, 0.8)'; // Earth Red - Terra Cotta
     } else if (sanitizedScore <= 6.67) {
-      return 'rgba(204, 119, 34, 0.8)'; // Burnt Orange
+      return 'rgba(204, 153, 51, 0.8)'; // Earth Amber - Ochre
     } else {
-      return 'rgba(194, 178, 155, 0.8)'; // Sandstone
+      return 'rgba(101, 133, 76, 0.8)'; // Earth Green - Sage
     }
+  };
+
+  // Handle mouse events for tooltips
+  const handleMouseOver = (event: MouseEvent, virtue: string, score: number) => {
+    if (!showLabels && !forPdf) {
+      setTooltip({
+        virtue,
+        score,
+        x: event.clientX,
+        y: event.clientY
+      });
+    }
+  };
+
+  const handleMouseOut = () => {
+    setTooltip(null);
+  };
+
+  // Label positioning configuration - easily adjustable
+  const getLabelPositioning = (angle: number, virtue: string) => {
+    // BASE CONFIGURATION - Adjust these values to control overall positioning
+    const baseConfig = {
+      labelRadius: radius + 45, // Increased from 35 to 45 for more space (WEB)
+      fontSize: '14',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: '700'
+    };
+
+    // PDF-specific adjustments
+    if (forPdf) {
+      baseConfig.labelRadius = radius + 55; // Even more space for PDF (increased from 45 to 55)
+      baseConfig.fontSize = '12';
+    }
+
+    // DEFAULT POSITIONING - Adjust these for general left/right positioning
+    let textAnchor = 'middle';
+    let dx = 0;
+    let dy = '0.35em';
+
+    // QUADRANT-BASED POSITIONING
+    // Left side (angles between π/2 and 3π/2)
+    if (angle > Math.PI / 2 && angle < 3 * Math.PI / 2) {
+      textAnchor = 'end';
+      dx = forPdf ? -6 : -4; // Reduced values for less extreme shifting
+    } 
+    // Right side (angles less than π/2 or greater than 3π/2)
+    else if (angle < Math.PI / 2 || angle > 3 * Math.PI / 2) {
+      textAnchor = 'start';
+      dx = forPdf ? 6 : 4; // Reduced values for less extreme shifting
+    }
+
+    // VIRTUE-SPECIFIC FINE-TUNING - Adjust these for individual labels
+    const virtueAdjustments: { [key: string]: { textAnchor: string; dx: number; dy?: string } } = {
+      'Responsibility': { textAnchor: 'middle', dx: forPdf ? -15 : -12 },
+      'Mindfulness': { textAnchor: 'middle', dx: forPdf ? 15 : 12 },
+      'Compassion': { textAnchor: 'middle', dx: forPdf ? -12 : -10 },
+      'Gratitude': { textAnchor: 'middle', dx: forPdf ? 12 : 10 },
+      'Self-Control': { textAnchor: 'middle', dx: forPdf ? -14 : -11 },
+      'Patience': { textAnchor: 'middle', dx: forPdf ? 14 : 11 },
+      'Honesty': { textAnchor: 'middle', dx: forPdf ? -10 : -8 },
+      'Integrity': { textAnchor: 'middle', dx: forPdf ? 10 : 8 },
+      'Respect': { textAnchor: 'middle', dx: forPdf ? -13 : -10 },
+      'Humility': { textAnchor: 'middle', dx: forPdf ? 13 : 10 },
+      'Vulnerability': { textAnchor: 'middle', dx: forPdf ? -11 : -9 }
+    };
+
+    if (virtueAdjustments[virtue]) {
+      textAnchor = virtueAdjustments[virtue].textAnchor;
+      dx = virtueAdjustments[virtue].dx;
+      if (virtueAdjustments[virtue].dy) {
+        dy = virtueAdjustments[virtue].dy as string;
+      }
+    }
+
+    // VERTICAL ALIGNMENT for top/bottom labels
+    if (Math.abs(Math.sin(angle)) > 0.9) {
+      dy = Math.sin(angle) > 0 ? '0.7em' : '0.2em'; // Adjusted for better vertical placement
+    }
+
+    return {
+      ...baseConfig,
+      textAnchor,
+      dx,
+      dy
+    };
   };
 
   useEffect(() => {
@@ -69,7 +163,7 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
         text.setAttribute('dominant-baseline', 'middle');
         text.setAttribute('fill', '#78716c');
         text.setAttribute('font-size', '12');
-        text.setAttribute('font-family', 'var(--font-geist-sans)');
+        text.setAttribute('font-family', 'Arial, sans-serif');
         text.setAttribute('font-weight', '500');
         text.textContent = value.toString();
         svgRef.current?.appendChild(text);
@@ -83,7 +177,7 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
     
     // Add radial dotted lines from center to outer edge for each segment
     const anglePerSegment = (2 * Math.PI) / data.length;
-    const segmentPadding = anglePerSegment * 0.1; // 10% padding between segments
+    const segmentPadding = anglePerSegment * 0.1;
     
     data.forEach((_, index) => {
       const angle = index * anglePerSegment;
@@ -107,7 +201,7 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
       const endAngle = (index + 1) * anglePerSegment - segmentPadding / 2;
       
       // Calculate points for the segment
-      const innerRadius = 10; // Increased from 0 for better visual appearance
+      const innerRadius = 10;
       const outerRadius = innerRadius + (radius - innerRadius) * (item.score / 10);
       
       const startInnerX = center + innerRadius * Math.cos(startAngle);
@@ -138,8 +232,12 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
       path.setAttribute('stroke', 'rgba(255, 255, 255, 0.5)');
       path.setAttribute('stroke-width', '1');
       
-      // Add tooltip
-      path.setAttribute('data-tooltip', `${item.virtue}: ${item.score.toFixed(1)}`);
+      // Add mouse events for tooltips (only when labels are hidden and not for PDF)
+      if (!showLabels && !forPdf) {
+        path.style.cursor = 'pointer';
+        path.addEventListener('mouseover', (e) => handleMouseOver(e as unknown as MouseEvent, item.virtue, item.score));
+        path.addEventListener('mouseout', handleMouseOut);
+      }
       
       svgRef.current?.appendChild(path);
     });
@@ -148,42 +246,23 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
     if (showLabels) {
       data.forEach((item, index) => {
         const angle = index * anglePerSegment + anglePerSegment / 2;
-        const labelRadius = radius + 40; // Increased to prevent clipping
-        const x = center + labelRadius * Math.cos(angle);
-        const y = center + labelRadius * Math.sin(angle);
         
-        // Adjust text anchor based on position to prevent clipping
-        let textAnchor = 'middle';
-        let dx = 0;
+        // Get positioning configuration
+        const positioning = getLabelPositioning(angle, item.virtue);
         
-        // For left side (angles between π/2 and 3π/2)
-        if (angle > Math.PI / 2 && angle < 3 * Math.PI / 2) {
-          textAnchor = 'end';
-          dx = -5;
-        } 
-        // For right side (angles less than π/2 or greater than 3π/2)
-        else if (angle < Math.PI / 2 || angle > 3 * Math.PI / 2) {
-          textAnchor = 'start';
-          dx = 5;
-        }
+        const x = center + positioning.labelRadius * Math.cos(angle);
+        const y = center + positioning.labelRadius * Math.sin(angle);
         
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', x.toString());
         text.setAttribute('y', y.toString());
-        text.setAttribute('dx', dx.toString());
-        text.setAttribute('text-anchor', textAnchor);
+        text.setAttribute('dx', positioning.dx.toString());
+        text.setAttribute('dy', positioning.dy);
+        text.setAttribute('text-anchor', positioning.textAnchor);
         text.setAttribute('fill', '#44403c');
-        text.setAttribute('font-size', '14');
-        text.setAttribute('font-family', 'var(--font-geist-sans)');
-        text.setAttribute('font-weight', '700'); // Bold text
-        text.setAttribute('letter-spacing', '0.5px'); // Added letter spacing for better readability
-        
-        // Adjust dy for vertical alignment
-        if (Math.abs(Math.sin(angle)) > 0.9) {
-          text.setAttribute('dy', Math.sin(angle) > 0 ? '1em' : '0.3em');
-        } else {
-          text.setAttribute('dy', '0.35em');
-        }
+        text.setAttribute('font-size', positioning.fontSize);
+        text.setAttribute('font-family', positioning.fontFamily);
+        text.setAttribute('font-weight', positioning.fontWeight);
         
         text.textContent = item.virtue;
         
@@ -200,10 +279,10 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
     centerCircle.setAttribute('stroke', '#d6d3d1');
     centerCircle.setAttribute('stroke-width', '1');
     svgRef.current?.appendChild(centerCircle);
-  }, [data, dimensions, center, radius, showLabels]);
+  }, [data, dimensions, center, radius, showLabels, forPdf]);
 
   return (
-    <div style={{ 
+    <div className={className} style={{ 
       width: '100%', 
       maxWidth: `${dimensions}px`, 
       height: `${dimensions}px`, 
@@ -213,11 +292,31 @@ export default function VirtueRoseChart({ data, size = 'large', showLabels = tru
     }}>
       <svg
         ref={svgRef}
+        data-testid="virtue-chart"
         width={dimensions}
         height={dimensions}
         viewBox={`0 0 ${dimensions} ${dimensions}`}
         style={{ display: 'block', overflow: 'visible' }}
       />
+      
+      {/* Tooltip for non-labeled version (not for PDF) */}
+      {!showLabels && !forPdf && tooltip && (
+        <div style={{
+          position: 'fixed',
+          left: `${tooltip.x + 10}px`,
+          top: `${tooltip.y + 10}px`,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '14px',
+          zIndex: 1000,
+          pointerEvents: 'none',
+        }}>
+          <div><strong>{tooltip.virtue}</strong></div>
+          <div>Score: {tooltip.score.toFixed(1)}/10</div>
+        </div>
+      )}
     </div>
   );
 }
