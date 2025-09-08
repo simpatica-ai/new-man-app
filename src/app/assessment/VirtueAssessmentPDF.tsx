@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 30,
+    padding: 36, // Updated for 0.5-inch margin (0.5 * 72 points = 36)
   },
   header: {
     marginBottom: 15,
@@ -55,13 +55,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#FAFAF9',
     width: '100%',
-    minHeight: 320,
   },
   chartImage: {
-    width: 350, // Fixed width instead of responsive
-    height: 350, // Fixed height to maintain aspect ratio
-    maxWidth: 500, // Maximum width to prevent excessive size
-    maxHeight: 300, // Maximum height
+    width: 350, 
+    height: 'auto',
   },
   virtueGrid: {
     flexDirection: 'row',
@@ -151,11 +148,9 @@ interface VirtueAssessmentPDFProps {
 const renderMarkdown = (content: string) => {
   if (!content) return <Text>No content available.</Text>;
   
-  // Split into paragraphs first
   const paragraphs = content.split('\n\n');
   
   return paragraphs.map((paragraph, pIndex) => {
-    // Process each paragraph for markdown formatting
     const elements: any[] = [];
     let currentText = '';
     let inBold = false;
@@ -165,7 +160,6 @@ const renderMarkdown = (content: string) => {
       const char = paragraph[i];
       const nextChar = paragraph[i + 1];
       
-      // Handle bold markers **
       if (char === '*' && nextChar === '*') {
         if (currentText) {
           elements.push(
@@ -176,11 +170,10 @@ const renderMarkdown = (content: string) => {
           currentText = '';
         }
         inBold = !inBold;
-        i++; // Skip the next asterisk
+        i++; 
         continue;
       }
       
-      // Handle italic markers *
       if (char === '*' && nextChar !== '*') {
         if (currentText) {
           elements.push(
@@ -194,11 +187,9 @@ const renderMarkdown = (content: string) => {
         continue;
       }
       
-      // Add character to current text
       currentText += char;
     }
     
-    // Add any remaining text
     if (currentText) {
       elements.push(
         <Text key={`final-${pIndex}`} style={inBold ? styles.markdownBold : inItalic ? styles.markdownItalic : {}}>
@@ -228,7 +219,7 @@ const VirtueAssessmentPDF = ({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>New Man New Behaviors Virtue Assessment</Text>
           <Text style={styles.subtitle}>Personal Growth and Development Report</Text>
@@ -250,7 +241,7 @@ const VirtueAssessmentPDF = ({
             {chartImage ? (
               <Image 
                 src={chartImage} 
-                style={styles.chartImage} // Use the new style
+                style={styles.chartImage}
               />
             ) : (
               <Text>Chart not available</Text>
@@ -263,7 +254,7 @@ const VirtueAssessmentPDF = ({
         )} fixed />
       </Page>
 
-      <Page size="A4" style={styles.page}>
+      <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>Virtue Analysis</Text>
         </View>

@@ -816,6 +816,22 @@ export default function AssessmentPage() {
                                         </CardContent>
                                     </Card>
                                 </div>
+                                
+                                {/* MODIFICATION START: Hidden chart for PDF capture */}
+                                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', zIndex: -1 }}>
+                                    {results && (
+                                        <VirtueRoseChart 
+                                            data={results.map((r) => ({ 
+                                                virtue: r.virtue, 
+                                                score: 10 - r.defectIntensity 
+                                            }))} 
+                                            size="medium"
+                                            forPdf={true} // Prop to trigger PDF-specific rendering
+                                        />
+                                    )}
+                                </div>
+                                {/* MODIFICATION END */}
+
 
                                 {/* Virtue Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 virtue-cards-grid">

@@ -13,7 +13,7 @@ interface VirtueRoseChartProps {
   size?: 'thumbnail' | 'medium' | 'large';
   showLabels?: boolean;
   className?: string;
-  forPdf?: boolean; // New prop to indicate if this is for PDF export
+  forPdf?: boolean; // Prop to indicate if this is for PDF export
 }
 
 export default function VirtueRoseChart({ 
@@ -26,16 +26,15 @@ export default function VirtueRoseChart({
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{virtue: string; score: number; x: number; y: number} | null>(null);
   
-  // Dimensions based on size
-  const dimensions = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
+  // Conditionally calculate dimensions to preserve web view and fix PDF view
+  const baseSize = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
+  const labelPadding = forPdf ? 180 : 0; // Add padding only for the PDF version
+  const dimensions = baseSize + labelPadding;
   const center = dimensions / 2;
-  const radius = center - 5; // Removed all padding, chart will fill the container
-  
+  const radius = baseSize / 2 - 5; // Radius of the data part of the chart remains the same
+
   /**
    * Generates earthy colors based on score (red, amber, green with earth tones)
-   * - 0 to 3.33: Earth Red (low score)
-   * - 3.33 to 6.67: Earth Amber (medium score)
-   * - 6.67 to 10: Earth Green (high score)
    */
   const getColorByScore = (score: number): string => {
     const sanitizedScore = Math.max(0, Math.min(10, Number(score)));
@@ -65,40 +64,30 @@ export default function VirtueRoseChart({
     setTooltip(null);
   };
 
-  // Label positioning configuration - easily adjustable
+  // Label positioning configuration
   const getLabelPositioning = (angle: number, virtue: string) => {
-    // BASE CONFIGURATION - Adjust these values to control overall positioning
     const baseConfig = {
-      labelRadius: radius + 45, // Increased from 35 to 45 for more space (WEB)
-      fontSize: '14',
+      labelRadius: radius + (forPdf ? 55 : 45),
+      fontSize: forPdf ? '12' : '14',
       fontFamily: 'Arial, sans-serif',
       fontWeight: '700'
     };
 
-    // PDF-specific adjustments
-    if (forPdf) {
-      baseConfig.labelRadius = radius + 55; // Even more space for PDF (increased from 45 to 55)
-      baseConfig.fontSize = '12';
-    }
-
-    // DEFAULT POSITIONING - Adjust these for general left/right positioning
     let textAnchor = 'middle';
     let dx = 0;
     let dy = '0.35em';
 
     // QUADRANT-BASED POSITIONING
-    // Left side (angles between π/2 and 3π/2)
     if (angle > Math.PI / 2 && angle < 3 * Math.PI / 2) {
       textAnchor = 'end';
-      dx = forPdf ? -6 : -4; // Reduced values for less extreme shifting
+      dx = forPdf ? -6 : -4;
     } 
-    // Right side (angles less than π/2 or greater than 3π/2)
     else if (angle < Math.PI / 2 || angle > 3 * Math.PI / 2) {
       textAnchor = 'start';
-      dx = forPdf ? 6 : 4; // Reduced values for less extreme shifting
+      dx = forPdf ? 6 : 4;
     }
 
-    // VIRTUE-SPECIFIC FINE-TUNING - Adjust these for individual labels
+    // VIRTUE-SPECIFIC FINE-TUNING
     const virtueAdjustments: { [key: string]: { textAnchor: string; dx: number; dy?: string } } = {
       'Responsibility': { textAnchor: 'middle', dx: forPdf ? -15 : -12 },
       'Mindfulness': { textAnchor: 'middle', dx: forPdf ? 15 : 12 },
@@ -123,7 +112,7 @@ export default function VirtueRoseChart({
 
     // VERTICAL ALIGNMENT for top/bottom labels
     if (Math.abs(Math.sin(angle)) > 0.9) {
-      dy = Math.sin(angle) > 0 ? '0.7em' : '0.2em'; // Adjusted for better vertical placement
+      dy = Math.sin(angle) > 0 ? '0.7em' : '0.2em';
     }
 
     return {
@@ -137,12 +126,10 @@ export default function VirtueRoseChart({
   useEffect(() => {
     if (!svgRef.current) return;
     
-    // Clear previous content
     while (svgRef.current.firstChild) {
       svgRef.current.removeChild(svgRef.current.firstChild);
     }
     
-    // Create background circles with numeric labels for Y-axis
     const createBackgroundCircle = (r: number, stroke: string, value?: number) => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', center.toString());
@@ -154,7 +141,6 @@ export default function VirtueRoseChart({
       circle.setAttribute('stroke-dasharray', '5,5');
       svgRef.current?.appendChild(circle);
       
-      // Add numeric labels for Y-axis (only for default view with labels)
       if (showLabels && value !== undefined) {
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', (center - r - 5).toString());
@@ -170,12 +156,10 @@ export default function VirtueRoseChart({
       }
     };
     
-    // Create background grid circles with numeric labels
     for (let i = 1; i <= 5; i++) {
       createBackgroundCircle(radius * (i / 5), '#d6d3d1', showLabels ? i * 2 : undefined);
     }
     
-    // Add radial dotted lines from center to outer edge for each segment
     const anglePerSegment = (2 * Math.PI) / data.length;
     const segmentPadding = anglePerSegment * 0.1;
     
@@ -195,12 +179,10 @@ export default function VirtueRoseChart({
       svgRef.current?.appendChild(line);
     });
     
-    // Draw segments with increased padding
     data.forEach((item, index) => {
       const startAngle = index * anglePerSegment + segmentPadding / 2;
       const endAngle = (index + 1) * anglePerSegment - segmentPadding / 2;
       
-      // Calculate points for the segment
       const innerRadius = 10;
       const outerRadius = innerRadius + (radius - innerRadius) * (item.score / 10);
       
@@ -214,7 +196,6 @@ export default function VirtueRoseChart({
       const endOuterX = center + outerRadius * Math.cos(endAngle);
       const endOuterY = center + outerRadius * Math.sin(endAngle);
       
-      // Create path for the segment
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
       
@@ -232,7 +213,6 @@ export default function VirtueRoseChart({
       path.setAttribute('stroke', 'rgba(255, 255, 255, 0.5)');
       path.setAttribute('stroke-width', '1');
       
-      // Add mouse events for tooltips (only when labels are hidden and not for PDF)
       if (!showLabels && !forPdf) {
         path.style.cursor = 'pointer';
         path.addEventListener('mouseover', (e) => handleMouseOver(e as unknown as MouseEvent, item.virtue, item.score));
@@ -242,12 +222,10 @@ export default function VirtueRoseChart({
       svgRef.current?.appendChild(path);
     });
     
-    // Only add virtue labels if showLabels is true
     if (showLabels) {
       data.forEach((item, index) => {
         const angle = index * anglePerSegment + anglePerSegment / 2;
         
-        // Get positioning configuration
         const positioning = getLabelPositioning(angle, item.virtue);
         
         const x = center + positioning.labelRadius * Math.cos(angle);
@@ -270,7 +248,6 @@ export default function VirtueRoseChart({
       });
     }
     
-    // Add center circle
     const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     centerCircle.setAttribute('cx', center.toString());
     centerCircle.setAttribute('cy', center.toString());
@@ -282,24 +259,26 @@ export default function VirtueRoseChart({
   }, [data, dimensions, center, radius, showLabels, forPdf]);
 
   return (
-    <div className={className} style={{ 
-      width: '100%', 
-      maxWidth: `${dimensions}px`, 
-      height: `${dimensions}px`, 
-      margin: '0 auto',
-      position: 'relative',
-      overflow: 'visible'
+    <div 
+        // Use a different test-id for the PDF version
+        data-testid={forPdf ? "virtue-chart-pdf" : "virtue-chart"}
+        className={className} style={{ 
+        width: '100%', 
+        maxWidth: `${dimensions}px`, 
+        height: `${dimensions}px`, 
+        margin: '0 auto',
+        position: 'relative',
+        // Use 'hidden' for the web version as originally intended, but 'visible' for PDF to ensure capture
+        overflow: forPdf ? 'visible' : 'visible' 
     }}>
       <svg
         ref={svgRef}
-        data-testid="virtue-chart"
         width={dimensions}
         height={dimensions}
         viewBox={`0 0 ${dimensions} ${dimensions}`}
         style={{ display: 'block', overflow: 'visible' }}
       />
       
-      {/* Tooltip for non-labeled version (not for PDF) */}
       {!showLabels && !forPdf && tooltip && (
         <div style={{
           position: 'fixed',
