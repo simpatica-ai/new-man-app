@@ -880,8 +880,13 @@ export default function AssessmentPage() {
                                         <ArrowLeft className="h-3 w-3 mr-1" />
                                         Adjust Responses
                                     </Button>
-                                    <PrintButton 
-                                        results={results}
+                                    <<PrintButton 
+                                        results={results.map(r => ({ 
+                                            virtue: r.virtue, 
+                                            priority: r.priority, 
+                                            defectIntensity: r.defectIntensity,
+                                            score: 10 - r.defectIntensity // Add the missing score property
+                                        }))}
                                         analyses={analyses}
                                         summaryAnalysis={summaryAnalysis || "No summary analysis available."}
                                         userName={userName}
