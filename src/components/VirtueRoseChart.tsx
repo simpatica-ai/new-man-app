@@ -139,9 +139,11 @@ export default function VirtueRoseChart({
       circle.setAttribute('stroke', stroke);
       circle.setAttribute('stroke-width', '1');
       circle.setAttribute('stroke-dasharray', '5,5');
-      svgRef.current?.appendChild(circle);
+      if (svgRef.current) {
+        svgRef.current.appendChild(circle);
+      }
       
-      if (showLabels && value !== undefined) {
+      if (showLabels && value !== undefined && svgRef.current) {
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', (center - r - 5).toString());
         text.setAttribute('y', center.toString());
@@ -152,7 +154,7 @@ export default function VirtueRoseChart({
         text.setAttribute('font-family', 'Arial, sans-serif');
         text.setAttribute('font-weight', '500');
         text.textContent = value.toString();
-        svgRef.current?.appendChild(text);
+        svgRef.current.appendChild(text);
       }
     };
     
@@ -176,7 +178,9 @@ export default function VirtueRoseChart({
       line.setAttribute('stroke', 'none');
       line.setAttribute('stroke-width', '1');
       line.setAttribute('stroke-dasharray', '3,3');
-      svgRef.current?.appendChild(line);
+      if (svgRef.current) {
+        svgRef.current.appendChild(line);
+      }
     });
     
     data.forEach((item, index) => {
@@ -219,11 +223,13 @@ export default function VirtueRoseChart({
         path.addEventListener('mouseout', handleMouseOut);
       }
       
-      svgRef.current?.appendChild(path);
+      if (svgRef.current) {
+        svgRef.current.appendChild(path);
+      }
     });
     
     // Create recovery journey arrow and text
-    if (data.length > 0 && showLabels) {
+    if (data.length > 0 && showLabels && svgRef.current) {
       // Find min and max scores
       const scores = data.map(item => item.score);
       const minScore = Math.min(...scores);
@@ -341,7 +347,9 @@ export default function VirtueRoseChart({
           textPathElement.setAttribute('fill', 'none');
           textPathElement.setAttribute('stroke', 'none');
           
-          svgRef.current.appendChild(textPathElement);
+          if (svgRef.current) {
+            svgRef.current.appendChild(textPathElement);
+          }
           
           // Create text that follows the path
           const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -358,7 +366,9 @@ export default function VirtueRoseChart({
           textPathContent.textContent = word;
           
           textPath.appendChild(textPathContent);
-          svgRef.current.appendChild(textPath);
+          if (svgRef.current) {
+            svgRef.current.appendChild(textPath);
+          }
         }
       };
       
@@ -366,40 +376,43 @@ export default function VirtueRoseChart({
       createTextPath('VIRTUE', 0.3); // VIRTUE at 30% along the path
       createTextPath('JOURNEY', 0.6); // JOURNEY at 60% along the path (good spacing)
     }
+
+    if (showLabels && svgRef.current) {
+  data.forEach((item, index) => {
+    const angle = index * anglePerSegment + anglePerSegment / 2;
     
-    if (showLabels) {
-      data.forEach((item, index) => {
-        const angle = index * anglePerSegment + anglePerSegment / 2;
-        
-        const positioning = getLabelPositioning(angle, item.virtue);
-        
-        const x = center + positioning.labelRadius * Math.cos(angle);
-        const y = center + positioning.labelRadius * Math.sin(angle);
-        
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', x.toString());
-        text.setAttribute('y', y.toString());
-        text.setAttribute('dx', positioning.dx.toString());
-        text.setAttribute('dy', positioning.dy);
-        text.setAttribute('text-anchor', positioning.textAnchor);
-        text.setAttribute('fill', '#44403c');
-        text.setAttribute('font-size', positioning.fontSize);
-        text.setAttribute('font-family', positioning.fontFamily);
-        text.setAttribute('font-weight', positioning.fontWeight);
-        
-        text.textContent = item.virtue;
-        
-        svgRef.current?.appendChild(text);
-      });
+    const positioning = getLabelPositioning(angle, item.virtue);
+    
+    const x = center + positioning.labelRadius * Math.cos(angle);
+    const y = center + positioning.labelRadius * Math.sin(angle);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', x.toString());
+    text.setAttribute('y', y.toString());
+    text.setAttribute('dx', positioning.dx.toString());
+    text.setAttribute('dy', positioning.dy);
+    text.setAttribute('text-anchor', positioning.textAnchor);
+    text.setAttribute('fill', '#44403c');
+    text.setAttribute('font-size', positioning.fontSize);
+    text.setAttribute('font-family', positioning.fontFamily);
+    text.setAttribute('font-weight', positioning.fontWeight);
+    
+    text.textContent = item.virtue;
+    
+    if (svgRef.current) {
+      svgRef.current.appendChild(text);
     }
-    
-    const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerCircle.setAttribute('cx', center.toString());
-    centerCircle.setAttribute('cy', center.toString());
-    centerCircle.setAttribute('r', '12');
-    centerCircle.setAttribute('fill', '#f5f5f4');
-    centerCircle.setAttribute('stroke', 'none');
-    svgRef.current?.appendChild(centerCircle);
+  });
+}    
+    if (svgRef.current) {
+      const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      centerCircle.setAttribute('cx', center.toString());
+      centerCircle.setAttribute('cy', center.toString());
+      centerCircle.setAttribute('r', '12');
+      centerCircle.setAttribute('fill', '#f5f5f4');
+      centerCircle.setAttribute('stroke', 'none');
+      svgRef.current.appendChild(centerCircle);
+    }
   }, [data, dimensions, center, radius, showLabels, forPdf, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
 
   return (
