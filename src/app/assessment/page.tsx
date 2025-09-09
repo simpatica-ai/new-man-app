@@ -880,7 +880,7 @@ export default function AssessmentPage() {
                                         <ArrowLeft className="h-3 w-3 mr-1" />
                                         Adjust Responses
                                     </Button>
-                                    <<PrintButton 
+                                    <PrintButton 
                                         results={results.map(r => ({ 
                                             virtue: r.virtue, 
                                             priority: r.priority, 
