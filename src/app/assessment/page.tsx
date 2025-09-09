@@ -80,7 +80,7 @@ type VirtueInfo = { id: number; name: string; description: string };
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
-    defect: { name: string; icon: JSX.Element; category: string; definition: string };
+    defect: { name: string; icon: React.ReactElement; category: string; definition: string };
     rating?: number;
     harmLevel?: string;
     onRatingChange: (name: string, value: string) => void;
