@@ -61,7 +61,7 @@ const defects = [
     { name: "Resentment", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health", definition: "Bitter indignation at having been treated unfairly." },
     { name: "Rudeness", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Offensive or impolite behavior." },
     { name: "Self-centeredness", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Being preoccupied with oneself and one's own affairs." },
-    { name: "Self-righteousness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "A certainty, especially an unfounded one, that one is totally correct or morally superior." },
+    { name: "Self-righteousness", virtues: "Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "A certainty, especially an unfounded one, that one is totally correct or morally superior." },
     { name: "Selfishness", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Consideration", definition: "Lacking consideration for others; concerned chiefly with one's own personal profit or pleasure." },
     { name: "Stealing", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Taking another person's property without permission or legal right." },
     { name: "Superiority", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "The state or belief of being greater than others in quality, status, or importance." },
@@ -157,15 +157,15 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
     <div className="markdown-content text-sm text-stone-700">
       <ReactMarkdown
         components={{
-          h1: ({node, ...props}) => <h2 className="text-lg font-semibold mt-4 mb-2" {...props} />,
-          h2: ({node, ...props}) => <h3 className="text-base font-semibold mt-3 mb-1" {...props} />,
-          h3: ({node, ...props}) => <h4 className="text-sm font-semibold mt-2 mb-1" {...props} />,
-          p: ({node, ...props}) => <p className="mb-2 leading-relaxed" {...props} />,
-          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 pl-4" {...props} />,
-          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 pl-4" {...props} />,
-          li: ({node, ...props}) => <li className="mb-1" {...props} />,
-          strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
-          em: ({node, ...props}) => <em className="italic" {...props} />,
+          h1: ({...props}) => <h2 className="text-lg font-semibold mt-4 mb-2" {...props} />,
+          h2: ({...props}) => <h3 className="text-base font-semibold mt-3 mb-1" {...props} />,
+          h3: ({...props}) => <h4 className="text-sm font-semibold mt-2 mb-1" {...props} />,
+          p: ({...props}) => <p className="mb-2 leading-relaxed" {...props} />,
+          ul: ({...props}) => <ul className="list-disc list-inside mb-2 pl-4" {...props} />,
+          ol: ({...props}) => <ol className="list-decimal list-inside mb-2 pl-4" {...props} />,
+          li: ({...props}) => <li className="mb-1" {...props} />,
+          strong: ({...props}) => <strong className="font-semibold" {...props} />,
+          em: ({...props}) => <em className="italic" {...props} />,
         }}
       >
         {content}
@@ -204,7 +204,7 @@ export default function AssessmentPage() {
     const totalPages = Math.ceil(defects.length / itemsPerPage);
 
     // --- AI Analysis Trigger ---
-    const triggerAndSaveAnalyses = async (assessmentId: number, user: any, resultsToAnalyze: Result[], ratingsForPrompt: Ratings, harmLevelsForPrompt: HarmLevels) => {
+    const triggerAndSaveAnalyses = async (assessmentId: number, user: { id: string }, resultsToAnalyze: Result[], ratingsForPrompt: Ratings, harmLevelsForPrompt: HarmLevels) => {
         const ASTRID_AI_URL = "https://get-astrid-analysis-917009769018.us-west1.run.app";
 
         for (const result of resultsToAnalyze) {
@@ -307,7 +307,7 @@ export default function AssessmentPage() {
     };
 
     // --- Summary Analysis Trigger ---
-    const triggerSummaryAnalysis = async (assessmentId: number, user: any, resultsToAnalyze: Result[]) => {
+    const triggerSummaryAnalysis = async (assessmentId: number, user: { id: string }, resultsToAnalyze: Result[]) => {
         setIsGeneratingSummary(true);
         const SUMMARY_AI_URL = "https://get-summary-analysis-917009769018.us-central1.run.app";
         
@@ -656,7 +656,7 @@ export default function AssessmentPage() {
                     {corsError && (
                         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 rounded-lg text-sm" role="alert">
                             <p className="font-bold">Connection Issue</p>
-                            <p>We're experiencing a temporary connection issue. Your personalized analysis has been generated.</p>
+                            <p>We&apos;re experiencing a temporary connection issue. Your personalized analysis has been generated.</p>
                         </div>
                     )}
                     
@@ -883,7 +883,7 @@ export default function AssessmentPage() {
                                     <PrintButton 
                                         results={results}
                                         analyses={analyses}
-                                        summaryAnalysis={summaryAnalysis}
+                                        summaryAnalysis={summaryAnalysis || "No summary analysis available."}
                                         userName={userName}
                                     />
                                 </div>
