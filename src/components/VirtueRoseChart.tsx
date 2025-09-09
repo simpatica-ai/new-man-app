@@ -124,10 +124,14 @@ export default function VirtueRoseChart({
   }, [forPdf, radius]);
 
   useEffect(() => {
-    if (!svgRef.current) return;
+    if (!svgRef.current || data.length === 0) return;
     
-    while (svgRef.current.firstChild) {
-      svgRef.current.removeChild(svgRef.current.firstChild);
+    // Create a sorted copy of the data to implement the rotation
+    const sortedData = [...data].sort((a, b) => a.score - b.score);
+    
+    const svg = svgRef.current;
+    while (svg.firstChild) {
+      svg.removeChild(svg.firstChild);
     }
     
     const createBackgroundCircle = (r: number, stroke: string, value?: number) => {
@@ -139,11 +143,9 @@ export default function VirtueRoseChart({
       circle.setAttribute('stroke', stroke);
       circle.setAttribute('stroke-width', '1');
       circle.setAttribute('stroke-dasharray', '5,5');
-      if (svgRef.current) {
-        svgRef.current.appendChild(circle);
-      }
+      svg.appendChild(circle);
       
-      if (showLabels && value !== undefined && svgRef.current) {
+      if (showLabels && value !== undefined) {
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', (center - r - 5).toString());
         text.setAttribute('y', center.toString());
@@ -154,7 +156,7 @@ export default function VirtueRoseChart({
         text.setAttribute('font-family', 'Arial, sans-serif');
         text.setAttribute('font-weight', '500');
         text.textContent = value.toString();
-        svgRef.current.appendChild(text);
+        svg.appendChild(text);
       }
     };
     
@@ -162,10 +164,10 @@ export default function VirtueRoseChart({
       createBackgroundCircle(radius * (i / 5), '#d6d3d1', showLabels ? i * 2 : undefined);
     }
     
-    const anglePerSegment = (2 * Math.PI) / data.length;
+    const anglePerSegment = (2 * Math.PI) / sortedData.length;
     const segmentPadding = anglePerSegment * 0.1;
     
-    data.forEach((_, index) => {
+    sortedData.forEach((_, index) => {
       const angle = index * anglePerSegment;
       const x = center + radius * Math.cos(angle);
       const y = center + radius * Math.sin(angle);
@@ -175,15 +177,13 @@ export default function VirtueRoseChart({
       line.setAttribute('y1', center.toString());
       line.setAttribute('x2', x.toString());
       line.setAttribute('y2', y.toString());
-      line.setAttribute('stroke', 'none');
+      line.setAttribute('stroke', '#d6d3d1');
       line.setAttribute('stroke-width', '1');
       line.setAttribute('stroke-dasharray', '3,3');
-      if (svgRef.current) {
-        svgRef.current.appendChild(line);
-      }
+      svg.appendChild(line);
     });
     
-    data.forEach((item, index) => {
+    sortedData.forEach((item, index) => {
       const startAngle = index * anglePerSegment + segmentPadding / 2;
       const endAngle = (index + 1) * anglePerSegment - segmentPadding / 2;
       
@@ -223,201 +223,45 @@ export default function VirtueRoseChart({
         path.addEventListener('mouseout', handleMouseOut);
       }
       
-      if (svgRef.current) {
-        svgRef.current.appendChild(path);
-      }
+      svg.appendChild(path);
     });
     
-    // Create recovery journey arrow and text
-    if (data.length > 0 && showLabels && svgRef.current) {
-      // Find min and max scores
-      const scores = data.map(item => item.score);
-      const minScore = Math.min(...scores);
-      const maxScore = Math.max(...scores);
-      
-      // Find indices of min and max scores
-      const minScoreIndex = scores.findIndex(score => score === minScore);
-      const maxScoreIndex = scores.findIndex(score => score === maxScore);
-      
-      const anglePerSegment = (2 * Math.PI) / data.length;
-      
-      // Calculate starting and ending angles
-      const startAngle = minScoreIndex * anglePerSegment + anglePerSegment / 2;
-      let endAngle = maxScoreIndex * anglePerSegment + anglePerSegment / 2;
-      
-      // Ensure we go clockwise
-      if (endAngle < startAngle) {
-        endAngle += 2 * Math.PI;
-      }
-      
-      // Create arrow path
-      const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      
-      // Calculate arrow points
-      const arrowOffset = 30;
-      const getArrowRadius = (score: number) => {
-        const innerRadius = 10;
-        return innerRadius + (radius - innerRadius) * (score / 10) + arrowOffset;
-      };
-      
-      // Create points for the arrow
-      const points = [];
-      const steps = 20;
-      
-      for (let i = 0; i <= steps; i++) {
-        const progress = i / steps;
-        const angle = startAngle + (endAngle - startAngle) * progress;
-        const score = minScore + (maxScore - minScore) * progress;
-        const arrowRadius = getArrowRadius(score);
+    if (showLabels) {
+      sortedData.forEach((item, index) => {
+        const angle = index * anglePerSegment + anglePerSegment / 2;
+        const positioning = getLabelPositioning(angle, item.virtue);
+        const x = center + positioning.labelRadius * Math.cos(angle);
+        const y = center + positioning.labelRadius * Math.sin(angle);
         
-        const x = center + arrowRadius * Math.cos(angle);
-        const y = center + arrowRadius * Math.sin(angle);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x.toString());
+        text.setAttribute('y', y.toString());
+        text.setAttribute('dx', positioning.dx.toString());
+        text.setAttribute('dy', positioning.dy);
+        text.setAttribute('text-anchor', positioning.textAnchor);
+        text.setAttribute('fill', '#44403c');
+        text.setAttribute('font-size', positioning.fontSize);
+        text.setAttribute('font-family', positioning.fontFamily);
+        text.setAttribute('font-weight', positioning.fontWeight);
+        text.textContent = item.virtue;
         
-        points.push(`${x},${y}`);
-      }
-      
-      // Create path data
-      const pathData = `M ${points.join(' L ')}`;
-      
-      arrowPath.setAttribute('d', pathData);
-      arrowPath.setAttribute('fill', 'none');
-      arrowPath.setAttribute('stroke', 'rgba(179, 82, 54, 0.5)');
-      arrowPath.setAttribute('stroke-width', '3');
-      arrowPath.setAttribute('stroke-linecap', 'round');
-      arrowPath.setAttribute('id', 'recovery-arrow-path');
-      
-      svgRef.current.appendChild(arrowPath);
-      
-      // Create arrowhead marker
-      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-      
-      marker.setAttribute('id', 'arrowhead');
-      marker.setAttribute('markerWidth', '10');
-      marker.setAttribute('markerHeight', '7');
-      marker.setAttribute('refX', '0');
-      marker.setAttribute('refY', '3.5');
-      marker.setAttribute('orient', 'auto');
-      
-      const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-      polygon.setAttribute('fill', 'rgba(179, 82, 54, 0.5)');
-      
-      marker.appendChild(polygon);
-      defs.appendChild(marker);
-      svgRef.current.appendChild(defs);
-      
-      // Add arrowhead to the path
-      arrowPath.setAttribute('marker-end', 'url(#arrowhead)');
-      
-      // Add "Virtue Journey" text with proper separation using textPath
-      const textPadding = 10; // 10pt padding above arrow
-      
-      // Create separate paths for each word
-      const createTextPath = (word: string, angleOffset: number) => {
-        const textPathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        
-        // Calculate text path points (10pt above the arrow)
-        const textPoints = [];
-        
-        // Create a shorter path segment for each word
-        const segmentLength = 0.2; // Length of path segment for each word
-        const startProgress = angleOffset;
-        const endProgress = angleOffset + segmentLength;
-        
-        for (let i = 0; i <= steps; i++) {
-          const progress = startProgress + (endProgress - startProgress) * (i / steps);
-          if (progress > 1) break;
-          
-          const angle = startAngle + (endAngle - startAngle) * progress;
-          const score = minScore + (maxScore - minScore) * progress;
-          const textRadius = getArrowRadius(score) + textPadding;
-          
-          const x = center + textRadius * Math.cos(angle);
-          const y = center + textRadius * Math.sin(angle);
-          
-          textPoints.push(`${x},${y}`);
-        }
-        
-        if (textPoints.length > 1) {
-          // Create text path data
-          const textPathData = `M ${textPoints.join(' L ')}`;
-          textPathElement.setAttribute('d', textPathData);
-          textPathElement.setAttribute('id', `text-path-${word.toLowerCase()}`);
-          textPathElement.setAttribute('fill', 'none');
-          textPathElement.setAttribute('stroke', 'none');
-          
-          if (svgRef.current) {
-            svgRef.current.appendChild(textPathElement);
-          }
-          
-          // Create text that follows the path
-          const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          textPath.setAttribute('fill', 'rgba(179, 82, 54, 0.5)');
-          textPath.setAttribute('font-size', '16');
-          textPath.setAttribute('font-family', 'Arial, sans-serif');
-          textPath.setAttribute('font-weight', 'bold');
-          
-          const textPathContent = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-          textPathContent.setAttribute('href', `#text-path-${word.toLowerCase()}`);
-          textPathContent.setAttribute('startOffset', '50%');
-          textPathContent.setAttribute('method', 'stretch');
-          textPathContent.setAttribute('spacing', 'auto');
-          textPathContent.textContent = word;
-          
-          textPath.appendChild(textPathContent);
-          if (svgRef.current) {
-            svgRef.current.appendChild(textPath);
-          }
-        }
-      };
-      
-      // Create text paths for each word with proper spacing
-      createTextPath('VIRTUE', 0.3); // VIRTUE at 30% along the path
-      createTextPath('JOURNEY', 0.6); // JOURNEY at 60% along the path (good spacing)
-    }
-
-    if (showLabels && svgRef.current) {
-  data.forEach((item, index) => {
-    const angle = index * anglePerSegment + anglePerSegment / 2;
+        svg.appendChild(text);
+      });
+    }    
     
-    const positioning = getLabelPositioning(angle, item.virtue);
+    const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerCircle.setAttribute('cx', center.toString());
+    centerCircle.setAttribute('cy', center.toString());
+    centerCircle.setAttribute('r', '12');
+    centerCircle.setAttribute('fill', '#f5f5f4');
+    centerCircle.setAttribute('stroke', '#d6d3d1');
+    centerCircle.setAttribute('stroke-width', '1');
+    svg.appendChild(centerCircle);
     
-    const x = center + positioning.labelRadius * Math.cos(angle);
-    const y = center + positioning.labelRadius * Math.sin(angle);
-    
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', x.toString());
-    text.setAttribute('y', y.toString());
-    text.setAttribute('dx', positioning.dx.toString());
-    text.setAttribute('dy', positioning.dy);
-    text.setAttribute('text-anchor', positioning.textAnchor);
-    text.setAttribute('fill', '#44403c');
-    text.setAttribute('font-size', positioning.fontSize);
-    text.setAttribute('font-family', positioning.fontFamily);
-    text.setAttribute('font-weight', positioning.fontWeight);
-    
-    text.textContent = item.virtue;
-    
-    if (svgRef.current) {
-      svgRef.current.appendChild(text);
-    }
-  });
-}    
-    if (svgRef.current) {
-      const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      centerCircle.setAttribute('cx', center.toString());
-      centerCircle.setAttribute('cy', center.toString());
-      centerCircle.setAttribute('r', '12');
-      centerCircle.setAttribute('fill', '#f5f5f4');
-      centerCircle.setAttribute('stroke', 'none');
-      svgRef.current.appendChild(centerCircle);
-    }
   }, [data, dimensions, center, radius, showLabels, forPdf, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
 
   return (
     <div 
-        // Use a different test-id for the PDF version
         data-testid={forPdf ? "virtue-chart-pdf" : "virtue-chart"}
         className={className} style={{ 
         width: '100%', 
@@ -425,8 +269,7 @@ export default function VirtueRoseChart({
         height: `${dimensions}px`, 
         margin: '0 auto',
         position: 'relative',
-        // Use 'hidden' for the web version as originally intended, but 'visible' for PDF to ensure capture
-        overflow: forPdf ? 'visible' : 'visible' 
+        overflow: 'visible' 
     }}>
       <svg
         ref={svgRef}
