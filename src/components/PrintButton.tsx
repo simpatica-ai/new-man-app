@@ -9,14 +9,16 @@ import VirtueAssessmentPDF from '@/app/assessment/VirtueAssessmentPDF';
 import { useState } from 'react';
 import { convertChartToImage } from '@/utils/chartToImage';
 
-interface VirtueResult {
+// Update this interface to match what page.tsx is sending
+interface PrintButtonResult {
   virtue: string;
+  priority: number; 
+  defectIntensity: number;
   score: number;
-  description?: string;
 }
 
 interface PrintButtonProps {
-  results: VirtueResult[];
+  results: PrintButtonResult[]; // Changed to match page.tsx transformation
   analyses: Map<string, string>;
   summaryAnalysis: string;
   userName: string;
@@ -41,11 +43,11 @@ const PrintButton = ({ results, analyses, summaryAnalysis, userName }: PrintButt
         // If chart capture fails, we'll proceed without it
       }
 
-      // Create the PDF
+      // Create the PDF - transform results to match PDFResult interface if needed
       console.log('Creating PDF document...');
       const pdfDoc = (
         <VirtueAssessmentPDF
-          results={results}
+          results={results} // This now matches what PDFResult expects
           analyses={analyses}
           summaryAnalysis={summaryAnalysis || "No summary analysis available."}
           userName={userName}
