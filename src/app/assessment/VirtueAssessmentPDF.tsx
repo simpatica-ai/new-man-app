@@ -1,6 +1,7 @@
 // src/app/assessment/VirtueAssessmentPDF.tsx
 'use client';
 
+import React from 'react';
 import { Document, Page, View, Text, StyleSheet, Image } from '@react-pdf/renderer';
 
 // Create styles with earth tones and proper font sizes
@@ -151,7 +152,7 @@ const renderMarkdown = (content: string) => {
   const paragraphs = content.split('\n\n');
   
   return paragraphs.map((paragraph, pIndex) => {
-    const elements: JSX.Element[] = [];
+    const elements: React.ReactElement[] = [];
     let currentText = '';
     let inBold = false;
     let inItalic = false;
