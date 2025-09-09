@@ -206,9 +206,9 @@ export default function Dashboard() {
           <h3 className="hidden md:block font-semibold text-lg text-stone-800">{virtue.name}</h3>
           <p className="text-stone-600 text-sm mb-3">{virtue.short_description || virtue.description}</p>
           <div className="flex flex-wrap gap-2">
-            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 1 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 1)}>Stage 1</Button></Link>
-            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 2 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 2)}>Stage 2</Button></Link>
-            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 3 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 3)}>Stage 3</Button></Link>
+            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 1 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 1)}>Stage 1: Dismantling</Button></Link>
+            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 2 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 2)}>Stage 2: Building</Button></Link>
+            <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 3 } }}><Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 3)}>Stage 3: Maintaining</Button></Link>
           </div>
       </div>
     </li>

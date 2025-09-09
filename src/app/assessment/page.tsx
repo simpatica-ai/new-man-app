@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Session } from '@supabase/supabase-js'
 import AppHeader from '@/components/AppHeader'
 import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
@@ -17,59 +18,58 @@ import '../print.css'
 import { saveAs } from 'file-saver'
 import { pdf } from '@react-pdf/renderer'
 import VirtueAssessmentPDF from './VirtueAssessmentPDF';
-import PrintableVirtueRoseChart from '@/components/PrintableVirtueRoseChart'
 import { convertChartToImage } from '@/utils/chartToImage'
 import PrintButton from '@/components/PrintButton';
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
 const defects = [
-    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
-    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation" },
-    { name: "Apathy", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection" },
-    { name: "Arrogance", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
-    { name: "Bitterness", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health" },
-    { name: "Blaming others", virtues: ["Responsibility", "Honesty"], icon: <Target className="h-4 w-4" />, category: "Accountability" },
-    { name: "Boastfulness", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Close-mindedness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Openness" },
-    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
-    { name: "Conceit", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Cruelty", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Compassion" },
-    { name: "Deceit", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty" },
-    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"], icon: <Shield className="h-4 w-4" />, category: "Openness" },
-    { name: "Dishonesty", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty" },
-    { name: "Disrespect", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Distrust", virtues: ["Vulnerability", "Honesty"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
-    { name: "Egotism", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Haughtiness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity" },
-    { name: "Impatience", virtues: ["Patience", "Mindfulness"], icon: <Clock className="h-4 w-4" />, category: "Patience" },
-    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
-    { name: "Indifference", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection" },
-    { name: "Ingratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation" },
-    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust" },
-    { name: "Intolerance", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Acceptance" },
-    { name: "Irresponsibility", virtues: ["Responsibility"], icon: <Target className="h-4 w-4" />, category: "Accountability" },
-    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Acceptance" },
-    { name: "Lack of empathy", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Compassion" },
-    { name: "Lack of gratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation" },
-    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
-    { name: "Lying", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty" },
-    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity" },
-    { name: "Narcissism", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Neglect", virtues: ["Responsibility", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Care" },
-    { name: "Objectification", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Respect" },
-    { name: "Pride", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control" },
-    { name: "Resentment", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health" },
-    { name: "Rudeness", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Self-centeredness", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Self-righteousness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Selfishness", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Consideration" },
-    { name: "Stealing", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity" },
-    { name: "Superiority", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships" },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"], icon: <Target className="h-4 w-4" />, category: "Accountability" }
+    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "A recurring compulsion to engage in a specific activity, despite harmful consequences." },
+    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation", definition: "A strong feeling of annoyance, displeasure, or hostility." },
+    { name: "Apathy", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection", definition: "A lack of interest, enthusiasm, or concern." },
+    { name: "Arrogance", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "An overbearing sense of one's own importance or abilities." },
+    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust", definition: "The act of violating a person's trust or confidence." },
+    { name: "Bitterness", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health", definition: "Anger and disappointment at being treated unfairly; resentment." },
+    { name: "Blaming others", virtues: ["Responsibility", "Honesty"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "Unjustly holding others responsible for one's own errors or problems." },
+    { name: "Boastfulness", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Excessively proud and self-satisfied talk about one's achievements or abilities." },
+    { name: "Close-mindedness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Openness", definition: "Unwillingness to consider different ideas or opinions." },
+    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "An irresistible urge to behave in a certain way, often against one's conscious wishes." },
+    { name: "Conceit", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Excessive pride in oneself; vanity." },
+    { name: "Cruelty", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Compassion", definition: "Behavior that causes physical or mental pain to others without feeling pity." },
+    { name: "Deceit", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty", definition: "The action of misleading someone through fraud or trickery." },
+    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"], icon: <Shield className="h-4 w-4" />, category: "Openness", definition: "Anxious or protective behavior in response to perceived criticism." },
+    { name: "Dishonesty", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty", definition: "The act of speaking or acting untruthfully." },
+    { name: "Disrespect", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "A lack of courtesy or consideration for others." },
+    { name: "Distrust", virtues: ["Vulnerability", "Honesty"], icon: <Shield className="h-4 w-4" />, category: "Trust", definition: "The feeling that someone or something cannot be relied upon." },
+    { name: "Egotism", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Thinking and talking about oneself excessively due to an undue sense of self-importance." },
+    { name: "Haughtiness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "The quality of being arrogantly superior and disdainful." },
+    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Claiming to have moral standards to which one's own behavior does not conform." },
+    { name: "Impatience", virtues: ["Patience", "Mindfulness"], icon: <Clock className="h-4 w-4" />, category: "Patience", definition: "The tendency to be quickly irritated or provoked." },
+    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "Acting or being done without forethought or consideration of consequences." },
+    { name: "Indifference", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection", definition: "A lack of interest, concern, or sympathy for others." },
+    { name: "Ingratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation", definition: "A lack of appreciation for help or kindness that has been shown." },
+    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust", definition: "A breach of trust in a relationship, typically involving unfaithful sexual behavior." },
+    { name: "Intolerance", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Acceptance", definition: "Unwillingness to accept views, beliefs, or behavior that differ from one's own." },
+    { name: "Irresponsibility", virtues: ["Responsibility"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "A failure to fulfill one's duties or obligations." },
+    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Acceptance", definition: "The tendency to form critical opinions of others too quickly." },
+    { name: "Lack of empathy", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Compassion", definition: "The inability to understand and share the feelings of another." },
+    { name: "Lack of gratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation", definition: "A failure to be appreciative for kindness or benefits received." },
+    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "The inability to regulate one's emotions, thoughts, and behavior." },
+    { name: "Lying", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty", definition: "The act of making a false statement with the intent to deceive." },
+    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Controlling or influencing a person or situation cleverly or unscrupulously." },
+    { name: "Narcissism", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Excessive interest in or admiration of oneself and one's physical appearance." },
+    { name: "Neglect", virtues: ["Responsibility", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Care", definition: "The failure to care for properly." },
+    { name: "Objectification", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Respect", definition: "Treating a person as an object without regard to their personality or dignity." },
+    { name: "Pride", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "An excessive and unreasonable view of one's own importance; hubris." },
+    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "A lack of regard for the danger or consequences of one's actions." },
+    { name: "Resentment", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health", definition: "Bitter indignation at having been treated unfairly." },
+    { name: "Rudeness", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Offensive or impolite behavior." },
+    { name: "Self-centeredness", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Being preoccupied with oneself and one's own affairs." },
+    { name: "Self-righteousness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "A certainty, especially an unfounded one, that one is totally correct or morally superior." },
+    { name: "Selfishness", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Consideration", definition: "Lacking consideration for others; concerned chiefly with one's own personal profit or pleasure." },
+    { name: "Stealing", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Taking another person's property without permission or legal right." },
+    { name: "Superiority", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "The state or belief of being greater than others in quality, status, or importance." },
+    { name: "Unreliability", virtues: ["Responsibility", "Integrity"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "The quality of not being able to be trusted or depended on." }
 ];
 const harmLevelsMap: { [key: string]: number } = { None: 0, Minimal: 1, Moderate: 2, Significant: 3, Severe: 4 };
 
@@ -85,7 +85,7 @@ type VirtueAnalysis = { virtue_id: number; analysis_text: string };
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
-    defect: { name: string; icon: JSX.Element; category: string };
+    defect: { name: string; icon: JSX.Element; category: string; definition: string }; // Add definition to the type
     rating?: number;
     harmLevel?: string;
     onRatingChange: (name: string, value: string) => void;
@@ -95,7 +95,21 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
         <div className="flex items-start gap-2 mb-2">
             <div className="text-amber-600 mt-0.5">{defect.icon}</div>
             <div className="flex-1">
-                <h3 className="font-medium text-stone-800 text-sm leading-tight">{defect.name}</h3>
+                <div className="flex items-center gap-1.5">
+                    <h3 className="font-medium text-stone-800 text-sm leading-tight">{defect.name}</h3>
+                    <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button className="text-stone-400 hover:text-stone-600">
+                                    <HelpCircle className="h-3.5 w-3.5" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                                <p>{defect.definition}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
                 <p className="text-xs text-stone-500">{defect.category}</p>
             </div>
         </div>

@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
     marginBottom: 15,
-    padding: 12,
+    padding: 6,
     borderWidth: 1,
     borderColor: '#D6D3D1',
     borderRadius: 4,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   summaryText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#374151',
     lineHeight: 1.4,
     textAlign: 'justify',
@@ -221,22 +221,21 @@ const VirtueAssessmentPDF = ({
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>New Man New Behaviors Virtue Assessment</Text>
-          <Text style={styles.subtitle}>Personal Growth and Development Report</Text>
+          <Text style={styles.title}>New Man New Behaviors Virtue Pathway</Text>
+          <Text style={styles.subtitle}>Personal Growth and Development Plan</Text>
           <Text style={styles.date}>Generated on {new Date().toLocaleDateString()}</Text>
           <Text style={styles.subtitle}>For: {userName}</Text>
           <Text style={styles.confidential}>Confidential - For Personal Development Use Only</Text>
         </View>
 
         <View style={styles.summarySection}>
-          <Text style={styles.sectionTitle}>Virtue Assessment Summary</Text>
           <View style={styles.summaryText}>
             {renderMarkdown(summaryAnalysis)}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Virtue Rose Chart</Text>
+          <Text style={styles.sectionTitle}>Pathway to Virtue</Text>
           <View style={styles.chartContainer}>
             {chartImage ? (
               <Image 

@@ -313,9 +313,9 @@ export default function VirtueDetailPage() {
           <div className="lg:col-span-3">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className={`grid w-full gap-2 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
-                <TabsTrigger value="stage-1">Dismantling</TabsTrigger>
-                <TabsTrigger value="stage-2">Building</TabsTrigger>
-                <TabsTrigger value="stage-3">Maintaining</TabsTrigger>
+                <TabsTrigger value="stage-1">Stage 1: Dismantling</TabsTrigger>
+                <TabsTrigger value="stage-2">Stage 2: Building</TabsTrigger>
+                <TabsTrigger value="stage-3">Stage 3: Maintaining</TabsTrigger>
                 <TabsTrigger value="journal">Journal</TabsTrigger>
                 {connectionId && (
                   <TabsTrigger value="chat" className="relative">
