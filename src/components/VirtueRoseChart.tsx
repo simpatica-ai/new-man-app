@@ -1,7 +1,7 @@
 // src/components/VirtueRoseChart.tsx
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface VirtueData {
   virtue: string;
@@ -36,7 +36,7 @@ export default function VirtueRoseChart({
   /**
    * Generates earthy colors based on score (red, amber, green with earth tones)
    */
-  const getColorByScore = (score: number): string => {
+  const getColorByScore = useCallback((score: number): string => {
     const sanitizedScore = Math.max(0, Math.min(10, Number(score)));
     
     if (sanitizedScore <= 3.33) {
@@ -46,10 +46,10 @@ export default function VirtueRoseChart({
     } else {
       return 'rgba(101, 133, 76, 0.8)'; // Earth Green - Sage
     }
-  };
+  }, []);
 
   // Handle mouse events for tooltips
-  const handleMouseOver = (event: MouseEvent, virtue: string, score: number) => {
+  const handleMouseOver = useCallback((event: MouseEvent, virtue: string, score: number) => {
     if (!showLabels && !forPdf) {
       setTooltip({
         virtue,
@@ -58,14 +58,14 @@ export default function VirtueRoseChart({
         y: event.clientY
       });
     }
-  };
+  }, [showLabels, forPdf]);
 
-  const handleMouseOut = () => {
+  const handleMouseOut = useCallback(() => {
     setTooltip(null);
-  };
+  }, []);
 
   // Label positioning configuration
-  const getLabelPositioning = (angle: number, virtue: string) => {
+  const getLabelPositioning = useCallback((angle: number, virtue: string) => {
     const baseConfig = {
       labelRadius: radius + (forPdf ? 55 : 45),
       fontSize: forPdf ? '12' : '14',
@@ -121,7 +121,7 @@ export default function VirtueRoseChart({
       dx,
       dy
     };
-  };
+  }, [forPdf, radius]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -400,7 +400,7 @@ export default function VirtueRoseChart({
     centerCircle.setAttribute('fill', '#f5f5f4');
     centerCircle.setAttribute('stroke', 'none');
     svgRef.current?.appendChild(centerCircle);
-  }, [data, dimensions, center, radius, showLabels, forPdf]);
+  }, [data, dimensions, center, radius, showLabels, forPdf, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
 
   return (
     <div 

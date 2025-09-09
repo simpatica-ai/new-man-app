@@ -9,8 +9,14 @@ import VirtueAssessmentPDF from '@/app/assessment/VirtueAssessmentPDF';
 import { useState } from 'react';
 import { convertChartToImage } from '@/utils/chartToImage';
 
+interface VirtueResult {
+  virtue: string;
+  score: number;
+  description?: string;
+}
+
 interface PrintButtonProps {
-  results: any[];
+  results: VirtueResult[];
   analyses: Map<string, string>;
   summaryAnalysis: string;
   userName: string;

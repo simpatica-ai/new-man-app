@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#F5F5F4',
     borderWidth: 1,
-    borderColor: '#E7E5E4',
+    borderColor: '##E7E5E4',
     borderRadius: 4,
   },
   virtueHeader: {
@@ -151,7 +151,7 @@ const renderMarkdown = (content: string) => {
   const paragraphs = content.split('\n\n');
   
   return paragraphs.map((paragraph, pIndex) => {
-    const elements: any[] = [];
+    const elements: JSX.Element[] = [];
     let currentText = '';
     let inBold = false;
     let inItalic = false;
@@ -241,6 +241,7 @@ const VirtueAssessmentPDF = ({
               <Image 
                 src={chartImage} 
                 style={styles.chartImage}
+                alt="Virtue Journey Chart"
               />
             ) : (
               <Text>Chart not available</Text>

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,10 +15,6 @@ import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, A
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
-import { saveAs } from 'file-saver'
-import { pdf } from '@react-pdf/renderer'
-import VirtueAssessmentPDF from './VirtueAssessmentPDF';
-import { convertChartToImage } from '@/utils/chartToImage'
 import PrintButton from '@/components/PrintButton';
 
 // --- Data & Types ---
@@ -81,11 +77,10 @@ type Result = {
     defectIntensity: number;
 };
 type VirtueInfo = { id: number; name: string; description: string };
-type VirtueAnalysis = { virtue_id: number; analysis_text: string };
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
-    defect: { name: string; icon: JSX.Element; category: string; definition: string }; // Add definition to the type
+    defect: { name: string; icon: JSX.Element; category: string; definition: string };
     rating?: number;
     harmLevel?: string;
     onRatingChange: (name: string, value: string) => void;
@@ -529,7 +524,6 @@ export default function AssessmentPage() {
 
     const handleRatingChange = (defectName: string, value: string) => setRatings(prev => ({ ...prev, [defectName]: parseInt(value) }));
     const handleHarmChange = (defectName: string, value: string) => setHarmLevels(prev => ({ ...prev, [defectName]: value }));
-    const handlePrint = () => window.print();
 
     const formatDefectDetailsForPrompt = (virtueName: string, currentRatings: Ratings, currentHarmLevels: HarmLevels) => {
         return defects
@@ -840,7 +834,7 @@ export default function AssessmentPage() {
                                                 score: 10 - r.defectIntensity 
                                             }))} 
                                             size="medium"
-                                            forPdf={true} // Prop to trigger PDF-specific rendering
+                                            forPdf={true}
                                         />
                                     )}
                                 </div>
