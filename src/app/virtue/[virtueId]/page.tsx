@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, Sparkles } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, Sparkles, Bot } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
@@ -118,6 +118,9 @@ export default function VirtueDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
   const [connectionId, setConnectionId] = useState<number | null>(null)
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
+  const [defectAnalysis, setDefectAnalysis] = useState<any>(null)
+  const [stage1AiPrompt, setStage1AiPrompt] = useState<string | null>(null)
+  const [isPromptLoading, setIsPromptLoading] = useState(false)
 
   const params = useParams()
   const router = useRouter()
@@ -148,8 +151,9 @@ export default function VirtueDetailPage() {
       const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', virtueId);
       const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', virtueId);
       const connectionPromise = supabase.from('sponsor_connections').select('id').or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`).eq('status', 'active').maybeSingle();
+      const defectAnalysisPromise = supabase.from('virtue_analysis').select('*').eq('user_id', user.id).eq('virtue_id', virtueId).single();
 
-      const [virtueResult, memosResult, progressResult, connectionResult] = await Promise.all([virtuePromise, memosPromise, progressPromise, connectionPromise]);
+      const [virtueResult, memosResult, progressResult, connectionResult, defectAnalysisResult] = await Promise.all([virtuePromise, memosPromise, progressPromise, connectionPromise, defectAnalysisPromise]);
 
       if (virtueResult.error) throw virtueResult.error;
       if (virtueResult.data) {
@@ -168,6 +172,13 @@ export default function VirtueDetailPage() {
       setProgress(progressMap);
       
       if (connectionResult.error) throw connectionResult.error;
+      
+      if (defectAnalysisResult.error && defectAnalysisResult.error.code !== 'PGRST116') {
+        console.error("Error fetching defect analysis:", defectAnalysisResult.error);
+      }
+      if (defectAnalysisResult.data) {
+        setDefectAnalysis(defectAnalysisResult.data);
+      }
       if (connectionResult.data) {
         setConnectionId(connectionResult.data.id);
         const { data: rawMessages, error: messagesError } = await supabase
@@ -208,6 +219,42 @@ export default function VirtueDetailPage() {
     fetchPageData()
   }, [fetchPageData])
 
+  const fetchStage1Prompt = useCallback(async () => {
+    if (!virtue || !defectAnalysis) return;
+
+    setIsPromptLoading(true);
+    try {
+      const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          virtueName: virtue.name,
+          virtueDef: virtue.description,
+          characterDefectAnalysis: defectAnalysis.analysis_text,
+          stage1MemoContent: memos.get(1) || ''
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch Stage 1 prompt');
+      }
+      const data = await response.json();
+      setStage1AiPrompt(data.prompt);
+
+    } catch (error) {
+      console.error("Error fetching Stage 1 AI prompt:", error);
+      setStage1AiPrompt("Could not load a suggestion. Please try reloading.");
+    } finally {
+      setIsPromptLoading(false);
+    }
+  }, [virtue, defectAnalysis, memos]);
+
+  useEffect(() => {
+    if (displayedStageNumber === 1 && virtue && defectAnalysis) {
+      fetchStage1Prompt();
+    }
+  }, [displayedStageNumber, virtue, defectAnalysis, fetchStage1Prompt]);
+
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
 
@@ -246,6 +293,10 @@ export default function VirtueDetailPage() {
       console.error("Error saving memo:", memoResult.error?.message || progressResult.error?.message);
     }
     await fetchPageData();
+    
+    if (stageNumber === 1) {
+      fetchStage1Prompt();
+    }
   }
 
   const handleCompleteStage = async (stageNumber: number) => {
@@ -373,46 +424,69 @@ export default function VirtueDetailPage() {
 
           {/* --- RIGHT COLUMN (SUPPORTING CARDS) --- */}
           <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
-            <Card>
-              <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                <Lightbulb className="h-8 w-8 text-amber-700" />
-                <div><CardTitle className="text-stone-800">Prompts</CardTitle></div>
-              </CardHeader>
-              <CardContent>
-                <Carousel className="w-full max-w-lg mx-auto relative">
-                  <CarouselContent>
-                    {activeStageData?.stage_prompts?.length ? activeStageData.stage_prompts.map((prompt) => (
-                      <CarouselItem key={prompt.id}><div className="p-1 h-28 flex items-center justify-center overflow-y-auto"><p className="text-base text-stone-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
-                    )) : (
-                      <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No prompts for this stage.</p></div></CarouselItem>
-                    )}
-                  </CarouselContent>
-                  <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
-                  <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
-                </Carousel>
-              </CardContent>
-            </Card>
+            {displayedStageNumber === 1 && (
+              <Card className="border-amber-200 bg-amber-50">
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                  <Bot className="h-8 w-8 text-amber-700 flex-shrink-0" />
+                  <div>
+                    <CardTitle className="text-stone-800">AI Guided Reflection</CardTitle>
+                    <CardDescription>Stage 1: Dismantling</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  {isPromptLoading && (
+                    <p className="text-stone-600 animate-pulse">Generating your personalized prompt...</p>
+                  )}
+                  {!isPromptLoading && stage1AiPrompt && (
+                    <p className="text-base text-stone-700 whitespace-pre-wrap">{stage1AiPrompt}</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {displayedStageNumber !== 1 && (
+              <>
+                <Card>
+                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                    <Lightbulb className="h-8 w-8 text-amber-700" />
+                    <div><CardTitle className="text-stone-800">Prompts</CardTitle></div>
+                  </CardHeader>
+                  <CardContent>
+                    <Carousel className="w-full max-w-lg mx-auto relative">
+                      <CarouselContent>
+                        {activeStageData?.stage_prompts?.length ? activeStageData.stage_prompts.map((prompt) => (
+                          <CarouselItem key={prompt.id}><div className="p-1 h-28 flex items-center justify-center overflow-y-auto"><p className="text-base text-stone-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
+                        )) : (
+                          <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No prompts for this stage.</p></div></CarouselItem>
+                        )}
+                      </CarouselContent>
+                      <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
+                      <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
+                    </Carousel>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                <Sparkles className="h-8 w-8 text-amber-700" />
-                <div><CardTitle className="text-stone-800">Affirmations</CardTitle></div>
-              </CardHeader>
-              <CardContent>
-                <Carousel className="w-full max-w-lg mx-auto relative">
-                  <CarouselContent>
-                    {/* CORRECTED: Pulling affirmations from the top-level virtue object */}
-                    {virtue?.affirmations?.length ? virtue.affirmations.map((affirmation) => (
-                      <CarouselItem key={affirmation.id}><div className="p-1 h-28 flex items-center justify-center"><p className="text-base text-stone-700 text-center">{affirmation.text}</p></div></CarouselItem>
-                    )) : (
-                      <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No affirmations for this virtue.</p></div></CarouselItem>
-                    )}
-                  </CarouselContent>
-                  <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
-                  <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
-                </Carousel>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+                    <Sparkles className="h-8 w-8 text-amber-700" />
+                    <div><CardTitle className="text-stone-800">Affirmations</CardTitle></div>
+                  </CardHeader>
+                  <CardContent>
+                    <Carousel className="w-full max-w-lg mx-auto relative">
+                      <CarouselContent>
+                        {virtue?.affirmations?.length ? virtue.affirmations.map((affirmation) => (
+                          <CarouselItem key={affirmation.id}><div className="p-1 h-28 flex items-center justify-center"><p className="text-base text-stone-700 text-center">{affirmation.text}</p></div></CarouselItem>
+                        )) : (
+                          <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No affirmations for this virtue.</p></div></CarouselItem>
+                        )}
+                      </CarouselContent>
+                      <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
+                      <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
+                    </Carousel>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </div>
       </main>
