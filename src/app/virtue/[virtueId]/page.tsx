@@ -120,6 +120,8 @@ export default function VirtueDetailPage() {
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
   const [defectAnalysis, setDefectAnalysis] = useState<any>(null)
   const [stage1AiPrompt, setStage1AiPrompt] = useState<string | null>(null)
+  const [stage2AiPrompt, setStage2AiPrompt] = useState<string | null>(null)
+  const [stage3AiPrompt, setStage3AiPrompt] = useState<string | null>(null)
   const [isPromptLoading, setIsPromptLoading] = useState(false)
 
   const params = useParams()
@@ -249,11 +251,86 @@ export default function VirtueDetailPage() {
     }
   }, [virtue, defectAnalysis, memos]);
 
-  useEffect(() => {
-    if (displayedStageNumber === 1 && virtue && defectAnalysis) {
-      fetchStage1Prompt();
+  const fetchStage2Prompt = useCallback(async () => {
+    if (!virtue || !defectAnalysis) return;
+
+    setIsPromptLoading(true);
+    try {
+      const stage1Status = progress.get(`${virtueId}-1`);
+      const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          virtueName: virtue.name,
+          virtueDef: virtue.description,
+          characterDefectAnalysis: defectAnalysis.analysis_text,
+          stage1MemoContent: memos.get(1) || '',
+          stage2MemoContent: memos.get(2) || '',
+          stage1Complete: stage1Status === 'completed'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch Stage 2 prompt');
+      }
+      const data = await response.json();
+      setStage2AiPrompt(data.prompt);
+
+    } catch (error) {
+      console.error("Error fetching Stage 2 AI prompt:", error);
+      setStage2AiPrompt("Could not load a suggestion. Please try reloading.");
+    } finally {
+      setIsPromptLoading(false);
     }
-  }, [displayedStageNumber, virtue, defectAnalysis, fetchStage1Prompt]);
+  }, [virtue, defectAnalysis, memos, progress, virtueId]);
+
+  const fetchStage3Prompt = useCallback(async () => {
+    if (!virtue || !defectAnalysis) return;
+
+    setIsPromptLoading(true);
+    try {
+      const stage1Status = progress.get(`${virtueId}-1`);
+      const stage2Status = progress.get(`${virtueId}-2`);
+      const response = await fetch('https://getstage3-917009769018.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          virtueName: virtue.name,
+          virtueDef: virtue.description,
+          characterDefectAnalysis: defectAnalysis.analysis_text,
+          stage1MemoContent: memos.get(1) || '',
+          stage2MemoContent: memos.get(2) || '',
+          stage3MemoContent: memos.get(3) || '',
+          stage1Complete: stage1Status === 'completed',
+          stage2Complete: stage2Status === 'completed'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch Stage 3 prompt');
+      }
+      const data = await response.json();
+      setStage3AiPrompt(data.prompt);
+
+    } catch (error) {
+      console.error("Error fetching Stage 3 AI prompt:", error);
+      setStage3AiPrompt("Could not load a suggestion. Please try reloading.");
+    } finally {
+      setIsPromptLoading(false);
+    }
+  }, [virtue, defectAnalysis, memos, progress, virtueId]);
+
+  useEffect(() => {
+    if (virtue && defectAnalysis) {
+      if (displayedStageNumber === 1) {
+        fetchStage1Prompt();
+      } else if (displayedStageNumber === 2) {
+        fetchStage2Prompt();
+      } else if (displayedStageNumber === 3) {
+        fetchStage3Prompt();
+      }
+    }
+  }, [displayedStageNumber, virtue, defectAnalysis, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
@@ -296,6 +373,10 @@ export default function VirtueDetailPage() {
     
     if (stageNumber === 1) {
       fetchStage1Prompt();
+    } else if (stageNumber === 2) {
+      fetchStage2Prompt();
+    } else if (stageNumber === 3) {
+      fetchStage3Prompt();
     }
   }
 
@@ -424,68 +505,34 @@ export default function VirtueDetailPage() {
 
           {/* --- RIGHT COLUMN (SUPPORTING CARDS) --- */}
           <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
-            {displayedStageNumber === 1 && (
+            {(displayedStageNumber === 1 || displayedStageNumber === 2 || displayedStageNumber === 3) && (
               <Card className="border-amber-200 bg-amber-50">
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                   <Bot className="h-8 w-8 text-amber-700 flex-shrink-0" />
                   <div>
                     <CardTitle className="text-stone-800">AI Guided Reflection</CardTitle>
-                    <CardDescription>Stage 1: Dismantling</CardDescription>
+                    <CardDescription>
+                      {displayedStageNumber === 1 && "Stage 1: Dismantling"}
+                      {displayedStageNumber === 2 && "Stage 2: Building"}
+                      {displayedStageNumber === 3 && "Stage 3: Maintaining"}
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-2">
                   {isPromptLoading && (
                     <p className="text-stone-600 animate-pulse">Generating your personalized prompt...</p>
                   )}
-                  {!isPromptLoading && stage1AiPrompt && (
+                  {!isPromptLoading && displayedStageNumber === 1 && stage1AiPrompt && (
                     <p className="text-base text-stone-700 whitespace-pre-wrap">{stage1AiPrompt}</p>
+                  )}
+                  {!isPromptLoading && displayedStageNumber === 2 && stage2AiPrompt && (
+                    <p className="text-base text-stone-700 whitespace-pre-wrap">{stage2AiPrompt}</p>
+                  )}
+                  {!isPromptLoading && displayedStageNumber === 3 && stage3AiPrompt && (
+                    <p className="text-base text-stone-700 whitespace-pre-wrap">{stage3AiPrompt}</p>
                   )}
                 </CardContent>
               </Card>
-            )}
-            
-            {displayedStageNumber !== 1 && (
-              <>
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                    <Lightbulb className="h-8 w-8 text-amber-700" />
-                    <div><CardTitle className="text-stone-800">Prompts</CardTitle></div>
-                  </CardHeader>
-                  <CardContent>
-                    <Carousel className="w-full max-w-lg mx-auto relative">
-                      <CarouselContent>
-                        {activeStageData?.stage_prompts?.length ? activeStageData.stage_prompts.map((prompt) => (
-                          <CarouselItem key={prompt.id}><div className="p-1 h-28 flex items-center justify-center overflow-y-auto"><p className="text-base text-stone-700 text-center">{prompt.prompt_text}</p></div></CarouselItem>
-                        )) : (
-                          <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No prompts for this stage.</p></div></CarouselItem>
-                        )}
-                      </CarouselContent>
-                      <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
-                      <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
-                    </Carousel>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                    <Sparkles className="h-8 w-8 text-amber-700" />
-                    <div><CardTitle className="text-stone-800">Affirmations</CardTitle></div>
-                  </CardHeader>
-                  <CardContent>
-                    <Carousel className="w-full max-w-lg mx-auto relative">
-                      <CarouselContent>
-                        {virtue?.affirmations?.length ? virtue.affirmations.map((affirmation) => (
-                          <CarouselItem key={affirmation.id}><div className="p-1 h-28 flex items-center justify-center"><p className="text-base text-stone-700 text-center">{affirmation.text}</p></div></CarouselItem>
-                        )) : (
-                          <CarouselItem><div className="p-1 h-28 flex items-center justify-center"><p className="text-gray-500">No affirmations for this virtue.</p></div></CarouselItem>
-                        )}
-                      </CarouselContent>
-                      <CarouselPrevious className="absolute left-[-45px] top-1/2 -translate-y-1/2" />
-                      <CarouselNext className="absolute right-[-45px] top-1/2 -translate-y-1/2" />
-                    </Carousel>
-                  </CardContent>
-                </Card>
-              </>
             )}
           </div>
         </div>
