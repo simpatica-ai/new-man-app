@@ -14,6 +14,15 @@ import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
 import AppHeader from '@/components/AppHeader'
 
+// --- Helper Functions ---
+const generateMemoHash = (memos: Map<number, string>, stageNumber: number) => {
+  const relevantMemos = [];
+  for (let i = 1; i <= stageNumber; i++) {
+    relevantMemos.push(memos.get(i) || '');
+  }
+  return btoa(relevantMemos.join('|')); // Simple base64 hash
+};
+
 // --- Type Definitions ---
 type Prompt = { id: number; prompt_text: string }
 type Affirmation = { id: number; text: string }
@@ -222,10 +231,27 @@ export default function VirtueDetailPage() {
   }, [fetchPageData])
 
   const fetchStage1Prompt = useCallback(async () => {
-    if (!virtue || !defectAnalysis) return;
+    if (!virtue || !defectAnalysis || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
+      const memoHash = generateMemoHash(memos, 1);
+      
+      // Check cache first
+      const { data: cachedPrompt } = await supabase
+        .from('user_virtue_ai_prompts')
+        .select('prompt_text, memo_hash')
+        .eq('user_id', currentUserId)
+        .eq('virtue_id', virtue.id)
+        .eq('stage_number', 1)
+        .single();
+
+      if (cachedPrompt && cachedPrompt.memo_hash === memoHash) {
+        setStage1AiPrompt(cachedPrompt.prompt_text);
+        return;
+      }
+
+      // Generate new prompt
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -237,10 +263,18 @@ export default function VirtueDetailPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch Stage 1 prompt');
-      }
+      if (!response.ok) throw new Error('Failed to fetch Stage 1 prompt');
       const data = await response.json();
+      
+      // Cache the new prompt
+      await supabase.from('user_virtue_ai_prompts').upsert({
+        user_id: currentUserId,
+        virtue_id: virtue.id,
+        stage_number: 1,
+        prompt_text: data.prompt,
+        memo_hash: memoHash
+      });
+      
       setStage1AiPrompt(data.prompt);
 
     } catch (error) {
@@ -249,14 +283,31 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, memos]);
+  }, [virtue, defectAnalysis, memos, currentUserId]);
 
   const fetchStage2Prompt = useCallback(async () => {
-    if (!virtue || !defectAnalysis) return;
+    if (!virtue || !defectAnalysis || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
       const stage1Status = progress.get(`${virtueId}-1`);
+      const memoHash = generateMemoHash(memos, 2) + `|${stage1Status}`;
+      
+      // Check cache first
+      const { data: cachedPrompt } = await supabase
+        .from('user_virtue_ai_prompts')
+        .select('prompt_text, memo_hash')
+        .eq('user_id', currentUserId)
+        .eq('virtue_id', virtue.id)
+        .eq('stage_number', 2)
+        .single();
+
+      if (cachedPrompt && cachedPrompt.memo_hash === memoHash) {
+        setStage2AiPrompt(cachedPrompt.prompt_text);
+        return;
+      }
+
+      // Generate new prompt
       const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -270,10 +321,18 @@ export default function VirtueDetailPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch Stage 2 prompt');
-      }
+      if (!response.ok) throw new Error('Failed to fetch Stage 2 prompt');
       const data = await response.json();
+      
+      // Cache the new prompt
+      await supabase.from('user_virtue_ai_prompts').upsert({
+        user_id: currentUserId,
+        virtue_id: virtue.id,
+        stage_number: 2,
+        prompt_text: data.prompt,
+        memo_hash: memoHash
+      });
+      
       setStage2AiPrompt(data.prompt);
 
     } catch (error) {
@@ -282,15 +341,32 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, memos, progress, virtueId]);
+  }, [virtue, defectAnalysis, memos, progress, virtueId, currentUserId]);
 
   const fetchStage3Prompt = useCallback(async () => {
-    if (!virtue || !defectAnalysis) return;
+    if (!virtue || !defectAnalysis || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
       const stage1Status = progress.get(`${virtueId}-1`);
       const stage2Status = progress.get(`${virtueId}-2`);
+      const memoHash = generateMemoHash(memos, 3) + `|${stage1Status}|${stage2Status}`;
+      
+      // Check cache first
+      const { data: cachedPrompt } = await supabase
+        .from('user_virtue_ai_prompts')
+        .select('prompt_text, memo_hash')
+        .eq('user_id', currentUserId)
+        .eq('virtue_id', virtue.id)
+        .eq('stage_number', 3)
+        .single();
+
+      if (cachedPrompt && cachedPrompt.memo_hash === memoHash) {
+        setStage3AiPrompt(cachedPrompt.prompt_text);
+        return;
+      }
+
+      // Generate new prompt
       const response = await fetch('https://getstage3-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -306,10 +382,18 @@ export default function VirtueDetailPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch Stage 3 prompt');
-      }
+      if (!response.ok) throw new Error('Failed to fetch Stage 3 prompt');
       const data = await response.json();
+      
+      // Cache the new prompt
+      await supabase.from('user_virtue_ai_prompts').upsert({
+        user_id: currentUserId,
+        virtue_id: virtue.id,
+        stage_number: 3,
+        prompt_text: data.prompt,
+        memo_hash: memoHash
+      });
+      
       setStage3AiPrompt(data.prompt);
 
     } catch (error) {
@@ -318,10 +402,10 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, memos, progress, virtueId]);
+  }, [virtue, defectAnalysis, memos, progress, virtueId, currentUserId]);
 
   useEffect(() => {
-    if (virtue && defectAnalysis) {
+    if (virtue && defectAnalysis && progress.size > 0) {
       if (displayedStageNumber === 1) {
         fetchStage1Prompt();
       } else if (displayedStageNumber === 2) {
@@ -330,7 +414,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, defectAnalysis, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
+  }, [displayedStageNumber, virtue, defectAnalysis, progress, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
@@ -385,6 +469,15 @@ export default function VirtueDetailPage() {
     const { error } = await updateStageStatus(stageNumber, 'completed');
     if (error) console.error("Error completing stage:", error.message);
     await fetchPageData();
+    
+    // Refresh prompts for subsequent stages when a stage is completed
+    setTimeout(() => {
+      if (stageNumber === 1 && displayedStageNumber === 2) {
+        fetchStage2Prompt();
+      } else if (stageNumber === 2 && displayedStageNumber === 3) {
+        fetchStage3Prompt();
+      }
+    }, 500);
   };
   
   const handleSendChatMessage = async () => {

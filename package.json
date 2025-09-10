@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync-schema": "npx supabase gen types typescript --project-id ogucnankmxrakkxavelk > src/lib/database.types.ts"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",
