@@ -89,8 +89,7 @@ export default function AdminPage() {
         .select(`
           practitioner_user_id,
           sponsor_user_id,
-          status,
-          profiles!sponsor_connections_sponsor_user_id_fkey(full_name)
+          status
         `);
       
       if (connectionsError) throw connectionsError;
@@ -101,7 +100,7 @@ export default function AdminPage() {
         return {
           ...p,
           connection_id: connection ? 1 : null,
-          sponsor_name: connection?.profiles?.full_name || null
+          sponsor_name: connection ? 'Sponsor Connected' : null
         };
       }) || [];
       
