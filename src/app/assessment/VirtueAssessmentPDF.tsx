@@ -242,7 +242,6 @@ const VirtueAssessmentPDF = ({
               <Image 
                 src={chartImage} 
                 style={styles.chartImage}
-                alt="Virtue assessment chart showing scores for each virtue"
               />
             ) : (
               <Text>Chart not available</Text>

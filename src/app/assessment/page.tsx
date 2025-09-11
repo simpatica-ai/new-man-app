@@ -509,14 +509,10 @@ export default function AssessmentPage() {
             if (!currentAssessmentId || virtueDetails.length === 0) return;
             
             try {
-                const { data: existingAnalyses, error } = await supabase
+                const { data: existingAnalyses } = await supabase
                     .from('virtue_analysis')
                     .select('virtue_id, analysis_text')
                     .eq('assessment_id', currentAssessmentId);
-                
-                if (error) {
-                    return;
-                }
                 
                 if (existingAnalyses && existingAnalyses.length > 0) {
                     const analysisMap = new Map<string, string>();
