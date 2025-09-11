@@ -103,29 +103,29 @@ export const journalQueries = {
 export const sponsorQueries = {
   getSponsorRelationships: async (userId: string) => {
     return await supabase
-      .from('sponsor_relationships')
+      .from('sponsor_connections')
       .select(`
         *,
-        sponsor:profiles!sponsor_id (
+        sponsor:profiles!sponsor_user_id (
           id,
           full_name,
           email
         ),
-        practitioner:profiles!practitioner_id (
+        practitioner:profiles!practitioner_user_id (
           id,
           full_name,
           email
         )
       `)
-      .or(`sponsor_id.eq.${userId},practitioner_id.eq.${userId}`)
+      .or(`sponsor_user_id.eq.${userId},practitioner_user_id.eq.${userId}`)
   },
 
   createSponsorRelationship: async (sponsorId: string, practitionerId: string) => {
     return await supabase
-      .from('sponsor_relationships')
+      .from('sponsor_connections')
       .insert({
-        sponsor_id: sponsorId,
-        practitioner_id: practitionerId,
+        sponsor_user_id: sponsorId,
+        practitioner_user_id: practitionerId,
         status: 'pending'
       })
   }
