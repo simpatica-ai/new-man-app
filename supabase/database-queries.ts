@@ -34,7 +34,7 @@ export const virtueQueries = {
     return await supabase
       .from('virtue_stages')
       .select('*')
-      .eq('virtue_id', virtueId)
+      .eq('virtue_id', parseInt(virtueId))
       .order('stage_number')
   }
 }
