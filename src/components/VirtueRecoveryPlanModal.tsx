@@ -18,7 +18,7 @@ interface VirtueRecoveryPlanModalProps {
 export default function VirtueRecoveryPlanModal({ isOpen }: VirtueRecoveryPlanModalProps) {
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-md p-0 relative" hideCloseButton>
+      <DialogContent className="sm:max-w-md p-0 relative" showCloseButton={false}>
         <div 
           className="relative rounded-t-lg bg-cover bg-center p-6 text-white z-0"
           style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${oakTreeImage})` }}
