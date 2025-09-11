@@ -130,7 +130,7 @@ export default function JournalComponent() {
                   month: 'long',
                   day: 'numeric',
                 }),
-                content: entry.entry_text
+                content: entry.entry_text || ''
               }} 
               onUpdate={handleUpdateEntry}
               onDelete={handleDeleteEntry}
