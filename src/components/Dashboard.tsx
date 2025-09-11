@@ -63,7 +63,7 @@ const defects = [
 
 // --- TYPE DEFINITIONS ---
 type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
-type Virtue = { id: number; name: string; description: string; short_description: string | null; virtue_score?: number; };
+type Virtue = { id: number; name: string; description: string | null; short_description: string | null; virtue_score?: number; };
 type Connection = { id: number; status: string; sponsor_name: string | null; }
 
 // --- DASHBOARD COMPONENT ---
