@@ -51,8 +51,8 @@ const HomePage = () => {
       {/* ## FIX: Removed backdrop-blur-md class ## */}
       <div className="absolute inset-0 bg-white/80"></div>
       
-      <div className="relative z-10 min-h-screen flex flex-col">
-        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="relative z-10">
+        <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
           <div className="container mx-auto w-full">
             <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
               
@@ -85,8 +85,8 @@ const HomePage = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
+      <Footer />
     </div>
   );
 };
