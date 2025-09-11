@@ -232,7 +232,7 @@ export default function VirtueDetailPage() {
 
       if (virtueResult.error) throw virtueResult.error;
       if (virtueResult.data) {
-        virtueResult.data.virtue_stages.sort((a: Stage, b: Stage) => a.stage_number - b.stage_number);
+        virtueResult.data.virtue_stages.sort((a, b) => a.stage_number - b.stage_number);
         setVirtue(virtueResult.data);
       }
 
