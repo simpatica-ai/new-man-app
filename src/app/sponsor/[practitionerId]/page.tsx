@@ -78,7 +78,7 @@ export default function SponsorView() {
       const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', practitionerId).order('assessment_id', { ascending: false });
       const connectionPromise = supabase.from('sponsor_connections').select('id').eq('practitioner_user_id', practitionerId).eq('sponsor_user_id', user.id).eq('status', 'active').single();
-      const activityPromise = supabase.from('user_virtue_stage_memos').select('updated_at').eq('user_id', practitionerId).order('updated_at', { ascending: false }).limit(1);
+      const activityPromise = supabase.from('user_virtue_stage_memos').select('created_at').eq('user_id', practitionerId).order('created_at', { ascending: false }).limit(1);
 
       const [practitionerResult, virtuesResult, memosResult, assessmentResult, connectionResult, activityResult] = await Promise.all([
         practitionerPromise, virtuesPromise, memosPromise, assessmentPromise, connectionPromise, activityPromise
@@ -89,7 +89,7 @@ export default function SponsorView() {
       
       // Set last activity from memo updates
       if (activityResult.data && activityResult.data.length > 0) {
-        setLastActivity(activityResult.data[0].updated_at);
+        setLastActivity(activityResult.data[0].created_at);
       }
 
       if (virtuesResult.error) throw virtuesResult.error;
