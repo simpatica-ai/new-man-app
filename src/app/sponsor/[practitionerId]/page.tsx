@@ -53,7 +53,7 @@ export default function SponsorView() {
   const [connectionId, setConnectionId] = useState<number | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [assessmentData, setAssessmentData] = useState<any[]>([]);
+  const [assessmentData, setAssessmentData] = useState<{virtue_name: string; priority_score: number}[]>([]);
   const [hasAssessment, setHasAssessment] = useState(false);
   const [lastActivity, setLastActivity] = useState<string | null>(null);
 

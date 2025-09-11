@@ -188,7 +188,7 @@ export default function VirtueDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
   const [connectionId, setConnectionId] = useState<number | null>(null)
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
-  const [defectAnalysis, setDefectAnalysis] = useState<any>(null)
+  const [defectAnalysis, setDefectAnalysis] = useState<{analysis_text: string} | null>(null)
   const [stage1AiPrompt, setStage1AiPrompt] = useState<string | null>(null)
   const [stage2AiPrompt, setStage2AiPrompt] = useState<string | null>(null)
   const [stage3AiPrompt, setStage3AiPrompt] = useState<string | null>(null)

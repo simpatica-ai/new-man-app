@@ -334,7 +334,7 @@ export default function AccountSettingsPage() {
                     </div>
                     
                     <div className="space-y-3">
-                      <Label htmlFor="sponsorEmail" className="text-stone-700 font-medium">Sponsor's Email Address</Label>
+                      <Label htmlFor="sponsorEmail" className="text-stone-700 font-medium">Sponsor&apos;s Email Address</Label>
                       <Input
                         id="sponsorEmail"
                         type="email"
