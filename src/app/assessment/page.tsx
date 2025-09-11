@@ -353,8 +353,8 @@ export default function AssessmentPage() {
             // Update local state
             setSummaryAnalysis(data.summary);
 
-        } catch (error) {
-            console.error('Error generating summary analysis:', error);
+        } catch {
+            console.error('Error generating summary analysis');
             // Provide fallback summary
             const fallbackSummary = "A comprehensive summary could not be generated at this time. Please review your individual virtue analyses for insights into your personal growth areas.";
             setSummaryAnalysis(fallbackSummary);
@@ -594,10 +594,9 @@ export default function AssessmentPage() {
             }
 
             // Clear old data
-            const tablesToClear = ['user_assessment_defects', 'user_assessment_results', 'virtue_analysis'];
-            for (const table of tablesToClear) {
-                await supabase.from(table).delete().eq('assessment_id', assessmentId);
-            }
+            await supabase.from('user_assessment_defects').delete().eq('assessment_id', assessmentId);
+            await supabase.from('user_assessment_results').delete().eq('assessment_id', assessmentId);
+            await supabase.from('virtue_analysis').delete().eq('assessment_id', assessmentId);
             
             // Insert updated defect ratings
             const defectRatingsToInsert = Object.entries(ratings).map(([defect_name, rating]) => ({
