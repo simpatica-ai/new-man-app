@@ -36,7 +36,7 @@ type Stage = {
 type Virtue = { 
   id: number; 
   name: string; 
-  description: string; 
+  description: string | null; 
   story_of_virtue: string | null; 
   author_reflection: string | null; 
   virtue_stages: Stage[];
