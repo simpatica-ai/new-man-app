@@ -400,7 +400,7 @@ export default function SponsorView() {
                     <CardHeader className="flex flex-row items-center gap-4">
                         <MessageCircle className="h-6 w-6 text-amber-700" />
                         <div>
-                            <CardTitle className="text-stone-800 font-medium">Chat with {practitioner.full_name || 'Practitioner'}</CardTitle>
+                            <CardTitle className="text-stone-800 font-medium">Chat with {practitioner.full_name || &apos;Practitioner&apos;}</CardTitle>
                             <CardDescription className="text-stone-600">Provide guidance and support</CardDescription>
                         </div>
                     </CardHeader>
