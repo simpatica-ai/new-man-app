@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
@@ -41,7 +40,7 @@ export default function AssessmentGuideModal({ isOpen, onClose }: AssessmentGuid
               <div className="bg-amber-100 p-2 rounded-full mt-1"><Heart className="h-5 w-5 text-amber-700"/></div>
               <div>
                 <h4 className="font-semibold text-stone-700">Honest Self-Evaluation</h4>
-                <p className="text-sm text-stone-600">You'll evaluate 46 character defects, rating their frequency and impact with complete honesty.</p>
+                <p className="text-sm text-stone-600">You&apos;ll evaluate 46 character defects, rating their frequency and impact with complete honesty.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">

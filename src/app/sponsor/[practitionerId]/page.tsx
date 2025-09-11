@@ -328,7 +328,7 @@ export default function SponsorView() {
                                     <AlertCircle className="h-8 w-8 text-amber-600 mx-auto mb-2" />
                                     <p className="text-amber-800 font-medium">Assessment Not Completed</p>
                                     <p className="text-sm text-amber-700 mt-1">
-                                        {practitioner.full_name || 'This practitioner'} has not yet completed their character defect assessment.
+                                        {practitioner.full_name || &apos;This practitioner&apos;} has not yet completed their character defect assessment.
                                     </p>
                                 </div>
                             </div>

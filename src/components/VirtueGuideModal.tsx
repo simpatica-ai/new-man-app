@@ -4,12 +4,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Edit3, Save, CheckCircle, Lightbulb, BookOpen, Users } from "lucide-react"
+import { Edit3, Save, Lightbulb, BookOpen, Users } from "lucide-react"
 
 const oakTreeImage = "https://storage.googleapis.com/gemini-prod-us-west1-assets/20250904_045439_330030_0.jpg";
 
@@ -49,7 +48,7 @@ export default function VirtueGuideModal({ isOpen, onClose, hasConnection }: Vir
               <div className="bg-amber-100 p-2 rounded-full mt-1"><Save className="h-5 w-5 text-amber-700"/></div>
               <div>
                 <h4 className="font-semibold text-stone-700">Save & Complete Progress</h4>
-                <p className="text-sm text-stone-600">Save your work as drafts or mark stages complete when you're ready to move forward.</p>
+                <p className="text-sm text-stone-600">Save your work as drafts or mark stages complete when you&apos;re ready to move forward.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">

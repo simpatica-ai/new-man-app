@@ -330,7 +330,7 @@ export default function AccountSettingsPage() {
                 ) : (
                   <div className="space-y-6">
                     <div className="p-4 bg-amber-50/60 backdrop-blur-sm rounded-lg border border-amber-200/60">
-                      <p className="text-stone-700 font-light">You are not currently connected with a sponsor. Enter your sponsor's email address below to invite them.</p>
+                      <p className="text-stone-700 font-light">You are not currently connected with a sponsor. Enter your sponsor&apos;s email address below to invite them.</p>
                     </div>
                     
                     <div className="space-y-3">
@@ -441,7 +441,7 @@ export default function AccountSettingsPage() {
                         Are you absolutely sure? This action cannot be undone.
                       </p>
                       <p className="text-red-700 text-sm font-light">
-                        Type <strong>"DELETE MY ACCOUNT"</strong> below to confirm:
+                        Type <strong>&quot;DELETE MY ACCOUNT&quot;</strong> below to confirm:
                       </p>
                     </div>
                     

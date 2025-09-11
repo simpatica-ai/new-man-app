@@ -163,7 +163,7 @@ export default function ManageSponsorPage() {
               ) : (
                 <div className="space-y-4">
                   <div className="p-4 bg-stone-50 rounded-lg border border-stone-200">
-                    <p className="text-stone-700 mb-4">You are not currently connected with a sponsor. Enter your sponsor's email address below to invite them to guide your journey.</p>
+                    <p className="text-stone-700 mb-4">You are not currently connected with a sponsor. Enter your sponsor&apos;s email address below to invite them to guide your journey.</p>
                     <div className="space-y-3">
                       <Input
                         type="email"

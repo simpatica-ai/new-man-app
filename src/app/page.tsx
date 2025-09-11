@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { AuthCard } from "@/components/AuthCard";
 import Dashboard from "@/components/Dashboard";
 import heroBackground from "@/assets/hero-background.jpg";
-import { Button } from "@/components/ui/button";
+
 
 // ## FIX: Define the component as a constant before exporting ##
 const HomePage = () => {
