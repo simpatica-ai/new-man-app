@@ -21,20 +21,20 @@ interface AssessmentGuideModalProps {
 export default function AssessmentGuideModal({ isOpen, onClose }: AssessmentGuideModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl p-0 relative">
-        <div 
-          className="relative rounded-t-lg bg-cover bg-center p-6 text-white z-0"
-          style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${oakTreeImage})` }}
-        >
-          <DialogHeader className="items-center text-center">
-            <DialogTitle className="text-3xl font-light text-white">Character Defect Assessment</DialogTitle>
-            <DialogDescription className="text-stone-200">
+      <DialogContent className="sm:max-w-xl">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <DialogTitle className="text-3xl font-light text-stone-800 text-center">Character Defect Assessment</DialogTitle>
+            <DialogDescription className="text-stone-600 text-center mt-2">
               Your journey begins with brutal honesty and self-reflection.
             </DialogDescription>
-          </DialogHeader>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-stone-400 hover:text-stone-600">
+            ✕
+          </Button>
         </div>
         
-        <div className="px-8 py-6">
+        <div className="px-6 py-4">
           <h3 className="mb-4 text-center font-semibold text-stone-700">What to expect in your assessment:</h3>
           <div className="grid gap-4">
             <div className="flex items-start gap-4">
@@ -68,7 +68,7 @@ export default function AssessmentGuideModal({ isOpen, onClose }: AssessmentGuid
           </div>
         </div>
         
-        <DialogFooter className="sm:justify-center gap-2 p-6 bg-stone-50 rounded-b-lg">
+        <DialogFooter className="sm:justify-center gap-2 mt-6">
           <Button type="button" onClick={onClose} className="bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white">
             Begin Assessment
           </Button>

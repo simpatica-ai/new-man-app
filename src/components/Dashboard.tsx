@@ -318,7 +318,6 @@ export default function Dashboard() {
       
       <div className="relative z-10">
         <AppHeader />
-        {console.log('Modal state:', showWelcomeModal)}
         <WelcomeModal isOpen={showWelcomeModal} onClose={handleCloseModal} />
 
         <main className="container mx-auto p-4 md:p-8">
@@ -342,10 +341,7 @@ export default function Dashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          console.log('Guide button clicked');
-                          setShowWelcomeModal(true);
-                        }}
+                        onClick={() => setShowWelcomeModal(true)}
                         className="border-amber-200 text-amber-700 hover:bg-amber-50 transition-mindful"
                       >
                         <HelpCircle className="h-4 w-4 mr-2" />

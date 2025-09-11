@@ -24,17 +24,17 @@ interface WelcomeModalProps {
 export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl p-0 relative">
-        <div 
-          className="relative rounded-t-lg bg-cover bg-center p-6 text-white z-0"
-          style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${oakTreeImage})` }}
-        >
-          <DialogHeader className="items-center text-center">
-            <DialogTitle className="text-3xl font-light text-white">Welcome to A New Man</DialogTitle>
-            <DialogDescription className="text-stone-200">
+      <DialogContent className="sm:max-w-xl">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <DialogTitle className="text-3xl font-light text-stone-800 text-center">Welcome to A New Man</DialogTitle>
+            <DialogDescription className="text-stone-600 text-center mt-2">
               Your private workspace for a journey of self-reflection and growth.
             </DialogDescription>
-          </DialogHeader>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-stone-400 hover:text-stone-600">
+            ✕
+          </Button>
         </div>
         
         <div className="px-8 py-6">
@@ -78,7 +78,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
           </div>
         </div>
         
-        <DialogFooter className="sm:justify-between gap-2 p-6 bg-stone-50 rounded-b-lg">
+        <DialogFooter className="sm:justify-between gap-2 mt-6">
           <Button type="button" variant="ghost" onClick={onClose}>
             I&apos;ll Explore on My Own
           </Button>

@@ -72,9 +72,6 @@ const HomePage = () => {
               <p className="font-semibold">
                 This application is a free resource, made possible by the generosity of our community.
               </p>
-              <Button variant="outline" className="border-stone-400 text-stone-700 hover:bg-stone-50">
-                Support This Work
-              </Button>
             </div>
           </div>
           
