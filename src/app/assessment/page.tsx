@@ -515,7 +515,6 @@ export default function AssessmentPage() {
                     .eq('assessment_id', currentAssessmentId);
                 
                 if (error) {
-                    console.error('Failed to fetch existing analyses:', error);
                     return;
                 }
                 
@@ -957,7 +956,7 @@ export default function AssessmentPage() {
                             ></div>
                         </div>
                         <p className="text-xs text-stone-500 text-center">
-                            This may take a few moments. Please don't close this window.
+                            This may take a few moments. Please don&rsquo;t close this window.
                         </p>
                     </div>
                 </DialogContent>
