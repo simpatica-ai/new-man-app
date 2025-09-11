@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import AppHeader from '@/components/AppHeader'
 import Footer from '@/components/Footer'
-import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Download, Edit } from 'lucide-react'
+import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
@@ -514,7 +514,10 @@ export default function AssessmentPage() {
                     .select('virtue_id, analysis_text')
                     .eq('assessment_id', currentAssessmentId);
                 
-                if (error) return;
+                if (error) {
+                    console.error('Failed to fetch existing analyses:', error);
+                    return;
+                }
                 
                 if (existingAnalyses && existingAnalyses.length > 0) {
                     const analysisMap = new Map<string, string>();
@@ -668,7 +671,7 @@ export default function AssessmentPage() {
                     {corsError && (
                         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 rounded-lg text-sm" role="alert">
                             <p className="font-bold">Connection Issue</p>
-                            <p>We&apos;re experiencing a temporary connection issue. Your personalized analysis has been generated.</p>
+                            <p>We&rsquo;re experiencing a temporary connection issue. Your personalized analysis has been generated.</p>
                         </div>
                     )}
                     
