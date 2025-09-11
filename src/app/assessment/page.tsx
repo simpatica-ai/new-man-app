@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Session } from '@supabase/supabase-js'
+
 import AppHeader from '@/components/AppHeader'
 import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
@@ -353,8 +353,8 @@ export default function AssessmentPage() {
             // Update local state
             setSummaryAnalysis(data.summary);
 
-        } catch (error) {
-            console.error('Error generating summary analysis:', error);
+        } catch {
+            console.error('Error generating summary analysis');
             // Provide fallback summary
             const fallbackSummary = "A comprehensive summary could not be generated at this time. Please review your individual virtue analyses for insights into your personal growth areas.";
             setSummaryAnalysis(fallbackSummary);
@@ -846,7 +846,7 @@ export default function AssessmentPage() {
                                         .map(result => {
                                             const virtueScore = 10 - result.defectIntensity;
                                             const analysisText = analyses.get(result.virtue);
-                                            const virtueInfo = virtueDetails.find(v => v.name === result.virtue);
+                    
 
                                             return (
                                                 <Card key={result.virtue} className="border-stone-200 print:break-inside-avoid">
