@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 type JournalEntry = {
   id: number;
   created_at: string;
-  entry_text: string;
+  entry_text: string | null;
 };
 
 export default function JournalComponent() {
