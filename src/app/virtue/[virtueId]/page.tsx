@@ -222,11 +222,11 @@ export default function VirtueDetailPage() {
       setCurrentUserId(user.id);
 
       // CORRECTED: Updated Supabase query to match the new schema
-      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*)), affirmations(*)').eq('id', virtueId).single();
-      const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', virtueId);
-      const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', virtueId);
+      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*)), affirmations(*)').eq('id', parseInt(virtueId as string)).single();
+      const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string));
+      const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string));
       const connectionPromise = supabase.from('sponsor_connections').select('id').or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`).eq('status', 'active').maybeSingle();
-      const defectAnalysisPromise = supabase.from('virtue_analysis').select('*').eq('user_id', user.id).eq('virtue_id', virtueId).single();
+      const defectAnalysisPromise = supabase.from('virtue_analysis').select('*').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string)).single();
 
       const [virtueResult, memosResult, progressResult, connectionResult, defectAnalysisResult] = await Promise.all([virtuePromise, memosPromise, progressPromise, connectionPromise, defectAnalysisPromise]);
 
