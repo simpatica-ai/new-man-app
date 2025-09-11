@@ -457,7 +457,7 @@ export default function AssessmentPage() {
                         const analysisMap = new Map<string, string>();
                         existingAnalyses.forEach(analysis => {
                             const virtueInfo = virtuesData?.find(v => v.id === analysis.virtue_id);
-                            if (virtueInfo) {
+                            if (virtueInfo && analysis.analysis_text) {
                                 analysisMap.set(virtueInfo.name, analysis.analysis_text);
                             }
                         });

@@ -456,12 +456,29 @@ export default function AdminPage() {
             
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest user actions and system events.</CardDescription>
+                <CardTitle>Analytics Overview</CardTitle>
+                <CardDescription>Vercel Analytics insights and user engagement.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-gray-500 text-center py-8">
-                  Activity monitoring coming soon...
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                    <div>
+                      <div className="font-medium">Page Views</div>
+                      <div className="text-sm text-gray-600">Real-time analytics via Vercel</div>
+                    </div>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">Live</Badge>
+                  </div>
+                  <div className="text-sm text-gray-500 text-center py-4">
+                    <p>Visit your Vercel dashboard for detailed analytics:</p>
+                    <a 
+                      href="https://vercel.com/analytics" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      vercel.com/analytics
+                    </a>
+                  </div>
                 </div>
               </CardContent>
             </Card>
