@@ -30,7 +30,7 @@ type Affirmation = { id: number; text: string }
 type Stage = { 
   id: number; 
   stage_number: number; 
-  title: string; 
+  title: string | null; 
   stage_prompts: Prompt[];
 }
 type Virtue = { 
