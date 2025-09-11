@@ -353,8 +353,8 @@ export default function AssessmentPage() {
             // Update local state
             setSummaryAnalysis(data.summary);
 
-        } catch {
-            console.error('Error generating summary analysis');
+        } catch (error) {
+            console.error('Error generating summary analysis:', error);
             // Provide fallback summary
             const fallbackSummary = "A comprehensive summary could not be generated at this time. Please review your individual virtue analyses for insights into your personal growth areas.";
             setSummaryAnalysis(fallbackSummary);
