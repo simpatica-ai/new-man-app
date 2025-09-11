@@ -60,7 +60,7 @@ export const progressQueries = {
       .from('user_virtue_stage_progress')
       .upsert({
         user_id: userId,
-        virtue_id: virtueId,
+        virtue_id: parseInt(virtueId),
         ...updates
       })
   }
