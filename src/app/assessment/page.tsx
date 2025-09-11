@@ -353,8 +353,8 @@ export default function AssessmentPage() {
             // Update local state
             setSummaryAnalysis(data.summary);
 
-        } catch {
-            console.error('Error generating summary analysis');
+        } catch (error) {
+            console.error('Error generating summary analysis:', error);
             // Provide fallback summary
             const fallbackSummary = "A comprehensive summary could not be generated at this time. Please review your individual virtue analyses for insights into your personal growth areas.";
             setSummaryAnalysis(fallbackSummary);
@@ -584,7 +584,7 @@ export default function AssessmentPage() {
             } else {
                 const { data: newAssessment, error: assessmentError } = await supabase
                     .from('user_assessments')
-                    .insert({ user_id: user.id })
+                    .insert({ user_id: user.id, assessment_type: 'virtue' })
                     .select('id')
                     .single();
                 if (assessmentError) throw assessmentError;
