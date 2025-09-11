@@ -43,7 +43,7 @@ export const virtueQueries = {
 export const progressQueries = {
   getUserProgress: async (userId: string) => {
     return await supabase
-      .from('user_virtue_progress')
+      .from('user_virtue_stage_progress')
       .select(`
         *,
         virtues (
@@ -55,9 +55,9 @@ export const progressQueries = {
       .eq('user_id', userId)
   },
 
-  updateProgress: async (userId: string, virtueId: string, updates: Tables['user_virtue_progress']['Update']) => {
+  updateProgress: async (userId: string, virtueId: string, updates: Tables['user_virtue_stage_progress']['Update']) => {
     return await supabase
-      .from('user_virtue_progress')
+      .from('user_virtue_stage_progress')
       .upsert({
         user_id: userId,
         virtue_id: virtueId,
