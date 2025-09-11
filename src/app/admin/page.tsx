@@ -449,7 +449,7 @@ export default function AdminPage() {
                   <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
                     <div>
                       <div className="font-medium">AI Response Time</div>
-                      <div className="text-sm text-gray-600">Average: {stats?.avgResponseTime || 0}s (Target: <2s)</div>
+                      <div className="text-sm text-gray-600">Average: {stats?.avgResponseTime || 0}s (Target: &lt;2s)</div>
                     </div>
                     <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Warning</Badge>
                   </div>
