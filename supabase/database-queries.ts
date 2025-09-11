@@ -95,7 +95,7 @@ export const journalQueries = {
     return await supabase
       .from('journal_entries')
       .update(updates)
-      .eq('id', entryId)
+      .eq('id', parseInt(entryId))
   }
 }
 
