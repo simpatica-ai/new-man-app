@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Users, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import CloudRunMonitor from '@/components/CloudRunMonitor';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -420,6 +421,8 @@ export default function AdminPage() {
         
         <TabsContent value="monitoring">
           <div className="grid gap-6">
+            <CloudRunMonitor />
+            
             <Card>
               <CardHeader>
                 <CardTitle>System Performance</CardTitle>
