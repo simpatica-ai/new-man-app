@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Rocket, BookText, UserPlus, Milestone, Award } from "lucide-react"
 
 // ## FIX: New, custom-generated background image URL ##
-const oakTreeImage = "https://storage.googleapis.com/gemini-prod-us-west1-assets/20250904_045439_330030_0.jpg";
+
 
 interface WelcomeModalProps {
   isOpen: boolean;

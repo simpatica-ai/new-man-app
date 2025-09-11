@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Heart, FileText, RotateCcw, Download } from "lucide-react"
 
-const oakTreeImage = "https://storage.googleapis.com/gemini-prod-us-west1-assets/20250904_045439_330030_0.jpg";
+
 
 interface AssessmentGuideModalProps {
   isOpen: boolean;

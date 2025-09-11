@@ -8,8 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, Sparkles, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, GripHorizontal, HelpCircle } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, ChevronRight, ChevronLeft, GripHorizontal, HelpCircle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
@@ -196,7 +195,7 @@ export default function VirtueDetailPage() {
   const [isPromptHidden, setIsPromptHidden] = useState(false)
   const [writingPanelHeight, setWritingPanelHeight] = useState(400)
   const [showGuideModal, setShowGuideModal] = useState(false)
-  const [hasSeenGuide, setHasSeenGuide] = useState(false)
+
 
   const params = useParams()
   const router = useRouter()
@@ -584,7 +583,7 @@ export default function VirtueDetailPage() {
     }
   }
   
-  const activeStageData = useMemo(() => virtue?.virtue_stages.find(s => s.stage_number === displayedStageNumber), [displayedStageNumber, virtue]);
+
   
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);

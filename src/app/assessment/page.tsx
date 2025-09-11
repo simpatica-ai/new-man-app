@@ -181,7 +181,7 @@ export default function AssessmentPage() {
     const [harmLevels, setHarmLevels] = useState<HarmLevels>({});
     const [results, setResults] = useState<Result[] | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [session, setSession] = useState<Session | null>(null);
+
     const [virtueDetails, setVirtueDetails] = useState<VirtueInfo[]>([]);
     const [analyses, setAnalyses] = useState<Map<string, string>>(new Map());
     const [currentAssessmentId, setCurrentAssessmentId] = useState<number | null>(null);
@@ -387,9 +387,7 @@ export default function AssessmentPage() {
                 if (virtuesError) throw virtuesError;
                 setVirtueDetails(virtuesData || []);
 
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) throw sessionError;
-                setSession(session);
+                const { data: { session } } = await supabase.auth.getSession();
                 const user = session?.user;
                 if (!user) return;
 
@@ -508,7 +506,7 @@ export default function AssessmentPage() {
                     const analysisMap = new Map<string, string>();
                     existingAnalyses.forEach(analysis => {
                         const virtueInfo = virtueDetails.find(v => v.id === analysis.virtue_id);
-                        if (virtueInfo) {
+                        if (virtueInfo && analysis.analysis_text) {
                             analysisMap.set(virtueInfo.name, analysis.analysis_text);
                         }
                     });

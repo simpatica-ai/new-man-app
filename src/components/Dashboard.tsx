@@ -75,7 +75,7 @@ export default function Dashboard() {
   const [progress, setProgress] = useState<Map<string, StageProgress['status']>>(new Map());
   const [lastJournalEntry, setLastJournalEntry] = useState<string | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+
 
   useEffect(() => { document.title = "New Man: Dashboard"; }, []);
 
@@ -103,7 +103,7 @@ export default function Dashboard() {
       if (!seen) {
         setShowWelcomeModal(true);
       }
-      setHasSeenWelcome(!!seen);
+
 
       if (connectionResult.error) throw connectionResult.error;
       setConnection(connectionResult.data?.[0] || null);
@@ -174,7 +174,7 @@ export default function Dashboard() {
     const welcomeKey = 'welcome-modal-seen';
     localStorage.setItem(welcomeKey, 'true');
     setShowWelcomeModal(false);
-    setHasSeenWelcome(true);
+
   }
 
   const getStatusClasses = (virtueId: number, stage: number): string => {
