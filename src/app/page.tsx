@@ -45,44 +45,48 @@ const HomePage = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center relative bg-cover bg-center p-4 sm:p-6 lg:p-8"
+      className="min-h-screen relative bg-cover bg-center"
       style={{ backgroundImage: `url(${heroBackground.src})` }}
     >
       {/* ## FIX: Removed backdrop-blur-md class ## */}
       <div className="absolute inset-0 bg-white/80"></div>
       
-      <main className="relative z-10 container mx-auto w-full">
-        <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
-          
-          <div className="text-stone-800 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-light leading-tight mb-4">
-              A New Man With
-              <br />
-              New Behaviors
-            </h1>
-            <p className="text-lg text-stone-600 mb-6">
-              A Guide to a Virtuous Life
-            </p>
-            <div className="space-y-4 text-stone-700">
-              <p>
-                This application grows from the book, inviting you to a journey of self-reflection. Learn from your character defects to build a sustainable practice of virtue.
-              </p>
-              <p>
-                Connect with a sponsor who can guide and coach you through your recovery and growth. This is a shared path, and you are not alone.
-              </p>
-              <p className="font-semibold">
-                This application is a free resource, made possible by the generosity of our community.
-              </p>
+      <div className="relative z-10 min-h-screen flex flex-col">
+        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+          <div className="container mx-auto w-full">
+            <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
+              
+              <div className="text-stone-800 text-center md:text-left">
+                <h1 className="text-4xl md:text-5xl font-light leading-tight mb-4">
+                  A New Man With
+                  <br />
+                  New Behaviors
+                </h1>
+                <p className="text-lg text-stone-600 mb-6">
+                  A Guide to a Virtuous Life
+                </p>
+                <div className="space-y-4 text-stone-700">
+                  <p>
+                    This application grows from the book, inviting you to a journey of self-reflection. Learn from your character defects to build a sustainable practice of virtue.
+                  </p>
+                  <p>
+                    Connect with a sponsor who can guide and coach you through your recovery and growth. This is a shared path, and you are not alone.
+                  </p>
+                  <p className="font-semibold">
+                    This application is a free resource, made possible by the generosity of our community.
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <AuthCard />
+              </div>
+
             </div>
           </div>
-          
-          <div>
-            <AuthCard />
-          </div>
-
-        </div>
-      </main>
-      <Footer />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };
