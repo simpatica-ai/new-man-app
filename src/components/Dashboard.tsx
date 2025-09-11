@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { Button } from './ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { UserCheck, BookOpen, Edit, Sparkles } from 'lucide-react'
+import { UserCheck, BookOpen, Edit, Sparkles, HelpCircle } from 'lucide-react'
 import AppHeader from './AppHeader'
 import WelcomeModal from './WelcomeModal'
 import VirtueRoseChart from './VirtueRoseChart'
@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [progress, setProgress] = useState<Map<string, StageProgress['status']>>(new Map());
   const [lastJournalEntry, setLastJournalEntry] = useState<string | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
 
   useEffect(() => { document.title = "New Man: Dashboard"; }, []);
 
@@ -96,11 +97,12 @@ export default function Dashboard() {
       ]);
       
       if (profileResult.error) throw profileResult.error;
-      if (profileResult.data && !profileResult.data.has_completed_first_assessment) {
-         if (!sessionStorage.getItem('onboardingSkipped')) {
-            setShowWelcomeModal(true);
-         }
+      const welcomeKey = 'welcome-modal-seen';
+      const seen = localStorage.getItem(welcomeKey);
+      if (!seen) {
+        setShowWelcomeModal(true);
       }
+      setHasSeenWelcome(!!seen);
 
       if (connectionResult.error) throw connectionResult.error;
       setConnection(connectionResult.data?.[0] || null);
@@ -168,8 +170,10 @@ export default function Dashboard() {
   }, [getDashboardData]);
 
   const handleCloseModal = () => {
+    const welcomeKey = 'welcome-modal-seen';
+    localStorage.setItem(welcomeKey, 'true');
     setShowWelcomeModal(false);
-    sessionStorage.setItem('onboardingSkipped', 'true');
+    setHasSeenWelcome(true);
   }
 
   const getStatusClasses = (virtueId: number, stage: number): string => {
@@ -192,7 +196,7 @@ export default function Dashboard() {
   }
   
   const VirtueRow = ({ virtue }: { virtue: Virtue }) => (
-    <li className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg bg-white shadow-sm">
+    <li className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">
       {assessmentTaken && (
         <div className="flex-shrink-0 flex items-center gap-4 w-full md:w-auto">
           <div className="relative w-16 h-16 flex items-center justify-center">
@@ -218,15 +222,15 @@ export default function Dashboard() {
     const daysSinceJournal = calculateDaysSince(lastJournalEntry);
     return (
         <div className="space-y-6">
-            <Card className="order-first">
+            <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                     <BookOpen className="h-8 w-8 text-amber-700" />
-                    <div><CardTitle className="text-stone-800">Assessment</CardTitle></div>
+                    <div><CardTitle className="text-stone-800 font-medium">Assessment</CardTitle></div>
                 </CardHeader>
                 <CardContent>
                   {assessmentTaken && virtues.length > 0 ? (
                     <>
-                      <Link href="/assessment" className="cursor-pointer block p-4">
+                      <Link href="/assessment" className="cursor-pointer block p-2">
                         <VirtueRoseChart 
                           data={virtues.map(v => ({
                             virtue: v.name,
@@ -254,10 +258,10 @@ export default function Dashboard() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                     <UserCheck className="h-8 w-8 text-amber-700" />
-                    <div><CardTitle className="text-stone-800">Sponsor Connection</CardTitle></div>
+                    <div><CardTitle className="text-stone-800 font-medium">Sponsor Connection</CardTitle></div>
                 </CardHeader>
                 <CardContent>
                     {connection ? (
@@ -275,10 +279,10 @@ export default function Dashboard() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                     <Edit className="h-8 w-8 text-amber-700" />
-                    <div><CardTitle className="text-stone-800">Journal</CardTitle></div>
+                    <div><CardTitle className="text-stone-800 font-medium">Journal</CardTitle></div>
                 </CardHeader>
                 <CardContent>
                     {daysSinceJournal !== null ? (
@@ -296,7 +300,7 @@ export default function Dashboard() {
   };
 
   const ProgressLegend = () => (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600 bg-stone-100 p-2 rounded-md">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600 bg-stone-100/60 backdrop-blur-sm p-2 rounded-md border border-stone-200/60">
       <strong>Legend:</strong>
       <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-stone-200 border border-stone-300"></div><span>Not Started</span></div>
       <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-200 border border-amber-300"></div><span>In Progress</span></div>
@@ -305,22 +309,52 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <AppHeader />
-      <WelcomeModal isOpen={showWelcomeModal} onClose={handleCloseModal} />
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100 relative">
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgb(120,113,108)_1px,_transparent_0)] bg-[length:32px_32px]"></div>
+      </div>
+      
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-50/60 to-stone-100/80"></div>
+      
+      <div className="relative z-10">
+        <AppHeader />
+        {console.log('Modal state:', showWelcomeModal)}
+        <WelcomeModal isOpen={showWelcomeModal} onClose={handleCloseModal} />
 
-      <main className="container mx-auto p-4 md:p-8">
+        <main className="container mx-auto p-4 md:p-8">
         {loading ? (
-          <p className="text-center text-stone-500">Loading dashboard...</p>
+          <div className="text-center">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-stone-300/60 rounded-lg w-64 mx-auto"></div>
+              <div className="h-4 bg-amber-200/60 rounded-lg w-48 mx-auto"></div>
+            </div>
+            <p className="text-stone-600 font-light mt-4">Loading dashboard...</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-4">
                
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 p-3 bg-white rounded-lg border">
-                    <h2 className="text-2xl font-light text-stone-800">
-                      Your Prioritized Virtues
-                    </h2>
-                    <ProgressLegend />
+                <div className="space-y-3 p-4 bg-white/80 backdrop-blur-sm rounded-lg border border-stone-200/60 shadow-gentle">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-light text-stone-800">
+                        Your Prioritized Virtues
+                      </h2>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log('Guide button clicked');
+                          setShowWelcomeModal(true);
+                        }}
+                        className="border-amber-200 text-amber-700 hover:bg-amber-50 transition-mindful"
+                      >
+                        <HelpCircle className="h-4 w-4 mr-2" />
+                        Guide
+                      </Button>
+                    </div>
+                    <div className="flex justify-end">
+                      <ProgressLegend />
+                    </div>
                 </div>
 
                 <ul className="space-y-4">
@@ -332,7 +366,8 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

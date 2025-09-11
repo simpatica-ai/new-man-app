@@ -24,9 +24,9 @@ interface WelcomeModalProps {
 export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl p-0">
+      <DialogContent className="sm:max-w-xl p-0 relative">
         <div 
-          className="relative rounded-t-lg bg-cover bg-center p-6 text-white"
+          className="relative rounded-t-lg bg-cover bg-center p-6 text-white z-0"
           style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${oakTreeImage})` }}
         >
           <DialogHeader className="items-center text-center">

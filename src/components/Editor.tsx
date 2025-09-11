@@ -56,9 +56,10 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
 interface TiptapEditorProps {
   content: string;
   onChange: (html: string) => void;
+  height?: number;
 }
 
-const TiptapEditor = ({ content, onChange }: TiptapEditorProps) => {
+const TiptapEditor = ({ content, onChange, height }: TiptapEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -73,7 +74,8 @@ const TiptapEditor = ({ content, onChange }: TiptapEditorProps) => {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-stone max-w-none p-4 min-h-[200px] border-x border-b border-stone-300 rounded-b-md focus:outline-none bg-white',
+        class: 'prose prose-stone max-w-none p-4 border-x border-b border-stone-300 rounded-b-md focus:outline-none bg-white',
+        style: height ? `height: ${height - 60}px; overflow-y: auto;` : 'min-height: 200px;',
       },
     },
     immediatelyRender: false,

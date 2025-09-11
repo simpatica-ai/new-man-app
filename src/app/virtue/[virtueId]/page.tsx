@@ -4,15 +4,17 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, Sparkles, Bot } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, Sparkles, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, GripHorizontal, HelpCircle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
 import AppHeader from '@/components/AppHeader'
+import VirtueGuideModal from '@/components/VirtueGuideModal'
 
 // --- Helper Functions ---
 const generateMemoHash = (memos: Map<number, string>, stageNumber: number) => {
@@ -39,29 +41,31 @@ type Virtue = {
   story_of_virtue: string | null; 
   author_reflection: string | null; 
   virtue_stages: Stage[];
-  affirmations: Affirmation[]; // CORRECTED: Affirmations are linked to the virtue
+  affirmations: Affirmation[];
 }
 type ChatMessage = { id: number; sender_id: string; message_text: string; created_at: string; sender_name: string | null; read_at: string | null }
 type StageStatus = 'not_started' | 'in_progress' | 'completed';
 
 // --- Standalone StageContent Component for Performance ---
-const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage }: { 
+const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, writingPanelHeight, setWritingPanelHeight }: { 
   stage: Stage, 
   memoContent: string, 
   status: StageStatus,
   onMemoChange: (html: string) => void,
   onSaveMemo: () => Promise<void>,
   onCompleteStage: () => Promise<void>,
-  onEditStage: () => Promise<void>
+  onEditStage: () => Promise<void>,
+  writingPanelHeight: number,
+  setWritingPanelHeight: (height: number) => void
 }) => {
     const [isSaving, setIsSaving] = useState(false);
     
     const empatheticTitles: { [key: number]: string } = {
-      1: "My Private Memo for Stage 1: Gently Exploring Areas for Growth",
-      2: "My Private Memo for Stage 2: Building New, Healthy Habits",
-      3: "My Private Memo for Stage 3: Maintaining Your Progress with Grace"
+      1: "My Private Reflection for Stage 1: Gently Exploring Areas for Growth",
+      2: "My Private Reflection for Stage 2: Building New, Healthy Habits",
+      3: "My Private Reflection for Stage 3: Maintaining Your Progress with Grace"
     };
-    const cardTitle = empatheticTitles[stage.stage_number] || `My Private Memo for ${stage.title}`;
+    const cardTitle = empatheticTitles[stage.stage_number] || `My Private Reflection for ${stage.title}`;
 
     const handleSave = async () => {
       setIsSaving(true);
@@ -77,35 +81,92 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
 
     const StatusBadge = () => {
         if (status === 'completed') {
-            return <div className="flex items-center gap-2 text-green-600 font-semibold"><CheckCircle size={18} /><span>Completed</span></div>
+            return (
+              <Badge variant="secondary" className="bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200">
+                <CheckCircle size={14} className="mr-1" />
+                Completed
+              </Badge>
+            )
         }
         if (status === 'in_progress') {
-            return <div className="flex items-center gap-2 text-amber-600 font-semibold"><Edit size={18} /><span>In Progress</span></div>
+            return (
+              <Badge variant="secondary" className="bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 border-amber-200">
+                <Edit size={14} className="mr-1" />
+                In Progress
+              </Badge>
+            )
         }
         return null;
     }
 
     return (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>{cardTitle}</CardTitle>
-          <CardDescription>Use the prompts above to guide your reflection. Your thoughts here are private.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <TiptapEditor
-            content={memoContent}
-            onChange={onMemoChange}
-          />
-          <div className="flex justify-end items-center gap-4">
-            <div className="flex-grow">
-              <StatusBadge />
+      <Card className="mt-6 border-stone-200 bg-gradient-to-br from-card via-amber-50/30 to-stone-50 shadow-gentle">
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <CardTitle className="text-stone-800 font-medium text-xl leading-relaxed">{cardTitle}</CardTitle>
+              <CardDescription className="text-stone-600">Use the guidance above to reflect deeply. Your thoughts here remain private and secure.</CardDescription>
             </div>
+            <StatusBadge />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-white/60 backdrop-blur-sm rounded-lg border border-stone-200/60 p-1 relative">
+            <TiptapEditor
+              content={memoContent}
+              onChange={onMemoChange}
+              height={writingPanelHeight}
+            />
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize flex items-center justify-center bg-stone-100/50 hover:bg-stone-200/50 transition-colors group"
+              onMouseDown={(e) => {
+                const startY = e.clientY;
+                const startHeight = writingPanelHeight;
+                
+                const handleMouseMove = (e: MouseEvent) => {
+                  const deltaY = e.clientY - startY;
+                  const newHeight = Math.max(200, Math.min(800, startHeight + deltaY));
+                  setWritingPanelHeight(newHeight);
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+            >
+              <GripHorizontal className="h-3 w-3 text-stone-400 group-hover:text-stone-600" />
+            </div>
+          </div>
+          <div className="flex justify-end items-center gap-3 pt-2">
             {status === 'completed' ? (
-              <Button variant="outline" onClick={onEditStage}>Edit Completed Memo</Button>
+              <Button 
+                variant="outline" 
+                onClick={onEditStage}
+                className="border-amber-200 text-amber-800 hover:bg-amber-50 transition-mindful"
+              >
+                Edit Completed Reflection
+              </Button>
             ) : (
               <>
-                <Button variant="outline" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Memo (Draft)'}</Button>
-                <Button onClick={handleComplete} disabled={isSaving}>{isSaving ? 'Saving...' : 'Mark as Complete'}</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  className="border-stone-300 text-stone-700 hover:bg-stone-50 transition-mindful"
+                >
+                  {isSaving ? 'Saving...' : 'Save Draft'}
+                </Button>
+                <Button 
+                  onClick={handleComplete} 
+                  disabled={isSaving}
+                  className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-mindful shadow-contemplative"
+                >
+                  {isSaving ? 'Saving...' : 'Mark Complete'}
+                </Button>
               </>
             )}
           </div>
@@ -132,6 +193,10 @@ export default function VirtueDetailPage() {
   const [stage2AiPrompt, setStage2AiPrompt] = useState<string | null>(null)
   const [stage3AiPrompt, setStage3AiPrompt] = useState<string | null>(null)
   const [isPromptLoading, setIsPromptLoading] = useState(false)
+  const [isPromptHidden, setIsPromptHidden] = useState(false)
+  const [writingPanelHeight, setWritingPanelHeight] = useState(400)
+  const [showGuideModal, setShowGuideModal] = useState(false)
+  const [hasSeenGuide, setHasSeenGuide] = useState(false)
 
   const params = useParams()
   const router = useRouter()
@@ -230,6 +295,22 @@ export default function VirtueDetailPage() {
     fetchPageData()
   }, [fetchPageData])
 
+  useEffect(() => {
+    const guideKey = 'virtue-guide-seen'
+    const seen = localStorage.getItem(guideKey)
+    if (!seen) {
+      setShowGuideModal(true)
+    }
+    setHasSeenGuide(!!seen)
+  }, [])
+
+  const handleCloseGuide = () => {
+    const guideKey = 'virtue-guide-seen'
+    localStorage.setItem(guideKey, 'true')
+    setShowGuideModal(false)
+    setHasSeenGuide(true)
+  }
+
   const fetchStage1Prompt = useCallback(async () => {
     if (!virtue || !defectAnalysis || !currentUserId) return;
 
@@ -278,8 +359,8 @@ export default function VirtueDetailPage() {
       setStage1AiPrompt(data.prompt);
 
     } catch (error) {
-      console.error("Error fetching Stage 1 AI prompt:", error);
-      setStage1AiPrompt("Could not load a suggestion. Please try reloading.");
+      console.error("Error fetching Stage 1 prompt:", error);
+      setStage1AiPrompt("Could not load guidance. Please try reloading.");
     } finally {
       setIsPromptLoading(false);
     }
@@ -336,8 +417,8 @@ export default function VirtueDetailPage() {
       setStage2AiPrompt(data.prompt);
 
     } catch (error) {
-      console.error("Error fetching Stage 2 AI prompt:", error);
-      setStage2AiPrompt("Could not load a suggestion. Please try reloading.");
+      console.error("Error fetching Stage 2 prompt:", error);
+      setStage2AiPrompt("Could not load guidance. Please try reloading.");
     } finally {
       setIsPromptLoading(false);
     }
@@ -397,8 +478,8 @@ export default function VirtueDetailPage() {
       setStage3AiPrompt(data.prompt);
 
     } catch (error) {
-      console.error("Error fetching Stage 3 AI prompt:", error);
-      setStage3AiPrompt("Could not load a suggestion. Please try reloading.");
+      console.error("Error fetching Stage 3 prompt:", error);
+      setStage3AiPrompt("Could not load guidance. Please try reloading.");
     } finally {
       setIsPromptLoading(false);
     }
@@ -513,123 +594,305 @@ export default function VirtueDetailPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100">
       <AppHeader />
-      <div className="p-8 text-center">Loading Workspace...</div>
+      <div className="p-8 text-center">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-amber-200/60 rounded-lg w-64 mx-auto"></div>
+          <div className="h-4 bg-stone-300/60 rounded-lg w-48 mx-auto"></div>
+        </div>
+      </div>
     </div>
   )
   if (!virtue) return (
-     <div className="min-h-screen bg-stone-50">
+     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100">
       <AppHeader />
-      <div className="p-8 text-center">Virtue not found.</div>
+      <div className="p-8 text-center">
+        <div className="text-stone-600 font-light">Virtue not found.</div>
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <AppHeader />
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-light text-stone-800">{virtue.name} Workspace</h1>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgb(120,113,108)_1px,_transparent_0)] bg-[length:32px_32px]"></div>
+      </div>
+      
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-50/60 to-stone-100/80"></div>
+      
+      <div className="relative z-10">
+        <AppHeader />
+        <main className="container mx-auto p-4 md:p-8">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-light text-stone-800 leading-tight">
+                  {virtue.name} 
+                  <span className="block text-xl font-medium text-amber-900 mt-1">Workspace</span>
+                </h1>
+                <div className="w-24 h-0.5 bg-gradient-to-r from-amber-600 to-stone-600 mt-3"></div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowGuideModal(true)}
+                className="border-amber-200 text-amber-700 hover:bg-amber-50"
+              >
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Guide
+              </Button>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-          {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
-          <div className="lg:col-span-3">
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full gap-2 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
-                <TabsTrigger value="stage-1">Stage 1: Dismantling</TabsTrigger>
-                <TabsTrigger value="stage-2">Stage 2: Building</TabsTrigger>
-                <TabsTrigger value="stage-3">Stage 3: Maintaining</TabsTrigger>
-                <TabsTrigger value="journal">Journal</TabsTrigger>
-                {connectionId && (
-                  <TabsTrigger value="chat" className="relative">
-                    Sponsor Chat
-                    {hasUnreadMessages && (<span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />)}
+          {/* Dynamic Layout Grid */}
+          <div className={`grid gap-8 items-start transition-all duration-500 ease-in-out ${
+            isPromptHidden ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-5'
+          }`}>
+            {/* Main Content */}
+            <div className={`transition-all duration-500 ease-in-out ${
+              isPromptHidden ? 'lg:col-span-1' : 'lg:col-span-3'
+            }`}>
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <TabsList className={`grid w-full gap-2 bg-white/70 backdrop-blur-sm border border-stone-200/60 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                  <TabsTrigger 
+                    value="stage-1" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                  >
+                    <span className="text-sm font-medium">Stage 1</span>
+                    <span className="text-sm text-stone-600">Dismantling</span>
                   </TabsTrigger>
-                )}
-              </TabsList>
+                  <TabsTrigger 
+                    value="stage-2"
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                  >
+                    <span className="text-sm font-medium">Stage 2</span>
+                    <span className="text-sm text-stone-600">Building</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="stage-3"
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                  >
+                    <span className="text-sm font-medium">Stage 3</span>
+                    <span className="text-sm text-stone-600">Maintaining</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="journal"
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful text-sm"
+                  >
+                    Journal
+                  </TabsTrigger>
+                  {connectionId && (
+                    <TabsTrigger 
+                      value="chat" 
+                      className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful text-sm"
+                    >
+                      Sponsor Chat
+                      {hasUnreadMessages && (<span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />)}
+                    </TabsTrigger>
+                  )}
+                </TabsList>
 
-              {[1, 2, 3].map(stageNum => {
-                const stageData = virtue.virtue_stages.find(s=>s.stage_number === stageNum);
-                const status = progress.get(`${virtueId}-${stageNum}`) || 'not_started';
-                return (
-                    <TabsContent key={stageNum} value={`stage-${stageNum}`}>
-                      {stageData && 
-                        <StageContent 
-                          stage={stageData} 
-                          memoContent={memos.get(stageNum) || ''}
-                          status={status}
-                          onMemoChange={(html) => setMemos(prev => new Map(prev).set(stageNum, html))}
-                          onSaveMemo={() => handleSaveMemo(stageNum)}
-                          onCompleteStage={() => handleCompleteStage(stageNum)}
-                          onEditStage={() => handleEditStage(stageNum)}
+                {[1, 2, 3].map(stageNum => {
+                  const stageData = virtue.virtue_stages.find(s=>s.stage_number === stageNum);
+                  const status = progress.get(`${virtueId}-${stageNum}`) || 'not_started';
+                  return (
+                      <TabsContent key={stageNum} value={`stage-${stageNum}`}>
+                        {stageData && 
+                          <StageContent 
+                            stage={stageData} 
+                            memoContent={memos.get(stageNum) || ''}
+                            status={status}
+                            onMemoChange={(html) => setMemos(prev => new Map(prev).set(stageNum, html))}
+                            onSaveMemo={() => handleSaveMemo(stageNum)}
+                            onCompleteStage={() => handleCompleteStage(stageNum)}
+                            onEditStage={() => handleEditStage(stageNum)}
+                            writingPanelHeight={writingPanelHeight}
+                            setWritingPanelHeight={setWritingPanelHeight}
+                          />
+                        }
+                      </TabsContent>
+                  )
+                })}
+                
+                <TabsContent value="journal">
+                  <Card className="mt-6 border-stone-200 bg-gradient-to-br from-card via-amber-50/30 to-stone-50 shadow-gentle">
+                    <CardContent className="pt-6">
+                      <JournalComponent />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="chat">
+                  <Card className="mt-6 border-stone-200 bg-gradient-to-br from-card via-amber-50/30 to-stone-50 shadow-gentle">
+                    <CardHeader>
+                      <CardTitle className="text-stone-800 font-medium">Chat with your Sponsor</CardTitle>
+                      <CardDescription className="text-stone-600">Connect with your mentor for guidance and support</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 border border-stone-200/60 p-4 rounded-lg bg-white/40 backdrop-blur-sm flex flex-col">
+                        {chatMessages.length > 0 ? chatMessages.map(message => (
+                          <div key={message.id} className={`p-3 rounded-lg shadow-gentle flex flex-col transition-mindful ${ message.sender_id === currentUserId ? 'bg-gradient-to-br from-stone-600 to-stone-700 text-white self-end' : 'bg-white/80 backdrop-blur-sm text-stone-800 self-start border border-stone-200/60' } max-w-[70%]`}>
+                            <p className={`text-xs mb-1 ${ message.sender_id === currentUserId ? 'text-stone-200' : 'text-stone-500' }`}>
+                              <strong>{message.sender_name}</strong> - {new Date(message.created_at).toLocaleTimeString()}
+                            </p>
+                            <p className="whitespace-pre-wrap">{message.message_text}</p>
+                          </div>
+                        )) : (
+                          <Alert className="border-amber-200 bg-amber-50/60 backdrop-blur-sm">
+                            <AlertCircle className="h-4 w-4 text-amber-600" />
+                            <AlertTitle className="text-amber-800">No Messages Yet</AlertTitle>
+                            <AlertDescription className="text-amber-700">Start the conversation with a thoughtful message.</AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Textarea 
+                          className="flex-grow bg-white/60 backdrop-blur-sm border-stone-200/60 transition-mindful focus:bg-white/80" 
+                          placeholder="Type your message..." 
+                          value={newChatMessage} 
+                          onChange={(e) => setNewChatMessage(e.target.value)} 
+                          onKeyDown={(e) => { 
+                            if (e.key === 'Enter' && !e.shiftKey) { 
+                              e.preventDefault(); 
+                              handleSendChatMessage(); 
+                            }
+                          }} 
                         />
-                      }
-                    </TabsContent>
-                )
-              })}
-              
-              <TabsContent value="journal">
-                <Card className="mt-6"><CardContent className="pt-6"><JournalComponent /></CardContent></Card>
-              </TabsContent>
+                        <Button 
+                          onClick={handleSendChatMessage} 
+                          size="icon" 
+                          className="flex-shrink-0 bg-gradient-primary text-primary-foreground hover:opacity-90 transition-mindful shadow-contemplative"
+                        >
+                          <Send size={18} />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
 
-              <TabsContent value="chat">
-                <Card className="mt-6">
-                  <CardHeader><CardTitle>Chat with your Sponsor</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 border p-4 rounded-md bg-stone-100 flex flex-col">
-                      {chatMessages.length > 0 ? chatMessages.map(message => (
-                        <div key={message.id} className={`p-3 rounded-lg shadow-sm flex flex-col ${ message.sender_id === currentUserId ? 'bg-blue-600 text-white self-end' : 'bg-white text-stone-800 self-start' } max-w-[70%]`}>
-                          <p className={`text-xs mb-1 ${ message.sender_id === currentUserId ? 'text-blue-200' : 'text-stone-500' }`}><strong>{message.sender_name}</strong> - {new Date(message.created_at).toLocaleTimeString()}</p>
-                          <p className="whitespace-pre-wrap">{message.message_text}</p>
+            {/* Guidance Panel - Collapsible Sideways */}
+            {!isPromptHidden && (displayedStageNumber === 1 || displayedStageNumber === 2 || displayedStageNumber === 3) && (
+              <div className={`transition-all duration-500 ease-in-out ${
+                isPromptHidden ? 'lg:col-span-0' : 'lg:col-span-2'
+              } lg:sticky lg:top-24`}>
+                <Card className="border-amber-200/60 bg-gradient-to-br from-amber-50 via-stone-50/50 to-amber-50 shadow-lg backdrop-blur-sm relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-[0.03]">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgb(120,113,108)_1px,_transparent_0)] bg-[length:16px_16px]"></div>
+                  </div>
+
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative">
+                    <div className="flex items-center gap-4">
+                      <Lightbulb className="h-6 w-6 text-amber-700 flex-shrink-0" />
+                      <div>
+                        <CardTitle className="text-stone-800 font-light text-base">Guided Reflection</CardTitle>
+                        <CardDescription className="text-stone-600 font-light text-sm">
+                          {displayedStageNumber === 1 && "Stage 1: Dismantling"}
+                          {displayedStageNumber === 2 && "Stage 2: Building"}
+                          {displayedStageNumber === 3 && "Stage 3: Maintaining"}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsPromptHidden(true)}
+                      className="text-stone-500 hover:text-stone-700 hover:bg-stone-100/60"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="pt-0 relative">
+                    {isPromptLoading ? (
+                      <div className="space-y-3">
+                        <div className="animate-pulse space-y-2">
+                          <div className="h-3 bg-stone-300/40 rounded w-full"></div>
+                          <div className="h-3 bg-stone-300/40 rounded w-5/6"></div>
+                          <div className="h-3 bg-stone-300/40 rounded w-4/6"></div>
                         </div>
-                      )) : (<Alert><AlertCircle className="h-4 w-4" /><AlertTitle>No Messages Yet</AlertTitle><AlertDescription>Start the conversation.</AlertDescription></Alert>)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Textarea className="flex-grow bg-white" placeholder="Type your message..." value={newChatMessage} onChange={(e) => setNewChatMessage(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChatMessage(); }}} />
-                      <Button onClick={handleSendChatMessage} size="icon" className="flex-shrink-0"><Send size={18} /></Button>
-                    </div>
+                        <p className="text-stone-600 text-xs font-light animate-pulse">
+                          Generating your personalized guidance...
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {displayedStageNumber === 1 && stage1AiPrompt && (
+                          <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+                            <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none">
+                              {stage1AiPrompt.split('\n').map((line, i) => (
+                                <p key={i} className="mb-2 last:mb-0">
+                                  {line.split(/\*\*(.*?)\*\*|\*(.*?)\*/).map((part, j) => {
+                                    if (j % 3 === 1) return <strong key={j}>{part}</strong>;
+                                    if (j % 3 === 2) return <em key={j}>{part}</em>;
+                                    return part;
+                                  })}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {displayedStageNumber === 2 && stage2AiPrompt && (
+                          <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+                            <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none">
+                              {stage2AiPrompt.split('\n').map((line, i) => (
+                                <p key={i} className="mb-2 last:mb-0">
+                                  {line.split(/\*\*(.*?)\*\*|\*(.*?)\*/).map((part, j) => {
+                                    if (j % 3 === 1) return <strong key={j}>{part}</strong>;
+                                    if (j % 3 === 2) return <em key={j}>{part}</em>;
+                                    return part;
+                                  })}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {displayedStageNumber === 3 && stage3AiPrompt && (
+                          <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+                            <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none">
+                              {stage3AiPrompt.split('\n').map((line, i) => (
+                                <p key={i} className="mb-2 last:mb-0">
+                                  {line.split(/\*\*(.*?)\*\*|\*(.*?)\*/).map((part, j) => {
+                                    if (j % 3 === 1) return <strong key={j}>{part}</strong>;
+                                    if (j % 3 === 2) return <em key={j}>{part}</em>;
+                                    return part;
+                                  })}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+              </div>
+            )}
 
-          {/* --- RIGHT COLUMN (SUPPORTING CARDS) --- */}
-          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
-            {(displayedStageNumber === 1 || displayedStageNumber === 2 || displayedStageNumber === 3) && (
-              <Card className="border-amber-200 bg-amber-50">
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                  <Bot className="h-8 w-8 text-amber-700 flex-shrink-0" />
-                  <div>
-                    <CardTitle className="text-stone-800">AI Guided Reflection</CardTitle>
-                    <CardDescription>
-                      {displayedStageNumber === 1 && "Stage 1: Dismantling"}
-                      {displayedStageNumber === 2 && "Stage 2: Building"}
-                      {displayedStageNumber === 3 && "Stage 3: Maintaining"}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  {isPromptLoading && (
-                    <p className="text-stone-600 animate-pulse">Generating your personalized prompt...</p>
-                  )}
-                  {!isPromptLoading && displayedStageNumber === 1 && stage1AiPrompt && (
-                    <p className="text-base text-stone-700 whitespace-pre-wrap">{stage1AiPrompt}</p>
-                  )}
-                  {!isPromptLoading && displayedStageNumber === 2 && stage2AiPrompt && (
-                    <p className="text-base text-stone-700 whitespace-pre-wrap">{stage2AiPrompt}</p>
-                  )}
-                  {!isPromptLoading && displayedStageNumber === 3 && stage3AiPrompt && (
-                    <p className="text-base text-stone-700 whitespace-pre-wrap">{stage3AiPrompt}</p>
-                  )}
-                </CardContent>
-              </Card>
+            {/* Show Guidance Button - when hidden */}
+            {isPromptHidden && (displayedStageNumber === 1 || displayedStageNumber === 2 || displayedStageNumber === 3) && (
+              <div className="fixed right-4 top-1/2 transform -translate-y-1/2 z-20">
+                <Button
+                  onClick={() => setIsPromptHidden(false)}
+                  className="bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white shadow-lg backdrop-blur-sm border border-amber-300/60 rounded-l-full pr-6 pl-4 py-8 flex items-center gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="font-light text-sm">Show Guidance</span>
+                </Button>
+              </div>
             )}
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
+      
+      <VirtueGuideModal 
+        isOpen={showGuideModal} 
+        onClose={handleCloseGuide}
+        hasConnection={!!connectionId}
+      />
     </div>
   )
 }
