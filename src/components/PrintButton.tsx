@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import VirtueAssessmentPDF from '@/app/assessment/VirtueAssessmentPDF';
@@ -73,9 +73,14 @@ const PrintButton = ({ results, analyses, summaryAnalysis, userName }: PrintButt
   };
 
   return (
-    <Button onClick={handlePrint} disabled={isGenerating} className="flex-1 text-xs h-8">
-      <Printer className="h-3 w-3 mr-1" />
-      {isGenerating ? 'Generating...' : 'Download PDF'}
+    <Button 
+      onClick={handlePrint} 
+      disabled={isGenerating} 
+      size="lg"
+      className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-medium transition-all duration-200"
+    >
+      <Download className="h-5 w-5 mr-2" />
+      {isGenerating ? 'Generating PDF...' : 'Download PDF Report'}
     </Button>
   );
 };

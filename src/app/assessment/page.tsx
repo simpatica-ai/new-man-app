@@ -9,9 +9,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 import AppHeader from '@/components/AppHeader'
-import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
+import Footer from '@/components/Footer'
+import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Download, Edit } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
@@ -154,18 +156,19 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
 // --- Markdown Renderer Component ---
 const MarkdownRenderer = ({ content }: { content: string }) => {
   return (
-    <div className="markdown-content text-sm text-stone-700">
+    <div className="markdown-content text-sm text-stone-700 prose prose-sm max-w-none">
       <ReactMarkdown
         components={{
-          h1: ({...props}) => <h2 className="text-lg font-semibold mt-4 mb-2" {...props} />,
-          h2: ({...props}) => <h3 className="text-base font-semibold mt-3 mb-1" {...props} />,
-          h3: ({...props}) => <h4 className="text-sm font-semibold mt-2 mb-1" {...props} />,
-          p: ({...props}) => <p className="mb-2 leading-relaxed" {...props} />,
-          ul: ({...props}) => <ul className="list-disc list-inside mb-2 pl-4" {...props} />,
-          ol: ({...props}) => <ol className="list-decimal list-inside mb-2 pl-4" {...props} />,
-          li: ({...props}) => <li className="mb-1" {...props} />,
-          strong: ({...props}) => <strong className="font-semibold" {...props} />,
-          em: ({...props}) => <em className="italic" {...props} />,
+          h1: ({...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-stone-800" {...props} />,
+          h2: ({...props}) => <h3 className="text-base font-bold mt-3 mb-2 text-stone-800" {...props} />,
+          h3: ({...props}) => <h4 className="text-sm font-bold mt-2 mb-1 text-stone-800" {...props} />,
+          p: ({...props}) => <p className="mb-3 leading-relaxed text-stone-700" {...props} />,
+          ul: ({...props}) => <ul className="list-disc list-outside mb-3 pl-5 space-y-1" {...props} />,
+          ol: ({...props}) => <ol className="list-decimal list-outside mb-3 pl-5 space-y-1" {...props} />,
+          li: ({...props}) => <li className="text-stone-700 leading-relaxed" {...props} />,
+          strong: ({...props}) => <strong className="font-bold text-stone-800" {...props} />,
+          em: ({...props}) => <em className="italic text-stone-600" {...props} />,
+          blockquote: ({...props}) => <blockquote className="border-l-4 border-amber-200 pl-4 italic text-stone-600 my-3" {...props} />,
         }}
       >
         {content}
@@ -191,6 +194,8 @@ export default function AssessmentPage() {
     const [summaryAnalysis, setSummaryAnalysis] = useState<string | null>(null);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [userName, setUserName] = useState<string>('');
+    const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+    const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
 
     const itemsPerPage = 8;
 
@@ -206,8 +211,14 @@ export default function AssessmentPage() {
     // --- AI Analysis Trigger ---
     const triggerAndSaveAnalyses = async (assessmentId: number, user: { id: string }, resultsToAnalyze: Result[], ratingsForPrompt: Ratings, harmLevelsForPrompt: HarmLevels) => {
         const ASTRID_AI_URL = "https://get-astrid-analysis-917009769018.us-west1.run.app";
+        
+        // Show modal and set progress
+        setShowAnalysisModal(true);
+        setAnalysisProgress({ current: 0, total: resultsToAnalyze.length });
 
-        for (const result of resultsToAnalyze) {
+        for (let i = 0; i < resultsToAnalyze.length; i++) {
+            const result = resultsToAnalyze[i];
+            setAnalysisProgress({ current: i + 1, total: resultsToAnalyze.length });
             const virtueInfo = virtueDetails.find(v => v.name === result.virtue);
             if (!virtueInfo) continue;
 
@@ -304,6 +315,9 @@ export default function AssessmentPage() {
 
         // After all virtue analyses are complete, trigger the summary analysis
         await triggerSummaryAnalysis(assessmentId, user, resultsToAnalyze);
+        
+        // Hide modal when complete
+        setShowAnalysisModal(false);
     };
 
     // --- Summary Analysis Trigger ---
@@ -634,6 +648,7 @@ export default function AssessmentPage() {
         setAnalyses(new Map());
         setCorsError(false);
         setSummaryAnalysis(null);
+        setShowAnalysisModal(false);
     };
 
     if (loading) return (
@@ -859,11 +874,16 @@ export default function AssessmentPage() {
                                                         </div>
                                                     </CardHeader>
                                                     <CardContent className="pt-0">
-                                                        {analysisText ? (
-                                                            <MarkdownRenderer content={analysisText} />
-                                                        ) : (
-                                                            <p className="text-stone-500 italic text-xs">Generating guidance...</p>
-                                                        )}
+                                                        <div className="min-h-[80px]">
+                                                            {analysisText ? (
+                                                                <MarkdownRenderer content={analysisText} />
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 text-stone-500 italic text-xs">
+                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-stone-400"></div>
+                                                                    Generating guidance...
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </CardContent>
                                                 </Card>
                                             )
@@ -871,28 +891,74 @@ export default function AssessmentPage() {
                                     }
                                 </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex gap-3">
-                                    <Button onClick={handleEdit} variant="outline" className="flex-1 text-xs h-8">
-                                        <ArrowLeft className="h-3 w-3 mr-1" />
-                                        Adjust Responses
-                                    </Button>
-                                    <PrintButton 
-                                        results={results.map(r => ({ 
-                                            virtue: r.virtue, 
-                                            priority: r.priority, 
-                                            defectIntensity: r.defectIntensity,
-                                            score: 10 - r.defectIntensity // Add the missing score property
-                                        }))}
-                                        analyses={analyses}
-                                        summaryAnalysis={summaryAnalysis || "No summary analysis available."}
-                                        userName={userName}
-                                    />
-                                </div>
+                                {/* Action Buttons - Improved Visibility */}
+                                <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-md">
+                                    <CardContent className="p-6">
+                                        <div className="text-center mb-4">
+                                            <h3 className="text-lg font-semibold text-stone-800 mb-2">Next Steps</h3>
+                                            <p className="text-sm text-stone-600">Review your results or save them for future reference</p>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <Button 
+                                                onClick={handleEdit} 
+                                                variant="outline" 
+                                                size="lg"
+                                                className="flex-1 h-12 border-2 border-amber-300 hover:bg-amber-50 hover:border-amber-400 transition-all duration-200"
+                                            >
+                                                <Edit className="h-5 w-5 mr-2" />
+                                                Adjust Responses
+                                            </Button>
+                                            <div className="flex-1">
+                                                <PrintButton 
+                                                    results={results.map(r => ({ 
+                                                        virtue: r.virtue, 
+                                                        priority: r.priority, 
+                                                        defectIntensity: r.defectIntensity,
+                                                        score: 10 - r.defectIntensity
+                                                    }))}
+                                                    analyses={analyses}
+                                                    summaryAnalysis={summaryAnalysis || "No summary analysis available."}
+                                                    userName={userName}
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
 )}                    </div>
                 </div>
             </div>
+            <Footer />
+            
+            {/* AI Analysis Loading Modal */}
+            <Dialog open={showAnalysisModal} onOpenChange={() => {}}>
+                <DialogContent showCloseButton={false} className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-600"></div>
+                            Generating AI Analysis
+                        </DialogTitle>
+                        <DialogDescription>
+                            Creating personalized insights for your virtue development...
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between text-sm">
+                            <span>Progress:</span>
+                            <span>{analysisProgress.current} of {analysisProgress.total} virtues</span>
+                        </div>
+                        <div className="w-full bg-stone-200 rounded-full h-2">
+                            <div 
+                                className="bg-amber-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${analysisProgress.total > 0 ? (analysisProgress.current / analysisProgress.total) * 100 : 0}%` }}
+                            ></div>
+                        </div>
+                        <p className="text-xs text-stone-500 text-center">
+                            This may take a few moments. Please don't close this window.
+                        </p>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
