@@ -14,7 +14,7 @@ import { Users, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
-  id: string; 
+  id: string | null; 
   full_name: string | null;
   user_email: string | null;
   connection_id: number | null;
@@ -322,7 +322,7 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {practitioners.length > 0 ? practitioners.map((p) => {
+                  {practitioners.length > 0 ? practitioners.filter(p => p.id).map((p) => {
                     const daysSince = Math.floor(Math.random() * 30); // Placeholder - would need actual activity tracking
                     const isActive = daysSince <= 7;
                     
@@ -349,7 +349,7 @@ export default function AdminPage() {
                              Remove Sponsor
                            </Button>
                         )}
-                        <Button variant="destructive" size="sm" onClick={() => handleRemovePractitioner(p.id)}>
+                        <Button variant="destructive" size="sm" onClick={() => p.id && handleRemovePractitioner(p.id)}>
                           Delete User
                         </Button>
                       </TableCell>
