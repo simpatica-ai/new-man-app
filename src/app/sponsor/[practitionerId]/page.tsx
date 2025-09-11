@@ -73,7 +73,7 @@ export default function SponsorView() {
       }
       setCurrentUserId(user.id);
 
-      const practitionerPromise = supabase.from('profiles').select('id, full_name, last_sign_in_at').eq('id', practitionerId).single();
+      const practitionerPromise = supabase.from('profiles').select('id, full_name').eq('id', practitionerId).single();
       const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
       const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', practitionerId).order('assessment_id', { ascending: false });
@@ -87,11 +87,9 @@ export default function SponsorView() {
       if (practitionerResult.error) throw practitionerResult.error;
       setPractitioner(practitionerResult.data);
       
-      // Set last activity from memo updates or last sign in
+      // Set last activity from memo updates
       if (activityResult.data && activityResult.data.length > 0) {
         setLastActivity(activityResult.data[0].updated_at);
-      } else if (practitionerResult.data?.last_sign_in_at) {
-        setLastActivity(practitionerResult.data.last_sign_in_at);
       }
 
       if (virtuesResult.error) throw virtuesResult.error;
