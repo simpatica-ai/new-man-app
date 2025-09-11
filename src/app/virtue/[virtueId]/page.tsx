@@ -568,7 +568,7 @@ export default function VirtueDetailPage() {
       .insert({
         connection_id: connectionId,
         sender_id: currentUserId,
-        receiver_id: parseInt(virtueId as string),
+        receiver_id: virtueId as string,
         message_text: newChatMessage
       })
       .select('id, sender_id, message_text, created_at, read_at')
