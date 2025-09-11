@@ -5,6 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { AuthCard } from "@/components/AuthCard";
 import Dashboard from "@/components/Dashboard";
+import Footer from "@/components/Footer";
 import heroBackground from "@/assets/hero-background.jpg";
 
 
@@ -81,6 +82,7 @@ const HomePage = () => {
 
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

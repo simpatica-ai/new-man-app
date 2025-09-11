@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { UserCheck, BookOpen, Edit, Sparkles, HelpCircle } from 'lucide-react'
 import AppHeader from './AppHeader'
+import Footer from './Footer'
 import WelcomeModal from './WelcomeModal'
 import VirtueRoseChart from './VirtueRoseChart'
 
@@ -363,6 +364,7 @@ export default function Dashboard() {
           </div>
         )}
         </main>
+        <Footer />
       </div>
     </div>
   )

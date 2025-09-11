@@ -76,7 +76,7 @@ type Result = {
     priority: number; 
     defectIntensity: number;
 };
-type VirtueInfo = { id: number; name: string; description: string };
+type VirtueInfo = { id: number; name: string; description: string | null };
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
@@ -376,7 +376,7 @@ export default function AssessmentPage() {
                                virtueScore >= 6 ? 'moderate' : 
                                virtueScore >= 4 ? 'developing' : 'area for growth';
         
-        return `Your reflection shows ${virtueInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description.toLowerCase()}. Every step toward practicing it brings growth.`;
+        return `Your reflection shows ${virtueInfo.name} is a ${scoreDescription} area. This virtue involves ${virtueInfo.description?.toLowerCase() || 'personal growth'}. Every step toward practicing it brings growth.`;
     };
 
     // --- Initial Data Load ---
