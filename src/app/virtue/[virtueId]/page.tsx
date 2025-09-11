@@ -300,14 +300,14 @@ export default function VirtueDetailPage() {
     if (!seen) {
       setShowGuideModal(true)
     }
-    setHasSeenGuide(!!seen)
+
   }, [])
 
   const handleCloseGuide = () => {
     const guideKey = 'virtue-guide-seen'
     localStorage.setItem(guideKey, 'true')
     setShowGuideModal(false)
-    setHasSeenGuide(true)
+
   }
 
   const fetchStage1Prompt = useCallback(async () => {
