@@ -229,7 +229,7 @@ export default function SponsorView() {
             <div className="h-8 bg-stone-300/60 rounded-lg w-64 mx-auto"></div>
             <div className="h-4 bg-amber-200/60 rounded-lg w-48 mx-auto"></div>
           </div>
-          <p className="text-stone-600 font-light mt-4">Loading practitioner's workspace...</p>
+          <p className="text-stone-600 font-light mt-4">Loading practitioner&apos;s workspace...</p>
         </div>
       </div>
     </div>
