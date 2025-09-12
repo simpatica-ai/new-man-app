@@ -48,6 +48,25 @@ export default function VirtueRoseChart({
     }
   }, []);
 
+  /**
+   * Handle mouse over events for tooltip display
+   */
+  const handleMouseOver = useCallback((e: MouseEvent, virtue: string, score: number) => {
+    setTooltip({
+      virtue,
+      score,
+      x: e.clientX,
+      y: e.clientY
+    });
+  }, []);
+
+  /**
+   * Handle mouse out events to hide tooltip
+   */
+  const handleMouseOut = useCallback(() => {
+    setTooltip(null);
+  }, []);
+
   // Handle mouse events for tooltips
   const handleMouseOver = useCallback((event: MouseEvent, virtue: string, score: number) => {
     if (!showLabels && !forPdf) {
