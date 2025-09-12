@@ -27,16 +27,26 @@ export default function ManageSponsorPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Calls the reliable RPC function to get connection details
+      // Get connection details from sponsor_relationships table
       const { data, error } = await supabase
-        .rpc('get_practitioner_connection_details', {
-          practitioner_id_param: user.id,
-        })
+        .from('sponsor_relationships')
+        .select(`
+          id,
+          status,
+          profiles!sponsor_relationships_sponsor_id_fkey(full_name)
+        `)
+        .eq('practitioner_id', user.id)
+        .in('status', ['pending', 'active', 'email_sent'])
+        .maybeSingle()
 
       if (error) throw error;
       
-      if (data && data.length > 0) {
-        setConnection(data[0]);
+      if (data) {
+        setConnection({
+          id: data.id,
+          status: data.status,
+          sponsor_name: data.profiles?.full_name || 'Your Sponsor'
+        });
       } else {
         setConnection(null);
       }
@@ -146,6 +156,11 @@ export default function ManageSponsorPage() {
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Active
                         </Badge>
+                      ) : connection.status === 'email_sent' ? (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Email Sent
+                        </Badge>
                       ) : (
                         <Badge className="bg-amber-100 text-amber-800 border-amber-200">
                           <Clock className="h-3 w-3 mr-1" />
@@ -157,6 +172,11 @@ export default function ManageSponsorPage() {
                   {connection.status === 'active' && (
                     <p className="text-sm text-stone-600 bg-stone-50 p-3 rounded-lg">
                       Your sponsor can now view your virtue progress and chat with you through the virtue workspace.
+                    </p>
+                  )}
+                  {connection.status === 'email_sent' && (
+                    <p className="text-sm text-stone-600 bg-blue-50 p-3 rounded-lg">
+                      An invitation email has been sent to your sponsor. They need to create an account and accept the invitation to complete the connection.
                     </p>
                   )}
                 </div>

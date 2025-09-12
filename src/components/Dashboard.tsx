@@ -98,9 +98,13 @@ export default function Dashboard() {
       ]);
       
       if (profileResult.error) throw profileResult.error;
-      const welcomeKey = 'welcome-modal-seen';
+      
+      // Show welcome modal for new users (no assessment taken and no local storage flag)
+      const welcomeKey = `welcome-modal-seen-${user.id}`;
       const seen = localStorage.getItem(welcomeKey);
-      if (!seen) {
+      const hasAssessment = assessmentResult.data && assessmentResult.data.length > 0;
+      
+      if (!seen && !hasAssessment) {
         setShowWelcomeModal(true);
       }
 
@@ -170,11 +174,13 @@ export default function Dashboard() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [getDashboardData]);
 
-  const handleCloseModal = () => {
-    const welcomeKey = 'welcome-modal-seen';
-    localStorage.setItem(welcomeKey, 'true');
+  const handleCloseModal = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const welcomeKey = `welcome-modal-seen-${user.id}`;
+      localStorage.setItem(welcomeKey, 'true');
+    }
     setShowWelcomeModal(false);
-
   }
 
   const getStatusClasses = (virtueId: number, stage: number): string => {

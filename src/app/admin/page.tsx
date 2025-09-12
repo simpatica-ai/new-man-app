@@ -151,6 +151,10 @@ export default function AdminPage() {
   }, [router]);
 
   useEffect(() => {
+    document.title = 'Admin';
+  }, []);
+
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
   

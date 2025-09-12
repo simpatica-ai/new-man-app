@@ -60,7 +60,9 @@ CREATE TABLE IF NOT EXISTS public.sponsor_relationships (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   sponsor_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   practitioner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  status TEXT DEFAULT 'pending', -- pending, active, inactive
+  sponsor_email TEXT, -- Store email for unregistered sponsors
+  invitation_token UUID DEFAULT gen_random_uuid(), -- Token for email invitations
+  status TEXT DEFAULT 'pending', -- pending, active, inactive, email_sent
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(sponsor_id, practitioner_id)
