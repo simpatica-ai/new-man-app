@@ -8,6 +8,21 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true
+  },
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: {
+      'x-my-custom-header': 'new-man-app',
+    },
+  },
+  // Connection pooling optimization
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // Limit realtime events
+    },
   },
 })
 

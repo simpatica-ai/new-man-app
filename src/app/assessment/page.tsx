@@ -15,6 +15,7 @@ import AppHeader from '@/components/AppHeader'
 import Footer from '@/components/Footer'
 import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
+import { useVirtues, type Virtue } from '@/hooks/useVirtues'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
 import PrintButton from '@/components/PrintButton';
@@ -90,7 +91,7 @@ type Result = {
     priority: number; 
     defectIntensity: number;
 };
-type VirtueInfo = { id: number; name: string; description: string | null };
+type VirtueInfo = Virtue;
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
@@ -191,13 +192,13 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
 
 // --- Main Assessment Page Component ---
 export default function AssessmentPage() {
+    const { data: virtueDetails = [], isLoading: virtuesLoading } = useVirtues();
     const [loading, setLoading] = useState(true);
     const [ratings, setRatings] = useState<Ratings>({});
     const [harmLevels, setHarmLevels] = useState<HarmLevels>({});
     const [results, setResults] = useState<Result[] | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [virtueDetails, setVirtueDetails] = useState<VirtueInfo[]>([]);
     const [analyses, setAnalyses] = useState<Map<string, string>>(new Map());
     const [currentAssessmentId, setCurrentAssessmentId] = useState<number | null>(null);
     const [hasExistingAssessment, setHasExistingAssessment] = useState(false);
@@ -411,10 +412,6 @@ export default function AssessmentPage() {
         
         const fetchInitialData = async () => {
             try {
-                const { data: virtuesData, error: virtuesError } = await supabase.from('virtues').select('id, name, description');
-                if (virtuesError) throw virtuesError;
-                setVirtueDetails(virtuesData || []);
-
                 const { data: { session } } = await supabase.auth.getSession();
                 const user = session?.user;
                 if (!user) return;

@@ -9,6 +9,14 @@ const nextConfig = {
     // Ignore ESLint errors during build
     ignoreDuringBuilds: true,
   },
+  
+  // Performance optimizations
+  compress: true,
+  
+  // Optimize images
+  images: {
+    formats: ['image/webp', 'image/avif'],
+  },
 }
 
 module.exports = nextConfig
