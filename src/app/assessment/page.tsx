@@ -21,6 +21,15 @@ import PrintButton from '@/components/PrintButton';
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
+
+// Map database virtue names to display names (only for charts)
+const virtueChartDisplayMap: { [key: string]: string } = {
+  "Healthy Boundaries": "Boundaries"
+};
+
+const getChartDisplayVirtueName = (dbName: string): string => {
+  return virtueChartDisplayMap[dbName] || dbName;
+};
 const defects = [
     { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "A recurring compulsion to engage in a specific activity, despite harmful consequences." },
     { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation", definition: "A strong feeling of annoyance, displeasure, or hostility." },
@@ -67,7 +76,10 @@ const defects = [
     { name: "Selfishness", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Consideration", definition: "Lacking consideration for others; concerned chiefly with one's own personal profit or pleasure." },
     { name: "Stealing", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Taking another person's property without permission or legal right." },
     { name: "Superiority", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "The state or belief of being greater than others in quality, status, or importance." },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "The quality of not being able to be trusted or depended on." }
+    { name: "Unreliability", virtues: ["Responsibility", "Integrity"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "The quality of not being able to be trusted or depended on." },
+    { name: "People-pleasing", virtues: ["Healthy Boundaries", "Honesty"], icon: <Heart className="h-4 w-4" />, category: "Boundaries", definition: "Excessive concern with gaining approval and avoiding conflict, often at the expense of one's own needs." },
+    { name: "Overcommitting", virtues: ["Healthy Boundaries", "Self-Control"], icon: <Clock className="h-4 w-4" />, category: "Boundaries", definition: "Taking on more responsibilities or obligations than one can reasonably handle." },
+    { name: "Enabling others", virtues: ["Healthy Boundaries", "Responsibility"], icon: <Users className="h-4 w-4" />, category: "Boundaries", definition: "Allowing or facilitating someone's harmful behavior by removing consequences or providing excessive support." }
 ];
 const harmLevelsMap: { [key: string]: number } = { None: 0, Minimal: 1, Moderate: 2, Significant: 3, Severe: 4 };
 
@@ -156,7 +168,7 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
 // --- Markdown Renderer Component ---
 const MarkdownRenderer = ({ content }: { content: string }) => {
   return (
-    <div className="markdown-content text-sm text-stone-700 prose prose-sm max-w-none">
+    <div className="markdown-content text-sm text-stone-700">
       <ReactMarkdown
         components={{
           h1: ({...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-stone-800" {...props} />,
@@ -824,10 +836,10 @@ export default function AssessmentPage() {
                                             <CardTitle className="text-base">Virtue Rose Chart</CardTitle>
                                             <CardDescription className="text-sm">Visual overview of your growth areas</CardDescription>
                                         </CardHeader>
-                                        <CardContent className="flex justify-center">
+                                        <CardContent className="flex justify-center items-center h-[500px]">
                                             <VirtueRoseChart 
                                             data={results.map((r) => ({ 
-                                                virtue: r.virtue, 
+                                                virtue: getChartDisplayVirtueName(r.virtue), 
                                                 score: 10 - r.defectIntensity 
                                             }))} 
                                             size="medium"
@@ -842,7 +854,7 @@ export default function AssessmentPage() {
                                     {results && (
                                         <VirtueRoseChart 
                                             data={results.map((r) => ({ 
-                                                virtue: r.virtue, 
+                                                virtue: getChartDisplayVirtueName(r.virtue), 
                                                 score: 10 - r.defectIntensity 
                                             }))} 
                                             size="medium"

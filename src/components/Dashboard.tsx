@@ -61,6 +61,15 @@ const defects = [
     { name: "Unreliability", virtues: ["Responsibility", "Integrity"] }
 ];
 
+// --- VIRTUE NAME MAPPING ---
+const virtueChartDisplayMap: { [key: string]: string } = {
+  "Healthy Boundaries": "Boundaries"
+};
+
+const getChartDisplayVirtueName = (dbName: string): string => {
+  return virtueChartDisplayMap[dbName] || dbName;
+};
+
 // --- TYPE DEFINITIONS ---
 type StageProgress = { virtue_id: number; stage_number: number; status: 'not_started' | 'in_progress' | 'completed'; }
 type Virtue = { id: number; name: string; description: string | null; short_description: string | null; virtue_score?: number; };
@@ -148,9 +157,14 @@ export default function Dashboard() {
             .map(v => {
               const priorityScore = scoreMap.get(v.name) || 0;
               const defectCount = virtueDefectCounts.get(v.name) || 0;
-              const maxPossiblePriority = defectCount * 25; // Max rating 5 * (Max harm 4 + 1) = 25
+              
+              // Use the same calculation as Assessment page
+              const maxFrequencyScore = 5; // Max frequency rating
+              const maxHarmMultiplier = 5; // Max harm level (4) + 1
+              const maxPossiblePriority = defectCount * maxFrequencyScore * maxHarmMultiplier;
               const defectIntensity = maxPossiblePriority > 0 ? (priorityScore / maxPossiblePriority) * 10 : 0;
               const finalVirtueScore = Math.max(0, Math.min(10, 10 - defectIntensity));
+              
               return { ...v, virtue_score: finalVirtueScore };
             })
             .sort((a, b) => (a.virtue_score || 0) - (b.virtue_score || 0));
@@ -237,19 +251,23 @@ export default function Dashboard() {
                 <CardContent>
                   {assessmentTaken && virtues.length > 0 ? (
                     <>
-                      <Link href="/assessment" className="cursor-pointer block p-2">
+                      <div className="p-2">
                         <VirtueRoseChart 
                           data={virtues.map(v => ({
-                            virtue: v.name,
+                            virtue: getChartDisplayVirtueName(v.name),
                             score: v.virtue_score || 0
                           }))}
                           size="thumbnail"
                           showLabels={false}
                         />
-                      </Link>
+                      </div>
                       <div className="px-6 pb-4 pt-0 text-center">
-                        <p className="text-sm text-stone-600 mb-2">Click chart for details or to retake.</p>
-                        <Link href="/assessment"><Button size="sm" variant="outline">Retake Assessment</Button></Link>
+                        <Link 
+                          href="/assessment" 
+                          className="text-amber-700 hover:text-amber-800 underline text-sm"
+                        >
+                          View Full Assessment
+                        </Link>
                       </div>
                     </>
                   ) : (

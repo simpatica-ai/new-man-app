@@ -52,18 +52,23 @@ export default function VirtueRoseChart({
    * Handle mouse over events for tooltip display
    */
   const handleMouseOver = useCallback((e: MouseEvent, virtue: string, score: number) => {
-    setTooltip({
-      virtue,
-      score,
-      x: e.clientX,
-      y: e.clientY
-    });
+    console.log('Mouse over:', virtue, score); // Debug log
+    const rect = (e.target as Element).closest('svg')?.getBoundingClientRect();
+    if (rect) {
+      setTooltip({
+        virtue,
+        score,
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
   }, []);
 
   /**
    * Handle mouse out events to hide tooltip
    */
   const handleMouseOut = useCallback(() => {
+    console.log('Mouse out'); // Debug log
     setTooltip(null);
   }, []);
 
@@ -102,7 +107,9 @@ export default function VirtueRoseChart({
       'Integrity': { textAnchor: 'middle', dx: forPdf ? 10 : 8 },
       'Respect': { textAnchor: 'middle', dx: forPdf ? -13 : -10 },
       'Humility': { textAnchor: 'middle', dx: forPdf ? 13 : 10 },
-      'Vulnerability': { textAnchor: 'middle', dx: forPdf ? -11 : -9 }
+      'Vulnerability': { textAnchor: 'middle', dx: forPdf ? -11 : -9 },
+      'Healthy Boundaries': { textAnchor: 'middle', dx: forPdf ? 1 : -2 },
+      'Boundaries': { textAnchor: 'middle', dx: forPdf ? 1 : -2 }
     };
 
     if (virtueAdjustments[virtue]) {
@@ -222,8 +229,13 @@ export default function VirtueRoseChart({
       
       if (!showLabels && !forPdf) {
         path.style.cursor = 'pointer';
-        path.addEventListener('mouseover', (e) => handleMouseOver(e as unknown as MouseEvent, item.virtue, item.score));
-        path.addEventListener('mouseout', handleMouseOut);
+        path.addEventListener('mouseover', (e) => {
+          const mouseEvent = e as MouseEvent;
+          handleMouseOver(mouseEvent, item.virtue, item.score);
+        });
+        path.addEventListener('mouseout', () => {
+          handleMouseOut();
+        });
       }
       
       svg.appendChild(path);
@@ -284,16 +296,19 @@ export default function VirtueRoseChart({
       
       {!showLabels && !forPdf && tooltip && (
         <div style={{
-          position: 'fixed',
+          position: 'absolute',
           left: `${tooltip.x + 10}px`,
           top: `${tooltip.y + 10}px`,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
           color: 'white',
           padding: '8px 12px',
-          borderRadius: '4px',
+          borderRadius: '6px',
           fontSize: '14px',
-          zIndex: 1000,
+          fontWeight: '500',
+          zIndex: 9999,
           pointerEvents: 'none',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          whiteSpace: 'nowrap',
         }}>
           <div><strong>{tooltip.virtue}</strong></div>
           <div>Score: {tooltip.score.toFixed(1)}/10</div>
