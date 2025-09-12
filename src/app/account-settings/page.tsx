@@ -35,6 +35,7 @@ export default function AccountSettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isCancellingInvite, setIsCancellingInvite] = useState(false);
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; content: string } | null>(null);
   const router = useRouter();
@@ -66,7 +67,15 @@ export default function AccountSettingsPage() {
       .single();
 
     const connectionPromise = supabase
-      .rpc('get_practitioner_connection_details', { practitioner_id_param: currentUser.id });
+      .from('sponsor_relationships')
+      .select(`
+        id,
+        status,
+        profiles!sponsor_relationships_sponsor_id_fkey(full_name)
+      `)
+      .eq('practitioner_id', currentUser.id)
+      .in('status', ['pending', 'active', 'email_sent'])
+      .maybeSingle();
 
     const [profileResult, connectionResult] = await Promise.all([profilePromise, connectionPromise]);
 
@@ -79,8 +88,12 @@ export default function AccountSettingsPage() {
     }
 
     if (connectionResult.error) throw connectionResult.error;
-    if (connectionResult.data && connectionResult.data.length > 0) {
-        setConnection(connectionResult.data[0]);
+    if (connectionResult.data) {
+        setConnection({
+          id: connectionResult.data.id,
+          status: connectionResult.data.status,
+          sponsor_name: connectionResult.data.profiles?.full_name || 'Your Sponsor'
+        });
     }
 
   }, []);
@@ -152,19 +165,107 @@ export default function AccountSettingsPage() {
   };
 
   const handleInviteSponsor = async () => {
+    if (!sponsorEmail) {
+      setMessage({ type: 'error', content: 'Please enter your sponsor\'s email address.' });
+      return;
+    }
+
     setIsSubmittingInvite(true);
     setMessage(null);
+    
     try {
-        const { error } = await supabase.functions.invoke('invite-sponsor', {
-            body: { sponsor_email: sponsorEmail }
-        });
-        if (error) throw error;
-        setMessage({ type: 'success', content: 'Sponsor invitation sent successfully!' });
-        fetchAllData(user!);
+      // Check if practitioner already has a pending or active relationship
+      const { data: existingRelationship } = await supabase
+        .from('sponsor_relationships')
+        .select('id')
+        .eq('practitioner_id', user!.id)
+        .in('status', ['pending', 'active', 'email_sent'])
+        .maybeSingle();
+
+      if (existingRelationship) {
+        setMessage({ type: 'error', content: 'You already have a pending or active sponsor invitation.' });
+        return;
+      }
+
+      // Check if sponsor email is already a sponsor for someone else
+      const { data: existingSponsor } = await supabase
+        .from('sponsor_relationships')
+        .select('id')
+        .eq('sponsor_email', sponsorEmail)
+        .in('status', ['active', 'pending'])
+        .maybeSingle();
+
+      // Create invitation with email
+      const { data: relationship, error: insertError } = await supabase
+        .from('sponsor_relationships')
+        .insert({
+          practitioner_id: user!.id,
+          sponsor_email: sponsorEmail,
+          status: 'email_sent'
+        })
+        .select('invitation_token')
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Send email using our API
+      const inviteUrl = `${window.location.origin}/sponsor/accept-invitation?token=${relationship.invitation_token}`;
+      
+      const emailResponse = await fetch('/api/send-sponsor-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sponsorEmail: sponsorEmail,
+          practitionerName: fullName || user!.email || 'User',
+          invitationLink: inviteUrl,
+          isExistingSponsor: !!existingSponsor
+        })
+      });
+
+      if (emailResponse.ok) {
+        setMessage({ type: 'success', content: 'Invitation email sent successfully!' });
+      } else {
+        setMessage({ type: 'success', content: `Invitation created! Please share this link with your sponsor: ${inviteUrl}` });
+      }
+
+      setSponsorEmail('');
+      
+      // Refresh the connection data
+      if (user) {
+        await fetchAllData(user);
+      }
     } catch (error) {
-        if (error instanceof Error) setMessage({ type: 'error', content: error.message });
+      if (error instanceof Error) {
+        setMessage({ type: 'error', content: error.message });
+      }
     } finally {
-        setIsSubmittingInvite(false);
+      setIsSubmittingInvite(false);
+    }
+  };
+
+  const handleCancelInvitation = async () => {
+    if (!connection) return;
+    
+    setIsCancellingInvite(true);
+    setMessage(null);
+    
+    try {
+      const { error } = await supabase
+        .from('sponsor_relationships')
+        .delete()
+        .eq('id', connection.id);
+        
+      if (error) throw error;
+      
+      setMessage({ type: 'success', content: 'Invitation cancelled. You can now invite a different sponsor.' });
+      setConnection(null);
+      setSponsorEmail('');
+    } catch (error) {
+      if (error instanceof Error) {
+        setMessage({ type: 'error', content: 'Failed to cancel invitation: ' + error.message });
+      }
+    } finally {
+      setIsCancellingInvite(false);
     }
   };
 
@@ -234,7 +335,7 @@ export default function AccountSettingsPage() {
             {message && (
               <Alert className={`border ${message.type === 'success' ? 'border-emerald-200 bg-emerald-50/60' : 'border-red-200 bg-red-50/60'} backdrop-blur-sm`}>
                 <AlertTriangle className={`h-4 w-4 ${message.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`} />
-                <AlertDescription className={message.type === 'success' ? 'text-emerald-800' : 'text-red-800'}>
+                <AlertDescription className={`${message.type === 'success' ? 'text-emerald-800' : 'text-red-800'} whitespace-pre-wrap break-all`}>
                   {message.content}
                 </AlertDescription>
               </Alert>
@@ -320,12 +421,33 @@ export default function AccountSettingsPage() {
                         <p className="text-stone-700 font-medium">Connected with: <span className="text-amber-800 font-semibold">{connection.sponsor_name || 'Your Sponsor'}</span></p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-stone-600 text-sm">Status:</span>
-                          <Badge variant="secondary" className="bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 capitalize">
-                            {connection.status}
+                          <Badge variant="secondary" className={
+                            connection.status === 'active' 
+                              ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200'
+                              : connection.status === 'email_sent'
+                              ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
+                              : 'bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 border-amber-200'
+                          }>
+                            {connection.status === 'email_sent' ? 'Invitation Sent' : connection.status}
                           </Badge>
                         </div>
                       </div>
                     </div>
+                    {connection.status === 'email_sent' && (
+                      <div className="p-4 bg-blue-50/60 backdrop-blur-sm rounded-lg border border-blue-200/60">
+                        <p className="text-blue-800 text-sm mb-3">
+                          Your sponsor invitation is pending. If they haven't responded or you need to invite someone else, you can cancel this invitation.
+                        </p>
+                        <Button 
+                          variant="outline"
+                          onClick={handleCancelInvitation}
+                          disabled={isCancellingInvite}
+                          className="border-red-300 text-red-700 hover:bg-red-50 transition-all duration-300"
+                        >
+                          {isCancellingInvite ? 'Cancelling...' : 'Cancel Invitation'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-6">
