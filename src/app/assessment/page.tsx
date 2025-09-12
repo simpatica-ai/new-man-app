@@ -395,6 +395,8 @@ export default function AssessmentPage() {
 
     // --- Initial Data Load ---
     useEffect(() => {
+        document.title = "New Man App: Virtue Assessment";
+        
         const fetchInitialData = async () => {
             try {
                 const { data: virtuesData, error: virtuesError } = await supabase.from('virtues').select('id, name, description');

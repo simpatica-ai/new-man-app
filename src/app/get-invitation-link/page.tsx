@@ -11,6 +11,8 @@ export default function GetInvitationLink() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    document.title = "New Man App: Invitation Link";
+    
     const getLink = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return

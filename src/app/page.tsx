@@ -15,6 +15,8 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "New Man App: Home";
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setIsLoading(false);
@@ -55,26 +57,35 @@ const HomePage = () => {
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
           <div className="min-h-screen flex items-center justify-center">
             <div className="w-full">
+              <h1 className="text-4xl md:text-5xl font-light leading-tight mb-8 text-center text-stone-800">
+                A New Man: Your Guide to Virtuous Living
+              </h1>
+              
               <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
                 
                 <div className="text-stone-800 text-center md:text-left">
-                  <h1 className="text-4xl md:text-5xl font-light leading-tight mb-4">
-                    A New Man With
-                    <br />
-                    New Behaviors
-                  </h1>
-                  <p className="text-lg text-stone-600 mb-6">
-                    A Guide to a Virtuous Life
-                  </p>
                   <div className="space-y-4 text-stone-700">
                     <p>
-                      This application grows from the book, inviting you to a journey of self-reflection. Learn from your character defects to build a sustainable practice of virtue.
+                      Transform your character through intentional virtue development powered by AI-driven insights. The New Man App helps you identify areas for growth, track your progress, and build lasting positive habits with the support of a personal mentor.
                     </p>
+                    
+                    <div className="space-y-3">
+                      <h3 className="font-semibold text-stone-800">Key Features:</h3>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex"><span className="mr-2">•</span><span><strong>AI-Powered Virtue Assessment</strong> - Discover your strengths and growth areas across 12 core virtues with intelligent analysis</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Comprehensive Assessment Reports</strong> - Receive detailed, AI-generated reports with actionable guidance</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Personal Journal</strong> - Reflect on daily experiences with AI-enhanced feedback</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Mentor Support</strong> - Connect with a sponsor who guides your growth using data-driven insights</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Intelligent Progress Tracking</strong> - Visualize development with AI-powered analytics</span></li>
+                      </ul>
+                    </div>
+                    
                     <p>
-                      Connect with a sponsor who can guide and coach you through your recovery and growth. This is a shared path, and you are not alone.
+                      Whether you're beginning your journey of personal growth or deepening existing practices, The New Man App combines proven virtue development principles with cutting-edge AI to provide personalized guidance and community support.
                     </p>
-                    <p className="font-semibold">
-                      This application is a free resource, made possible by the generosity of our community.
+                    
+                    <p className="font-semibold text-amber-800">
+                      Ready to begin your transformation? Create your account today to start your personalized virtue development journey. Thank you for being an early adopter and joining us in this mission to build character and transform lives.
                     </p>
                   </div>
                 </div>

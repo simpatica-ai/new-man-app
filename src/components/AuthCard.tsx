@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 
 export function AuthCard() {
   const [loading, setLoading] = useState(false);
-  const [isLoginView, setIsLoginView] = useState(true);
+  const [isLoginView, setIsLoginView] = useState(false); // Changed to false to show signup first
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -57,10 +57,10 @@ export function AuthCard() {
     <Card className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border-stone-200">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-semibold text-stone-800 tracking-tight">
-          {isLoginView ? 'Welcome Back' : 'Create an Account'}
+          {isLoginView ? 'Welcome Back' : 'Start Your Journey'}
         </CardTitle>
         <CardDescription className="text-stone-600 pt-1">
-          {isLoginView ? 'Continue your path of personal growth.' : 'Join to start your virtuous life.'}
+          {isLoginView ? 'Continue your path of personal growth.' : 'Create your account to begin transforming your character.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">
@@ -141,7 +141,7 @@ export function AuthCard() {
             }}
             className="font-semibold text-stone-800 hover:text-stone-900 underline"
           >
-            {isLoginView ? 'Start your journey' : 'Sign In'}
+            {isLoginView ? 'Create Account' : 'Sign In Here'}
           </button>
         </div>
       </CardContent>
