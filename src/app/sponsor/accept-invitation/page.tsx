@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, UserPlus, AlertCircle } from 'lucide-react'
+import { UserPlus, AlertCircle } from 'lucide-react'
 
 export default function AcceptInvitationPage() {
   const [loading, setLoading] = useState(true)
@@ -16,17 +16,7 @@ export default function AcceptInvitationPage() {
   const router = useRouter()
   const token = searchParams.get('token')
 
-  useEffect(() => {
-    if (!token) {
-      setError('Invalid invitation link')
-      setLoading(false)
-      return
-    }
-
-    fetchInvitation()
-  }, [token])
-
-  const fetchInvitation = async () => {
+  const fetchInvitation = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('sponsor_relationships')
@@ -49,10 +39,21 @@ export default function AcceptInvitationPage() {
       setInvitation(data)
     } catch (err) {
       setError('Failed to load invitation')
+      console.error('Fetch invitation error:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
+
+  useEffect(() => {
+    if (!token) {
+      setError('Invalid invitation link')
+      setLoading(false)
+      return
+    }
+
+    fetchInvitation()
+  }, [token, fetchInvitation])
 
   const acceptInvitation = async () => {
     if (!invitation) return
@@ -90,6 +91,7 @@ export default function AcceptInvitationPage() {
       router.push('/sponsor/dashboard')
     } catch (err) {
       setError('Failed to accept invitation')
+      console.error('Accept invitation error:', err)
     } finally {
       setAccepting(false)
     }

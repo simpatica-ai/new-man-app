@@ -37,12 +37,17 @@ Deno.serve(async (req) => {
     }
 
     // Check if practitioner already has a pending or active relationship
-    const { data: existingRelationship } = await supabase
+    const { data: existingRelationship, error: relationshipError } = await supabase
       .from('sponsor_relationships')
       .select('id')
       .eq('practitioner_id', user.id)
       .in('status', ['pending', 'active', 'email_sent'])
       .maybeSingle()
+
+    if (relationshipError) {
+      console.error('Error checking existing relationships:', relationshipError)
+      throw new Error('Failed to check existing relationships')
+    }
 
     if (existingRelationship) {
       return new Response(JSON.stringify({ error: 'You already have a pending or active sponsor invitation.' }), { 
@@ -52,11 +57,16 @@ Deno.serve(async (req) => {
     }
 
     // Check if sponsor is already registered
-    const { data: sponsorProfile } = await supabase
+    const { data: sponsorProfile, error: profileError } = await supabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('email', sponsor_email)
-      .single()
+      .maybeSingle()
+
+    if (profileError) {
+      console.error('Error checking sponsor profile:', profileError)
+      throw new Error('Failed to check sponsor profile')
+    }
 
     if (sponsorProfile) {
       // Sponsor is registered - create direct relationship
@@ -69,7 +79,10 @@ Deno.serve(async (req) => {
           status: 'pending'
         })
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error('Error creating relationship:', insertError)
+        throw insertError
+      }
 
       // Update sponsor role if needed
       if (sponsorProfile.role !== 'sponsor') {
@@ -98,7 +111,10 @@ Deno.serve(async (req) => {
         .select('invitation_token')
         .single()
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error('Error creating email invitation:', insertError)
+        throw insertError
+      }
 
       // Get practitioner name for email
       const { data: practitionerProfile } = await supabase
@@ -109,31 +125,28 @@ Deno.serve(async (req) => {
 
       const practitionerName = practitionerProfile?.full_name || user.email
 
-      // Send invitation email
-      const siteUrl = Deno.env.get('SITE_URL') || 
-        (Deno.env.get('VERCEL_URL') ? `https://${Deno.env.get('VERCEL_URL')}` : 'http://localhost:3000')
-      const inviteUrl = `${siteUrl}/sponsor/accept-invitation?token=${relationship.invitation_token}`
-      
-      const emailHtml = `
-        <h2>You've been invited to be a sponsor!</h2>
-        <p>${practitionerName} has invited you to be their sponsor on our virtue development platform.</p>
-        <p>As a sponsor, you'll be able to guide and support their journey of personal growth.</p>
-        <p><a href="${inviteUrl}" style="background-color: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Accept Invitation</a></p>
-        <p>If the button doesn't work, copy and paste this link: ${inviteUrl}</p>
-      `
+      // Send invitation email using Supabase Auth
+      try {
+        const siteUrl = Deno.env.get('SITE_URL') || 
+          (Deno.env.get('VERCEL_URL') ? `https://${Deno.env.get('VERCEL_URL')}` : 'http://localhost:3000')
+        const inviteUrl = `${siteUrl}/sponsor/accept-invitation?token=${relationship.invitation_token}`
+        
+        const { error: emailError } = await supabase.auth.admin.inviteUserByEmail(sponsor_email, {
+          data: {
+            invitation_type: 'sponsor',
+            practitioner_name: practitionerName,
+            invitation_token: relationship.invitation_token
+          },
+          redirectTo: inviteUrl
+        })
 
-      const { error: emailError } = await supabase.auth.admin.inviteUserByEmail(sponsor_email, {
-        data: {
-          invitation_type: 'sponsor',
-          practitioner_name: practitionerName,
-          invitation_token: relationship.invitation_token
-        },
-        redirectTo: inviteUrl
-      })
-
-      if (emailError) {
-        console.error('Email error:', emailError)
-        // Don't fail the whole operation if email fails
+        if (emailError) {
+          console.error('Email error:', emailError)
+          // Continue without failing - the invitation is still created
+        }
+      } catch (emailErr) {
+        console.error('Email sending failed:', emailErr)
+        // Continue without failing
       }
 
       return new Response(JSON.stringify({ 
@@ -146,7 +159,7 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error('Function error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     })

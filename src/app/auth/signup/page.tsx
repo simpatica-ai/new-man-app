@@ -63,8 +63,9 @@ export default function SignUpPage() {
       } else {
         router.push('/')
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
