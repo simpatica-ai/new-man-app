@@ -67,22 +67,6 @@ export default function VirtueRoseChart({
     setTooltip(null);
   }, []);
 
-  // Handle mouse events for tooltips
-  const handleMouseOver = useCallback((event: MouseEvent, virtue: string, score: number) => {
-    if (!showLabels && !forPdf) {
-      setTooltip({
-        virtue,
-        score,
-        x: event.clientX,
-        y: event.clientY
-      });
-    }
-  }, [showLabels, forPdf]);
-
-  const handleMouseOut = useCallback(() => {
-    setTooltip(null);
-  }, []);
-
   // Label positioning configuration
   const getLabelPositioning = useCallback((angle: number, virtue: string) => {
     const baseConfig = {
