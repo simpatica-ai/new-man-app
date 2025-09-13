@@ -13,11 +13,6 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'public',
   },
-  global: {
-    headers: {
-      'x-my-custom-header': 'new-man-app',
-    },
-  },
   // Connection pooling optimization
   realtime: {
     params: {

@@ -21,6 +21,7 @@ type PractitionerDetails = {
   created_at: string | null;
   connection_id: number | null;
   sponsor_name: string | null;
+  last_activity: Date | null;
 };
 
 type SupportTicket = {
@@ -82,7 +83,44 @@ export default function AdminPage() {
           full_name,
           created_at
         `);
+
+      // Get recent activity for each user (assessments, journal entries)
+      const { data: recentActivity } = await supabase
+        .from('user_assessments')
+        .select('user_id, created_at')
+        .order('created_at', { ascending: false });
+
+      // Get journal activity too
+      const { data: journalActivity } = await supabase
+        .from('journal_entries')
+        .select('user_id, created_at')
+        .order('created_at', { ascending: false });
       
+      // Create activity map
+      const activityMap = new Map<string, Date>();
+      
+      // Process assessment activity
+      recentActivity?.forEach(activity => {
+        if (activity.user_id) {
+          const existingDate = activityMap.get(activity.user_id);
+          const activityDate = new Date(activity.created_at);
+          if (!existingDate || activityDate > existingDate) {
+            activityMap.set(activity.user_id, activityDate);
+          }
+        }
+      });
+
+      // Process journal activity
+      journalActivity?.forEach(activity => {
+        if (activity.user_id) {
+          const existingDate = activityMap.get(activity.user_id);
+          const activityDate = new Date(activity.created_at);
+          if (!existingDate || activityDate > existingDate) {
+            activityMap.set(activity.user_id, activityDate);
+          }
+        }
+      });
+
       if (practitionerError) throw practitionerError;
       
       // Fetch sponsor connections
