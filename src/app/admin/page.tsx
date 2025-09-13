@@ -12,12 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Users, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 import CloudRunMonitor from '@/components/CloudRunMonitor';
+import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
   id: string | null; 
   full_name: string | null;
-  user_email: string | null;
+  created_at: string | null;
   connection_id: number | null;
   sponsor_name: string | null;
 };
@@ -75,11 +76,11 @@ export default function AdminPage() {
 
       // Fetch practitioners with sponsor info
       const { data: practitionerData, error: practitionerError } = await supabase
-        .from('profile_with_email')
+        .from('profiles')
         .select(`
           id,
           full_name,
-          user_email
+          created_at
         `);
       
       if (practitionerError) throw practitionerError;
@@ -301,10 +302,11 @@ export default function AdminPage() {
       )}
 
       <Tabs defaultValue="practitioners">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="practitioners">Users</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+          <TabsTrigger value="usage">Usage</TabsTrigger>
         </TabsList>
         
         <TabsContent value="practitioners">
@@ -334,7 +336,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2">
                           <div>
                             <div className="font-medium">{p.full_name}</div>
-                            <div className="text-sm text-gray-500">{p.user_email}</div>
+                            <div className="text-sm text-gray-500">ID: {p.id?.slice(0, 8)}...</div>
                           </div>
                           {isActive && <Badge variant="secondary" className="text-xs">Active</Badge>}
                         </div>
@@ -485,6 +487,44 @@ export default function AdminPage() {
                     >
                       vercel.com/analytics
                     </a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="usage">
+          <div className="grid gap-6">
+            <SupabaseUsageMonitor />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Upgrade Recommendations</CardTitle>
+                <CardDescription>When to consider upgrading your Supabase plan.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">Pro Plan Benefits ($25/month)</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• 8 GB database storage</li>
+                      <li>• 250 GB bandwidth</li>
+                      <li>• 100,000 MAU</li>
+                      <li>• Connection pooling</li>
+                      <li>• Daily backups</li>
+                      <li>• Custom domains</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h4 className="font-medium text-yellow-900 mb-2">Upgrade Triggers</h4>
+                    <ul className="text-sm text-yellow-800 space-y-1">
+                      <li>• Database size &gt; 400 MB (80% of limit)</li>
+                      <li>• Bandwidth &gt; 4 GB/month</li>
+                      <li>• Users &gt; 40,000/month</li>
+                      <li>• Frequent connection errors</li>
+                    </ul>
                   </div>
                 </div>
               </CardContent>
