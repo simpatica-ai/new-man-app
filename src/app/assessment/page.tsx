@@ -408,6 +408,9 @@ export default function AssessmentPage() {
 
     // --- Initial Data Load ---
     useEffect(() => {
+        // Wait for virtues to load before proceeding
+        if (virtuesLoading || !virtueDetails.length) return;
+        
         document.title = "New Man App: Virtue Assessment";
         
         const fetchInitialData = async () => {
@@ -479,7 +482,7 @@ export default function AssessmentPage() {
                     if (existingAnalyses && existingAnalyses.length > 0) {
                         const analysisMap = new Map<string, string>();
                         existingAnalyses.forEach(analysis => {
-                            const virtueInfo = virtuesData?.find(v => v.id === analysis.virtue_id);
+                            const virtueInfo = virtueDetails?.find(v => v.id === analysis.virtue_id);
                             if (virtueInfo && analysis.analysis_text) {
                                 analysisMap.set(virtueInfo.name, analysis.analysis_text);
                             }
@@ -512,7 +515,7 @@ export default function AssessmentPage() {
             }
         }
         fetchInitialData()
-    }, []);
+    }, [virtuesLoading, virtueDetails]);
 
     // --- Fetch existing analyses on mount ---
     useEffect(() => {
