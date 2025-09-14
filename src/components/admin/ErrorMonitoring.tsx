@@ -12,6 +12,7 @@ export default function ErrorMonitoring() {
   const [errorSummary, setErrorSummary] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState(7)
+  const [tableExists, setTableExists] = useState(true)
 
   const loadErrorData = async () => {
     setLoading(true)
@@ -22,8 +23,14 @@ export default function ErrorMonitoring() {
       ])
       setErrorLogs(logs)
       setErrorSummary(summary)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load error data:', error)
+      // Handle missing table gracefully
+      if (error?.code === 'PGRST205' || error?.message?.includes('error_logs')) {
+        setErrorLogs([])
+        setErrorSummary([])
+        setTableExists(false)
+      }
     } finally {
       setLoading(false)
     }
@@ -69,6 +76,38 @@ export default function ErrorMonitoring() {
       </div>
 
       {/* Stats Cards */}
+      {!tableExists ? (
+        <Card className="col-span-full">
+          <CardContent className="text-center py-8">
+            <div className="mx-auto mb-4 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <Code className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">Error Monitoring Setup Required</h3>
+            <p className="text-stone-600 mb-4">
+              The error_logs table needs to be created in your database to enable error monitoring.
+            </p>
+            <div className="bg-stone-100 p-4 rounded-lg text-left max-w-2xl mx-auto">
+              <p className="text-sm font-medium text-stone-700 mb-2">Run this SQL in your Supabase SQL Editor:</p>
+              <code className="text-xs text-stone-600 block whitespace-pre-wrap">
+{`CREATE TABLE error_logs (
+  id SERIAL PRIMARY KEY,
+  error_message TEXT NOT NULL,
+  error_code VARCHAR(50),
+  context VARCHAR(100) NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  user_agent TEXT,
+  url TEXT,
+  stack_trace TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_error_logs_created_at ON error_logs(created_at DESC);`}
+              </code>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -189,6 +228,8 @@ export default function ErrorMonitoring() {
           )}
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   )
 }
