@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Rocket, BookText, UserPlus, Milestone, Award } from "lucide-react"
+import { Rocket, BookText, UserPlus, Milestone, Award, BookOpen } from "lucide-react"
 
 // ## FIX: New, custom-generated background image URL ##
 
@@ -37,6 +37,14 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         </div>
         
         <div className="px-2 sm:px-8 py-4 sm:py-6">
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="h-4 w-4 text-amber-600" />
+              <p className="text-sm font-medium text-amber-800">New! Check out "Your Virtue Journey" overview</p>
+            </div>
+            <p className="text-xs text-amber-700">Click the expandable card in your dashboard to understand how all the pieces fit together in your months-long virtue development journey.</p>
+          </div>
+          
           <h3 className="mb-4 text-center font-semibold text-stone-700 text-sm sm:text-base">Here&apos;s how your journey will unfold:</h3>
           <div className="grid gap-3 sm:gap-4">
               <div className="flex items-start gap-3 sm:gap-4">

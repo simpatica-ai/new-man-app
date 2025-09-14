@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { HelpCircle } from 'lucide-react'
+import { HelpCircle, ChevronDown, ChevronUp, BookOpen, Target, Users, MessageCircle } from 'lucide-react'
 import AppHeader from './AppHeader'
 import Footer from './Footer'
 import WelcomeModal from './WelcomeModal'
@@ -14,6 +14,7 @@ import VirtueRoseChart from './VirtueRoseChart'
 import { useDashboardData } from '@/hooks/useDashboardData'
 
 export default function Dashboard() {
+  const [showOverview, setShowOverview] = useState(false)
   const {
     loading,
     connection,
@@ -23,6 +24,7 @@ export default function Dashboard() {
     lastJournalEntry,
     showWelcomeModal,
     handleCloseModal,
+    handleOpenModal,
     getStatusClasses
   } = useDashboardData();
 
@@ -77,7 +79,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCloseModal()}
+                      onClick={() => handleOpenModal()}
                       className="border-amber-200 text-amber-700 hover:bg-amber-50 transition-mindful"
                     >
                       <HelpCircle className="h-4 w-4 mr-2" />
@@ -102,6 +104,99 @@ export default function Dashboard() {
               </div>
               
               <div className="lg:col-span-1 lg:sticky lg:top-24">
+                {/* App Overview Card */}
+                <Card className="mb-6 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-semibold text-amber-800 flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" />
+                        Your Virtue Journey
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowOverview(!showOverview)}
+                        className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                      >
+                        {showOverview ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {showOverview && (
+                    <CardContent className="pt-0">
+                      <div className="space-y-4 text-sm text-amber-900">
+                        <div className="flex items-start gap-3">
+                          <Target className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium mb-1">1. Character Assessment</p>
+                            <p className="text-amber-800">Begin with a moral awakening through character inventory, discovering insights presented positively toward 12 virtues.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <BookOpen className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium mb-1">2. Virtue Sequencing</p>
+                            <p className="text-amber-800">AI-powered insights sequence your 12 virtues by greatest development need, creating a personalized months-long journey.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <div className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold">1</div>
+                          <div>
+                            <p className="font-medium mb-1">Stage 1: Dismantling</p>
+                            <p className="text-amber-800">Dwell on character defects associated with each virtue. Clear the foundation before building.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <div className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold">2</div>
+                          <div>
+                            <p className="font-medium mb-1">Stage 2: Building</p>
+                            <p className="text-amber-800">Construct virtue through guided reflection and AI-generated insights.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <div className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold">3</div>
+                          <div>
+                            <p className="font-medium mb-1">Stage 3: Maintaining</p>
+                            <p className="text-amber-800">Sustain virtue development through ongoing reflection and practice.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <Users className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium mb-1">Sponsor Support</p>
+                            <p className="text-amber-800">Invite a sponsor to observe your assessment and virtue progress, with chat available on each virtue desktop.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <MessageCircle className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium mb-1">Journal & Reflection Book</p>
+                            <p className="text-amber-800">Record insights in your journal. In time, we'll build a reflection book celebrating your progress while recognizing the ongoing journey.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 p-3 bg-amber-100 rounded-lg border border-amber-200">
+                          <p className="text-xs text-amber-800 font-medium">
+                            💡 <strong>Approach:</strong> Complete all Stage 1s across virtues, or focus on one virtue through all stages. Always progress toward Stage 3 - the journey of virtue development unfolds across months.
+                          </p>
+                        </div>
+                        
+                        <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs text-green-800 font-medium">
+                            💬 <strong>We Value Your Input:</strong> Questions or feedback? Use the "Get Support" button in the top navigation. Your insights help us improve this early-stage application.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
                 <ActionCards 
                   assessmentTaken={assessmentTaken}
                   virtues={virtues}

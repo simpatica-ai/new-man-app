@@ -884,8 +884,8 @@ export default function VirtueDetailPage() {
                     <div className="flex items-center gap-4">
                       <Lightbulb className="h-6 w-6 text-amber-700 flex-shrink-0" />
                       <div>
-                        <CardTitle className="text-stone-800 font-light text-base">Guided Reflection</CardTitle>
-                        <CardDescription className="text-stone-600 font-light text-sm">
+                        <CardTitle className="text-stone-800 font-semibold text-base">Guided Reflection</CardTitle>
+                        <CardDescription className="text-stone-600 font-semibold text-sm">
                           {displayedStageNumber === 1 && "Stage 1: Dismantling"}
                           {displayedStageNumber === 2 && "Stage 2: Building"}
                           {displayedStageNumber === 3 && "Stage 3: Maintaining"}

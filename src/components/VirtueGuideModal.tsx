@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Edit3, Save, Lightbulb, BookOpen, Users } from "lucide-react"
+import { Edit3, Save, Lightbulb, BookOpen, Users, Sparkles } from "lucide-react"
 
 
 
@@ -35,8 +35,23 @@ export default function VirtueGuideModal({ isOpen, onClose, hasConnection }: Vir
         </div>
         
         <div className="px-6 py-4">
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="h-4 w-4 text-blue-600" />
+              <p className="text-sm font-medium text-blue-800">Start with the Discovery Tab</p>
+            </div>
+            <p className="text-xs text-blue-700">Begin each virtue with the "Discovery" tab to understand the virtue's meaning and development approach before diving into the reflection stages.</p>
+          </div>
+          
           <h3 className="mb-4 text-center font-semibold text-stone-700">How to use your Virtue Workspace:</h3>
           <div className="grid gap-4">
+            <div className="flex items-start gap-4">
+              <div className="bg-amber-100 p-2 rounded-full mt-1"><BookOpen className="h-5 w-5 text-amber-700"/></div>
+              <div>
+                <h4 className="font-semibold text-stone-700">Discovery Tab</h4>
+                <p className="text-sm text-stone-600">Start here to read comprehensive guidance about this virtue, its meaning, and how to develop it effectively.</p>
+              </div>
+            </div>
             <div className="flex items-start gap-4">
               <div className="bg-amber-100 p-2 rounded-full mt-1"><Edit3 className="h-5 w-5 text-amber-700"/></div>
               <div>

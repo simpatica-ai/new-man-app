@@ -131,6 +131,10 @@ export function useDashboardData() {
     setShowWelcomeModal(false);
   };
 
+  const handleOpenModal = () => {
+    setShowWelcomeModal(true);
+  };
+
   const getStatusClasses = (virtueId: number, stage: number): string => {
     const status = progress.get(`${virtueId}-${stage}`);
     switch (status) {
@@ -150,6 +154,7 @@ export function useDashboardData() {
     lastJournalEntry,
     showWelcomeModal,
     handleCloseModal,
+    handleOpenModal,
     getStatusClasses
   };
 }
