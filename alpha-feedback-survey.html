@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Man App - Alpha User Feedback Survey</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #fef7ed 0%, #f5f5f4 50%, #fef7ed 100%);
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section h3 {
+            color: #78716c;
+            border-bottom: 2px solid #f59e0b;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .question label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #44403c;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        textarea, input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e7e5e4;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        textarea {
+            min-height: 80px;
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .scale {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .scale input[type="radio"] {
+            margin: 0 5px;
+        }
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #78716c;
+            margin-top: 5px;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #f59e0b, #78716c);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+        .required {
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>New Man App - Alpha User Feedback</h1>
+        <p>Your honest feedback will help shape the future of this virtue development platform. Please be candid about your experience.</p>
+    </div>
+
+    <form id="feedbackForm">
+        <div class="section">
+            <h3>Basic Information</h3>
+            <div class="question">
+                <label>Your Name (optional):</label>
+                <input type="text" name="name" placeholder="Leave blank for anonymous feedback">
+            </div>
+            <div class="question">
+                <label>How long did you spend testing the app? <span class="required">*</span></label>
+                <select name="testingTime" required>
+                    <option value="">Select...</option>
+                    <option value="15-30 minutes">15-30 minutes</option>
+                    <option value="30-60 minutes">30-60 minutes</option>
+                    <option value="1-2 hours">1-2 hours</option>
+                    <option value="2+ hours">2+ hours</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Core Experience</h3>
+            <div class="question">
+                <label>Did you complete the virtue assessment? <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label><input type="radio" name="completedAssessment" value="yes" required> Yes, completed it</label>
+                    <label><input type="radio" name="completedAssessment" value="partial" required> Started but didn't finish</label>
+                    <label><input type="radio" name="completedAssessment" value="no" required> No, couldn't find it or skipped</label>
+                </div>
+            </div>
+            
+            <div class="question">
+                <label>How many virtue stages did you work through?</label>
+                <select name="stagesCompleted">
+                    <option value="0">None</option>
+                    <option value="1">1 stage</option>
+                    <option value="2-3">2-3 stages</option>
+                    <option value="4-6">4-6 stages</option>
+                    <option value="7+">7+ stages</option>
+                </select>
+            </div>
+
+            <div class="question">
+                <label>Rate the overall user experience (1 = Confusing, 5 = Intuitive):</label>
+                <div class="scale">
+                    <span>1</span>
+                    <input type="radio" name="overallUX" value="1">
+                    <input type="radio" name="overallUX" value="2">
+                    <input type="radio" name="overallUX" value="3">
+                    <input type="radio" name="overallUX" value="4">
+                    <input type="radio" name="overallUX" value="5">
+                    <span>5</span>
+                </div>
+                <div class="scale-labels">
+                    <span>Confusing</span>
+                    <span>Intuitive</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>AI Guidance Quality</h3>
+            <div class="question">
+                <label>How relevant was the AI guidance to your personal situation? (1 = Generic, 5 = Highly Personal):</label>
+                <div class="scale">
+                    <span>1</span>
+                    <input type="radio" name="aiRelevance" value="1">
+                    <input type="radio" name="aiRelevance" value="2">
+                    <input type="radio" name="aiRelevance" value="3">
+                    <input type="radio" name="aiRelevance" value="4">
+                    <input type="radio" name="aiRelevance" value="5">
+                    <span>5</span>
+                </div>
+                <div class="scale-labels">
+                    <span>Generic</span>
+                    <span>Highly Personal</span>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>Was the AI guidance helpful for reflection? (1 = Not helpful, 5 = Very helpful):</label>
+                <div class="scale">
+                    <span>1</span>
+                    <input type="radio" name="aiHelpfulness" value="1">
+                    <input type="radio" name="aiRelevance" value="2">
+                    <input type="radio" name="aiHelpfulness" value="3">
+                    <input type="radio" name="aiHelpfulness" value="4">
+                    <input type="radio" name="aiHelpfulness" value="5">
+                    <span>5</span>
+                </div>
+                <div class="scale-labels">
+                    <span>Not helpful</span>
+                    <span>Very helpful</span>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>Describe the quality of AI prompts you received:</label>
+                <textarea name="aiQuality" placeholder="Were they insightful? Too generic? Too personal? Missing something?"></textarea>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Writing & Interface</h3>
+            <div class="question">
+                <label>How was the writing experience in the reflection panels?</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="writingExperience" value="excellent"> Excellent - felt natural and encouraging</label>
+                    <label><input type="radio" name="writingExperience" value="good"> Good - mostly comfortable</label>
+                    <label><input type="radio" name="writingExperience" value="okay"> Okay - functional but could be better</label>
+                    <label><input type="radio" name="writingExperience" value="poor"> Poor - frustrating or difficult</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>Did you encounter any technical issues? (Check all that apply)</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="technicalIssues" value="slow-loading"> Slow loading times</label>
+                    <label><input type="checkbox" name="technicalIssues" value="errors"> Error messages or crashes</label>
+                    <label><input type="checkbox" name="technicalIssues" value="mobile"> Mobile/responsive issues</label>
+                    <label><input type="checkbox" name="technicalIssues" value="navigation"> Navigation problems</label>
+                    <label><input type="checkbox" name="technicalIssues" value="saving"> Problems saving content</label>
+                    <label><input type="checkbox" name="technicalIssues" value="none"> No technical issues</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Value & Motivation</h3>
+            <div class="question">
+                <label>How likely are you to use this app regularly for personal growth? (1 = Very unlikely, 5 = Very likely):</label>
+                <div class="scale">
+                    <span>1</span>
+                    <input type="radio" name="likelyToUse" value="1">
+                    <input type="radio" name="likelyToUse" value="2">
+                    <input type="radio" name="likelyToUse" value="3">
+                    <input type="radio" name="likelyToUse" value="4">
+                    <input type="radio" name="likelyToUse" value="5">
+                    <span>5</span>
+                </div>
+                <div class="scale-labels">
+                    <span>Very unlikely</span>
+                    <span>Very likely</span>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>What would motivate you to return to the app daily?</label>
+                <textarea name="motivation" placeholder="Progress tracking, reminders, community features, better content, etc."></textarea>
+            </div>
+
+            <div class="question">
+                <label>Does this approach to virtue development feel valuable compared to other methods you've tried?</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="valueComparison" value="much-better"> Much better than other approaches</label>
+                    <label><input type="radio" name="valueComparison" value="somewhat-better"> Somewhat better</label>
+                    <label><input type="radio" name="valueComparison" value="similar"> Similar to other approaches</label>
+                    <label><input type="radio" name="valueComparison" value="worse"> Worse than other approaches</label>
+                    <label><input type="radio" name="valueComparison" value="no-comparison"> Haven't tried other approaches</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Missing Features & Improvements</h3>
+            <div class="question">
+                <label>What's the biggest thing missing from the app?</label>
+                <textarea name="biggestMissing" placeholder="Be specific about what would make this more useful for your growth journey"></textarea>
+            </div>
+
+            <div class="question">
+                <label>What features would you add or change?</label>
+                <textarea name="featureRequests" placeholder="Progress tracking, social features, different content types, etc."></textarea>
+            </div>
+
+            <div class="question">
+                <label>Any other honest feedback or concerns?</label>
+                <textarea name="additionalFeedback" placeholder="What else should we know? Don't hold back - honest feedback helps us improve"></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit Feedback</button>
+    </form>
+
+    <script>
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            
+            // Handle regular form fields
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            // Handle checkboxes
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const technicalIssues = [];
+            checkboxes.forEach(cb => {
+                if (cb.name === 'technicalIssues') {
+                    technicalIssues.push(cb.value);
+                }
+            });
+            if (technicalIssues.length > 0) {
+                data.technicalIssues = technicalIssues;
+            }
+            
+            // Create downloadable JSON file
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `alpha-feedback-${new Date().toISOString().split('T')[0]}-${data.name || 'anonymous'}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('Thank you! Your feedback has been saved as a download. Please send this file back to the development team.');
+        });
+    </script>
+</body>
+</html>

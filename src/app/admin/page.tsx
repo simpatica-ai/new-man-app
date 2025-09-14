@@ -43,12 +43,28 @@ type AdminStats = {
   avgResponseTime: number;
 };
 
+type AlphaFeedback = {
+  id: number;
+  name: string | null;
+  show_name: boolean;
+  testing_time: string;
+  completed_assessment: string;
+  overall_ux: number | null;
+  ai_relevance: number | null;
+  likely_to_use: number | null;
+  biggest_missing: string | null;
+  additional_feedback: string | null;
+  technical_issues: string[] | null;
+  created_at: string;
+};
+
 // --- ADMIN PAGE COMPONENT ---
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [practitioners, setPractitioners] = useState<PractitionerDetails[]>([]);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
+  const [alphaFeedback, setAlphaFeedback] = useState<AlphaFeedback[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const router = useRouter();
 
@@ -161,6 +177,15 @@ export default function AdminPage() {
       })) || [];
       
       setSupportTickets(formattedTickets);
+      
+      // Fetch alpha feedback
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from('alpha_feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (feedbackError) throw feedbackError;
+      setAlphaFeedback(feedbackData || []);
       
       // Calculate stats
       const totalUsers = practitionerData?.length || 0;
@@ -347,9 +372,10 @@ export default function AdminPage() {
       )}
 
       <Tabs defaultValue="practitioners">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="practitioners">Users</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="usage">Usage</TabsTrigger>
         </TabsList>
@@ -461,6 +487,95 @@ export default function AdminPage() {
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-gray-500">
                         No support tickets found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="feedback">
+          <Card>
+            <CardHeader>
+              <CardTitle>Alpha User Feedback</CardTitle>
+              <CardDescription>Review feedback from alpha testers to improve the app.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Testing Time</TableHead>
+                    <TableHead>UX Rating</TableHead>
+                    <TableHead>AI Rating</TableHead>
+                    <TableHead>Likely to Use</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alphaFeedback.length > 0 ? alphaFeedback.map((feedback) => (
+                    <TableRow key={feedback.id}>
+                      <TableCell>
+                        <div className="font-medium">
+                          {feedback.show_name && feedback.name ? feedback.name : 'Anonymous'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Assessment: {feedback.completed_assessment}
+                        </div>
+                      </TableCell>
+                      <TableCell>{feedback.testing_time}</TableCell>
+                      <TableCell>
+                        <Badge variant={feedback.overall_ux && feedback.overall_ux >= 4 ? "default" : "secondary"}>
+                          {feedback.overall_ux || 'N/A'}/5
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={feedback.ai_relevance && feedback.ai_relevance >= 4 ? "default" : "secondary"}>
+                          {feedback.ai_relevance || 'N/A'}/5
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={feedback.likely_to_use && feedback.likely_to_use >= 4 ? "default" : "destructive"}>
+                          {feedback.likely_to_use || 'N/A'}/5
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(feedback.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const details = `
+Name: ${feedback.show_name && feedback.name ? feedback.name : 'Anonymous'}
+Testing Time: ${feedback.testing_time}
+Completed Assessment: ${feedback.completed_assessment}
+UX Rating: ${feedback.overall_ux}/5
+AI Relevance: ${feedback.ai_relevance}/5
+Likely to Use: ${feedback.likely_to_use}/5
+Technical Issues: ${feedback.technical_issues?.join(', ') || 'None'}
+
+Biggest Missing Feature:
+${feedback.biggest_missing || 'No response'}
+
+Additional Feedback:
+${feedback.additional_feedback || 'No response'}
+
+Submitted: ${new Date(feedback.created_at).toLocaleString()}
+                            `.trim()
+                            alert(details)
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-gray-500">
+                        No feedback submitted yet.
                       </TableCell>
                     </TableRow>
                   )}
