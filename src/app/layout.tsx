@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import QueryProvider from "@/components/QueryProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToastContainer } from "@/components/Toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,9 +34,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <ErrorBoundary>
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+          <ToastContainer />
+        </ErrorBoundary>
         <Analytics />
       </body>
     </html>

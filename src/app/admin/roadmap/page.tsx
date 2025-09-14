@@ -9,6 +9,7 @@ import VirtueDefectManager from '@/components/admin/VirtueDefectManager'
 import MappingAnalysis from '@/components/admin/MappingAnalysis'
 import DatabaseModifier from '@/components/admin/DatabaseModifier'
 import VirtueRestorer from '@/components/admin/VirtueRestorer'
+import ErrorMonitoring from '@/components/admin/ErrorMonitoring'
 
 export default function RoadmapPage() {
   return (
@@ -20,10 +21,11 @@ export default function RoadmapPage() {
         </div>
 
         <Tabs defaultValue="database" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="database">Database</TabsTrigger>
             <TabsTrigger value="virtues">Virtues</TabsTrigger>
             <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            <TabsTrigger value="errors">Errors</TabsTrigger>
             <TabsTrigger value="technical">Technical</TabsTrigger>
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="organizations">Orgs</TabsTrigger>
@@ -40,6 +42,10 @@ export default function RoadmapPage() {
 
           <TabsContent value="analysis" className="space-y-6">
             <MappingAnalysis />
+          </TabsContent>
+
+          <TabsContent value="errors" className="space-y-6">
+            <ErrorMonitoring />
           </TabsContent>
 
           <TabsContent value="technical" className="space-y-6">
@@ -61,6 +67,17 @@ export default function RoadmapPage() {
                     <li>• Dashboard now reads corrected scores from user_assessment_results table</li>
                   </ul>
                 </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">✅ Error Handling & User Experience</h4>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• Global ErrorBoundary component for crash recovery</li>
+                    <li>• Toast notification system for user feedback</li>
+                    <li>• Comprehensive error handling utilities with context-aware messages</li>
+                    <li>• Loading states with proper spinner icons</li>
+                    <li>• Supabase error translation to user-friendly messages</li>
+                    <li>• Admin error monitoring dashboard with real-time insights</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
 
@@ -76,8 +93,8 @@ export default function RoadmapPage() {
                   <div className="p-4 bg-red-50 rounded-lg">
                     <h4 className="font-semibold text-red-800 mb-2">Code Quality & Architecture</h4>
                     <ul className="text-sm text-red-700 space-y-1">
-                      <li>• Break down large components (Dashboard: 20k+ lines, Assessment: 59k+ lines)</li>
-                      <li>• Add comprehensive error handling with user-friendly messages</li>
+                      <li>✅ <s>Break down large components (Dashboard: 20k+ lines, Assessment: 59k+ lines)</s> - COMPLETED: Components modularized</li>
+                      <li>✅ <s>Add comprehensive error handling with user-friendly messages</s> - COMPLETED: Global error boundary, toast system, error utilities</li>
                       <li>• Implement proper loading states for all async operations</li>
                       <li>• Add input validation on both client and server sides</li>
                       <li>✅ <s>Centralize constants (defects array duplicated across files)</s> - COMPLETED: Assessment now fully database-driven</li>

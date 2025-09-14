@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import AppHeader from '@/components/AppHeader'
 import Footer from '@/components/Footer'
-import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit } from 'lucide-react'
+import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit, Loader2 } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import { useVirtues, type Virtue } from '@/hooks/useVirtues'
 import ReactMarkdown from 'react-markdown'
@@ -23,6 +23,7 @@ import { useAssessmentData } from '@/hooks/useAssessmentData'
 import { getDefectIcon } from '@/lib/iconUtils'
 import { harmLevelsMap } from '@/lib/constants'
 import { clearAssessmentCache } from '@/lib/assessmentService'
+import { withErrorHandling, showErrorToast, showSuccessToast } from '@/lib/errorHandling'
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
@@ -72,7 +73,6 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
                         </Tooltip>
                     </TooltipProvider>
                 </div>
-                <p className="text-xs text-stone-500">{defect.category}</p>
             </div>
         </div>
         
@@ -523,7 +523,7 @@ export default function AssessmentPage() {
         setCorsError(false);
         setSummaryAnalysis(null);
         
-        try {
+        const result = await withErrorHandling(async () => {
             // Use database service to calculate virtue scores
             const virtueScores = await calculateScores(ratings, harmLevels);
             
@@ -605,12 +605,17 @@ export default function AssessmentPage() {
 
             // Trigger AI analysis
             await triggerAndSaveAnalyses(assessmentId, user, prioritizedVirtues, ratings, harmLevels);
+            
+            showSuccessToast('Assessment completed successfully!');
+            return prioritizedVirtues;
+        }, 'Assessment submission');
 
-        } catch (error) {
-            console.error(`Error saving results: ${error}`);
-        } finally {
+        if (!result) {
             setIsSubmitting(false);
+            return;
         }
+        
+        setIsSubmitting(false);
     }
     
     const handleEdit = async () => {
@@ -737,7 +742,7 @@ export default function AssessmentPage() {
                                             >
                                                 {isSubmitting ? (
                                                     <div className="flex items-center gap-2 justify-center">
-                                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
                                                         Creating Plan...
                                                     </div>
                                                 ) : answeredCount === 0 ? (
