@@ -277,9 +277,16 @@ export default function AdminPage() {
        <Link href="/" className="mb-4 inline-block">
           <Button variant="outline">&larr; Back to Dashboard</Button>
         </Link>
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold">Admin Panel</h1>
-        <p className="text-gray-500">Manage practitioners, support tickets, and other system settings.</p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-4xl font-bold">Admin Panel</h1>
+          <p className="text-gray-500">Manage practitioners, support tickets, and other system settings.</p>
+        </div>
+        <Link href="/admin/roadmap">
+          <Button variant="outline" className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200">
+            📋 Development Roadmap
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Dashboard */}

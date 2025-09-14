@@ -12,10 +12,10 @@ const styles = StyleSheet.create({
     padding: 36, // Updated for 0.5-inch margin (0.5 * 72 points = 36)
   },
   header: {
-    marginBottom: 15,
+    marginBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#A8A29E',
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
   title: {
     fontSize: 20,
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
     padding: 6,
     borderWidth: 1,
     borderColor: '#D6D3D1',
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   chartImage: {
-    width: 350, 
+    width: 300, 
     height: 'auto',
   },
   virtueGrid: {
@@ -121,6 +121,18 @@ const styles = StyleSheet.create({
     right: 0,
     textAnchor: 'middle',
     color: '#9CA3AF',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 36,
+    right: 36,
+    fontSize: 8,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 8,
   },
   // Markdown styling
   markdownBold: {
@@ -226,7 +238,6 @@ const VirtueAssessmentPDF = ({
           <Text style={styles.subtitle}>Personal Growth and Development Plan</Text>
           <Text style={styles.date}>Generated on {new Date().toLocaleDateString()}</Text>
           <Text style={styles.subtitle}>For: {userName}</Text>
-          <Text style={styles.confidential}>Confidential - For Personal Development Use Only</Text>
         </View>
 
         <View style={styles.summarySection}>
@@ -252,6 +263,10 @@ const VirtueAssessmentPDF = ({
         <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
           `${pageNumber} / ${totalPages}`
         )} fixed />
+        
+        <View style={styles.footer} fixed>
+          <Text>© {new Date().getFullYear()} Simpatica AI™ (Patent Pending). All rights reserved. | For disclaimer visit: newmanapp.com/disclaimer</Text>
+        </View>
       </Page>
 
       <Page size="LETTER" style={styles.page}>
@@ -288,6 +303,10 @@ const VirtueAssessmentPDF = ({
         <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
           `${pageNumber} / ${totalPages}`
         )} fixed />
+        
+        <View style={styles.footer} fixed>
+          <Text>© {new Date().getFullYear()} Simpatica AI™ (Patent Pending). All rights reserved. | For disclaimer visit: newmanapp.com/disclaimer</Text>
+        </View>
       </Page>
     </Document>
   );
