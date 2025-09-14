@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { X, MessageSquare } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
+import { feedbackSchema, validateInput } from '@/lib/validation'
 
 interface FeedbackSurveyModalProps {
   isOpen: boolean
@@ -33,10 +34,32 @@ export default function FeedbackSurveyModal({ isOpen, onClose }: FeedbackSurveyM
     additionalFeedback: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setValidationErrors([])
+    
+    // Client-side validation
+    const validation = validateInput(feedbackSchema, {
+      name: formData.name || undefined,
+      show_name: formData.showName,
+      testing_time: formData.testingTime,
+      completed_assessment: formData.completedAssessment,
+      overall_ux: formData.overallUX ? parseInt(formData.overallUX) : undefined,
+      ai_relevance: formData.aiRelevance ? parseInt(formData.aiRelevance) : undefined,
+      likely_to_use: formData.likelyToUse ? parseInt(formData.likelyToUse) : undefined,
+      biggest_missing: formData.biggestMissing || undefined,
+      additional_feedback: formData.additionalFeedback || undefined,
+      technical_issues: formData.technicalIssues.length > 0 ? formData.technicalIssues : undefined,
+    })
+
+    if (!validation.success) {
+      setValidationErrors(validation.errors)
+      setIsSubmitting(false)
+      return
+    }
     
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -102,6 +125,16 @@ export default function FeedbackSurveyModal({ isOpen, onClose }: FeedbackSurveyM
           </Button>
         </CardHeader>
         <CardContent>
+          {validationErrors.length > 0 && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="font-medium text-red-800 mb-2">Please fix the following errors:</h4>
+              <ul className="text-sm text-red-700 space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>

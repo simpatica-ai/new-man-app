@@ -16,6 +16,7 @@ import AppHeader from '@/components/AppHeader'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import VirtueGuideModal from '@/components/VirtueGuideModal'
+import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
 const generateMemoHash = (memos: Map<number, string>, stageNumber: number) => {
@@ -568,6 +569,20 @@ export default function VirtueDetailPage() {
     setSavingMemo(true)
     const memoText = memos.get(stageNumber) || ""
     if (!currentUserId || !virtue) return
+
+    // Client-side validation
+    const validation = validateInput(memoSchema, {
+      memo_text: memoText,
+      stage_number: stageNumber,
+      virtue_id: virtue.id
+    })
+
+    if (!validation.success) {
+      console.error('Validation errors:', validation.errors)
+      alert('Please check your input: ' + validation.errors.join(', '))
+      setSavingMemo(false)
+      return
+    }
 
     const saveMemoPromise = supabase.from('user_virtue_stage_memos').upsert({ 
         user_id: currentUserId,

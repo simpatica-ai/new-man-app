@@ -1,17 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { z } from 'zod'
+
+const emailSchema = z.object({
+  sponsorEmail: z.string().email('Invalid email address'),
+  practitionerName: z.string().min(1, 'Practitioner name is required').max(100, 'Name too long'),
+  invitationLink: z.string().url('Invalid invitation link'),
+  isExistingSponsor: z.boolean().optional()
+})
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Email API called')
     
     const body = await request.json()
-    const { sponsorEmail, practitionerName, invitationLink, isExistingSponsor } = body as {
-      sponsorEmail: string
-      practitionerName: string
-      invitationLink: string
-      isExistingSponsor?: boolean
+    
+    // Server-side validation
+    const validation = emailSchema.safeParse(body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid input data',
+          details: validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        },
+        { status: 400 }
+      )
     }
+
+    const { sponsorEmail, practitionerName, invitationLink, isExistingSponsor } = validation.data
     console.log('Request data:', { sponsorEmail, practitionerName, invitationLink, isExistingSponsor })
 
     const gmailUser = process.env.GMAIL_USER
