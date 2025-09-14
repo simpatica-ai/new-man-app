@@ -1,41 +1,52 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabaseClient';
+'use client'
 
-export const useAssessmentData = (assessmentId: number | null) => {
-  return useQuery({
-    queryKey: ['assessment-data', assessmentId],
-    queryFn: async () => {
-      if (!assessmentId) return null;
-      
-      // Single query to get all assessment data
-      const { data, error } = await supabase
-        .from('user_assessments')
-        .select(`
-          id,
-          created_at,
-          summary_analysis,
-          user_assessment_results (
-            virtue_name,
-            priority_score,
-            defect_intensity
-          ),
-          user_assessment_defects (
-            defect_name,
-            harm_level
-          ),
-          virtue_analysis (
-            virtue_id,
-            analysis_text
-          )
-        `)
-        .eq('id', assessmentId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!assessmentId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    cacheTime: 1000 * 60 * 30, // 30 minutes
-  });
-};
+import { useState, useEffect } from 'react';
+import { getDefectsWithVirtues, calculateVirtueScores, checkHealthyBoundariesExists, type DefectWithVirtues, type VirtueScore } from '@/lib/assessmentService';
+
+export function useAssessmentData() {
+  const [defects, setDefects] = useState<DefectWithVirtues[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [healthyBoundariesExists, setHealthyBoundariesExists] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const [defectsData, boundariesExists] = await Promise.all([
+          getDefectsWithVirtues(),
+          checkHealthyBoundariesExists()
+        ]);
+        
+        setDefects(defectsData);
+        setHealthyBoundariesExists(boundariesExists);
+        
+        if (defectsData.length === 0) {
+          setError('No defects found in database. Please check database seeding.');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load assessment data');
+        console.error('Error loading assessment data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const calculateScores = async (
+    ratings: { [defectName: string]: number },
+    harmLevels: { [defectName: string]: string }
+  ): Promise<VirtueScore[]> => {
+    return calculateVirtueScores(ratings, harmLevels);
+  };
+
+  return {
+    defects,
+    loading,
+    error,
+    healthyBoundariesExists,
+    calculateScores
+  };
+}

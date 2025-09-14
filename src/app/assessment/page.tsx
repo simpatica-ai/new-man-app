@@ -19,6 +19,10 @@ import { useVirtues, type Virtue } from '@/hooks/useVirtues'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
 import PrintButton from '@/components/PrintButton';
+import { useAssessmentData } from '@/hooks/useAssessmentData'
+import { getDefectIcon } from '@/lib/iconUtils'
+import { harmLevelsMap } from '@/lib/constants'
+import { clearAssessmentCache } from '@/lib/assessmentService'
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
@@ -31,58 +35,6 @@ const virtueChartDisplayMap: { [key: string]: string } = {
 const getChartDisplayVirtueName = (dbName: string): string => {
   return virtueChartDisplayMap[dbName] || dbName;
 };
-const defects = [
-    { name: "Addictive tendencies", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "A recurring compulsion to engage in a specific activity, despite harmful consequences." },
-    { name: "Anger", virtues: ["Patience", "Compassion", "Self-Control"], icon: <Zap className="h-4 w-4" />, category: "Emotional Regulation", definition: "A strong feeling of annoyance, displeasure, or hostility." },
-    { name: "Apathy", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection", definition: "A lack of interest, enthusiasm, or concern." },
-    { name: "Arrogance", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "An overbearing sense of one's own importance or abilities." },
-    { name: "Betrayal", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust", definition: "The act of violating a person's trust or confidence." },
-    { name: "Bitterness", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health", definition: "Anger and disappointment at being treated unfairly; resentment." },
-    { name: "Blaming others", virtues: ["Responsibility", "Honesty"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "Unjustly holding others responsible for one's own errors or problems." },
-    { name: "Boastfulness", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Excessively proud and self-satisfied talk about one's achievements or abilities." },
-    { name: "Close-mindedness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Openness", definition: "Unwillingness to consider different ideas or opinions." },
-    { name: "Compulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "An irresistible urge to behave in a certain way, often against one's conscious wishes." },
-    { name: "Conceit", virtues: ["Humility"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Excessive pride in oneself; vanity." },
-    { name: "Cruelty", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Compassion", definition: "Behavior that causes physical or mental pain to others without feeling pity." },
-    { name: "Deceit", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty", definition: "The action of misleading someone through fraud or trickery." },
-    { name: "Defensiveness", virtues: ["Humility", "Vulnerability"], icon: <Shield className="h-4 w-4" />, category: "Openness", definition: "Anxious or protective behavior in response to perceived criticism." },
-    { name: "Dishonesty", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty", definition: "The act of speaking or acting untruthfully." },
-    { name: "Disrespect", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "A lack of courtesy or consideration for others." },
-    { name: "Distrust", virtues: ["Vulnerability", "Honesty"], icon: <Shield className="h-4 w-4" />, category: "Trust", definition: "The feeling that someone or something cannot be relied upon." },
-    { name: "Egotism", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Thinking and talking about oneself excessively due to an undue sense of self-importance." },
-    { name: "Haughtiness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "The quality of being arrogantly superior and disdainful." },
-    { name: "Hypocrisy", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Claiming to have moral standards to which one's own behavior does not conform." },
-    { name: "Impatience", virtues: ["Patience", "Mindfulness"], icon: <Clock className="h-4 w-4" />, category: "Patience", definition: "The tendency to be quickly irritated or provoked." },
-    { name: "Impulsiveness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "Acting or being done without forethought or consideration of consequences." },
-    { name: "Indifference", virtues: ["Compassion", "Responsibility"], icon: <Heart className="h-4 w-4" />, category: "Connection", definition: "A lack of interest, concern, or sympathy for others." },
-    { name: "Ingratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation", definition: "A lack of appreciation for help or kindness that has been shown." },
-    { name: "Infidelity", virtues: ["Honesty", "Integrity", "Respect"], icon: <Shield className="h-4 w-4" />, category: "Trust", definition: "A breach of trust in a relationship, typically involving unfaithful sexual behavior." },
-    { name: "Intolerance", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Acceptance", definition: "Unwillingness to accept views, beliefs, or behavior that differ from one's own." },
-    { name: "Irresponsibility", virtues: ["Responsibility"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "A failure to fulfill one's duties or obligations." },
-    { name: "Judgmental attitude", virtues: ["Compassion", "Respect"], icon: <Heart className="h-4 w-4" />, category: "Acceptance", definition: "The tendency to form critical opinions of others too quickly." },
-    { name: "Lack of empathy", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Compassion", definition: "The inability to understand and share the feelings of another." },
-    { name: "Lack of gratitude", virtues: ["Gratitude"], icon: <Star className="h-4 w-4" />, category: "Appreciation", definition: "A failure to be appreciative for kindness or benefits received." },
-    { name: "Lack of self-control", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "The inability to regulate one's emotions, thoughts, and behavior." },
-    { name: "Lying", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Honesty", definition: "The act of making a false statement with the intent to deceive." },
-    { name: "Manipulation", virtues: ["Honesty", "Respect", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Controlling or influencing a person or situation cleverly or unscrupulously." },
-    { name: "Narcissism", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Excessive interest in or admiration of oneself and one's physical appearance." },
-    { name: "Neglect", virtues: ["Responsibility", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Care", definition: "The failure to care for properly." },
-    { name: "Objectification", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Respect", definition: "Treating a person as an object without regard to their personality or dignity." },
-    { name: "Pride", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "An excessive and unreasonable view of one's own importance; hubris." },
-    { name: "Recklessness", virtues: ["Self-Control", "Mindfulness"], icon: <Zap className="h-4 w-4" />, category: "Impulse Control", definition: "A lack of regard for the danger or consequences of one's actions." },
-    { name: "Resentment", virtues: ["Gratitude", "Compassion"], icon: <Heart className="h-4 w-4" />, category: "Emotional Health", definition: "Bitter indignation at having been treated unfairly." },
-    { name: "Rudeness", virtues: ["Respect", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Offensive or impolite behavior." },
-    { name: "Self-centeredness", virtues: ["Humility", "Compassion"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "Being preoccupied with oneself and one's own affairs." },
-    { name: "Self-righteousness", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "A certainty, especially an unfounded one, that one is totally correct or morally superior." },
-    { name: "Selfishness", virtues: ["Compassion"], icon: <Heart className="h-4 w-4" />, category: "Consideration", definition: "Lacking consideration for others; concerned chiefly with one's own personal profit or pleasure." },
-    { name: "Stealing", virtues: ["Honesty", "Integrity"], icon: <Shield className="h-4 w-4" />, category: "Integrity", definition: "Taking another person's property without permission or legal right." },
-    { name: "Superiority", virtues: ["Humility", "Respect"], icon: <Users className="h-4 w-4" />, category: "Relationships", definition: "The state or belief of being greater than others in quality, status, or importance." },
-    { name: "Unreliability", virtues: ["Responsibility", "Integrity"], icon: <Target className="h-4 w-4" />, category: "Accountability", definition: "The quality of not being able to be trusted or depended on." },
-    { name: "People-pleasing", virtues: ["Healthy Boundaries", "Honesty"], icon: <Heart className="h-4 w-4" />, category: "Boundaries", definition: "Excessive concern with gaining approval and avoiding conflict, often at the expense of one's own needs." },
-    { name: "Overcommitting", virtues: ["Healthy Boundaries", "Self-Control"], icon: <Clock className="h-4 w-4" />, category: "Boundaries", definition: "Taking on more responsibilities or obligations than one can reasonably handle." },
-    { name: "Enabling others", virtues: ["Healthy Boundaries", "Responsibility"], icon: <Users className="h-4 w-4" />, category: "Boundaries", definition: "Allowing or facilitating someone's harmful behavior by removing consequences or providing excessive support." }
-];
-const harmLevelsMap: { [key: string]: number } = { None: 0, Minimal: 1, Moderate: 2, Significant: 3, Severe: 4 };
 
 type Ratings = { [key: string]: number };
 type HarmLevels = { [key: string]: string };
@@ -95,7 +47,7 @@ type VirtueInfo = Virtue;
 
 // --- DefectRow Component ---
 const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: { 
-    defect: { name: string; icon: React.ReactElement; category: string; definition: string };
+    defect: { name: string; icon_name: string | null; category: string | null; definition: string | null };
     rating?: number;
     harmLevel?: string;
     onRatingChange: (name: string, value: string) => void;
@@ -103,7 +55,7 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
 }) => (
     <div className="flex flex-col p-3 border border-stone-200 rounded-lg bg-white hover:shadow-sm transition-all duration-200">
         <div className="flex items-start gap-2 mb-2">
-            <div className="text-amber-600 mt-0.5">{defect.icon}</div>
+            <div className="text-amber-600 mt-0.5">{getDefectIcon(defect.icon_name)}</div>
             <div className="flex-1">
                 <div className="flex items-center gap-1.5">
                     <h3 className="font-medium text-stone-800 text-sm leading-tight">{defect.name}</h3>
@@ -193,6 +145,7 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
 // --- Main Assessment Page Component ---
 export default function AssessmentPage() {
     const { data: virtueDetails = [], isLoading: virtuesLoading } = useVirtues();
+    const { defects, loading: defectsLoading, error: defectsError, calculateScores } = useAssessmentData();
     const [loading, setLoading] = useState(true);
     const [ratings, setRatings] = useState<Ratings>({});
     const [harmLevels, setHarmLevels] = useState<HarmLevels>({});
@@ -408,6 +361,9 @@ export default function AssessmentPage() {
 
     // --- Initial Data Load ---
     useEffect(() => {
+        // Clear cache to ensure fresh data
+        clearAssessmentCache();
+        
         // Wait for virtues to load before proceeding
         if (virtuesLoading || !virtueDetails.length) return;
         
@@ -567,54 +523,43 @@ export default function AssessmentPage() {
         setCorsError(false);
         setSummaryAnalysis(null);
         
-        const virtueScores: { [key: string]: { score: number; harm: number; defectCount: number } } = {};
-        coreVirtuesList.forEach(v => { virtueScores[v] = { score: 0, harm: 0, defectCount: 0 } });
-
-        defects.forEach(defect => {
-            const score = ratings[defect.name] || 1;
-            const harmValue = harmLevelsMap[harmLevels[defect.name] || "None"];
-            defect.virtues.forEach(virtue => {
-                if(coreVirtuesList.includes(virtue)) {
-                    virtueScores[virtue].score += score;
-                    virtueScores[virtue].harm = Math.max(virtueScores[virtue].harm, harmValue);
-                    virtueScores[virtue].defectCount++;
-                }
-            });
-        });
-
-        // Calculate priority scores
-        const maxFrequencyScore = 5;
-        const maxHarmMultiplier = 5;
-        
-        const prioritizedVirtues = Object.entries(virtueScores)
-            .map(([virtue, data]) => {
-                const rawPriority = data.score * (data.harm + 1);
-                const maxPossibleForVirtue = (data.defectCount * maxFrequencyScore) * maxHarmMultiplier;
-                const defectIntensity = maxPossibleForVirtue > 0 ? 
-                    (rawPriority / maxPossibleForVirtue) * 10 : 0;
-                    
-                return { virtue, priority: rawPriority, defectIntensity };
-            })
-            .filter(v => v.priority > 0)
-            .sort((a, b) => b.priority - a.priority);
-        setResults(prioritizedVirtues);
-
         try {
+            // Use database service to calculate virtue scores
+            const virtueScores = await calculateScores(ratings, harmLevels);
+            
+            // Convert to the format expected by the rest of the code
+            const prioritizedVirtues: Result[] = virtueScores.map(vs => ({
+                virtue: vs.virtue,
+                priority: vs.priority,
+                defectIntensity: vs.defectIntensity
+            }));
+
+            setResults(prioritizedVirtues);
+
+            // Save to database
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("User not found");
+
+            console.log('Saving assessment for user:', user.id);
+            console.log('Prioritized virtues to save:', prioritizedVirtues);
 
             let assessmentId: number;
 
             if (currentAssessmentId) {
                 assessmentId = currentAssessmentId;
+                console.log('Using existing assessment ID:', assessmentId);
             } else {
                 const { data: newAssessment, error: assessmentError } = await supabase
                     .from('user_assessments')
                     .insert({ user_id: user.id, assessment_type: 'virtue' })
                     .select('id')
                     .single();
-                if (assessmentError) throw assessmentError;
+                if (assessmentError) {
+                    console.error('Error creating assessment:', assessmentError);
+                    throw assessmentError;
+                }
                 assessmentId = newAssessment.id;
+                console.log('Created new assessment ID:', assessmentId);
                 setCurrentAssessmentId(assessmentId);
                 setHasExistingAssessment(true);
             }
@@ -641,9 +586,22 @@ export default function AssessmentPage() {
                 priority_score: result.priority,
                 defect_intensity: result.defectIntensity,
             }));
+            console.log('Results to insert:', resultsToInsert);
+            
             if (resultsToInsert.length > 0) {
-                await supabase.from('user_assessment_results').insert(resultsToInsert);
+                const { error: resultsError } = await supabase.from('user_assessment_results').insert(resultsToInsert);
+                if (resultsError) {
+                    console.error('Error inserting results:', resultsError);
+                    throw resultsError;
+                }
+                console.log('Successfully inserted results');
             }
+
+            // Update profile to mark first assessment as completed
+            await supabase
+                .from('profiles')
+                .update({ has_completed_first_assessment: true })
+                .eq('id', user.id);
 
             // Trigger AI analysis
             await triggerAndSaveAnalyses(assessmentId, user, prioritizedVirtues, ratings, harmLevels);
@@ -663,11 +621,19 @@ export default function AssessmentPage() {
         setShowAnalysisModal(false);
     };
 
-    if (loading) return (
+    if (loading || defectsLoading) return (
         <div className="min-h-screen bg-stone-50 flex items-center justify-center">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
                 <p className="text-stone-600">Loading your assessment...</p>
+            </div>
+        </div>
+    );
+
+    if (defectsError) return (
+        <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+            <div className="text-center">
+                <p className="text-red-600">Error loading assessment: {defectsError}</p>
             </div>
         </div>
     );

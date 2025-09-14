@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, Circle, Clock, DollarSign, Users, Building } from 'lucide-react'
+import DatabaseCheck from '@/components/admin/DatabaseCheck'
+import VirtueDefectManager from '@/components/admin/VirtueDefectManager'
+import MappingAnalysis from '@/components/admin/MappingAnalysis'
+import DatabaseModifier from '@/components/admin/DatabaseModifier'
+import VirtueRestorer from '@/components/admin/VirtueRestorer'
 
 export default function RoadmapPage() {
   return (
@@ -14,15 +19,51 @@ export default function RoadmapPage() {
           <p className="text-stone-600">Technical and business development plan - Updated {new Date().toLocaleDateString()}</p>
         </div>
 
-        <Tabs defaultValue="technical" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="technical">Technical Plan</TabsTrigger>
-            <TabsTrigger value="business">Business Model</TabsTrigger>
-            <TabsTrigger value="organizations">Organizations</TabsTrigger>
+        <Tabs defaultValue="database" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="database">Database</TabsTrigger>
+            <TabsTrigger value="virtues">Virtues</TabsTrigger>
+            <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            <TabsTrigger value="technical">Technical</TabsTrigger>
+            <TabsTrigger value="business">Business</TabsTrigger>
+            <TabsTrigger value="organizations">Orgs</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="database" className="space-y-6">
+            <DatabaseCheck />
+          </TabsContent>
+
+          <TabsContent value="virtues" className="space-y-6">
+            <VirtueDefectManager />
+          </TabsContent>
+
+          <TabsContent value="analysis" className="space-y-6">
+            <MappingAnalysis />
+          </TabsContent>
+
           <TabsContent value="technical" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Recently Completed
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">✅ Database-Driven Assessment System</h4>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• Assessment page now fully database-driven via defects_virtues table</li>
+                    <li>• Eliminated hardcoded virtue/defect arrays from assessment logic</li>
+                    <li>• Implemented proper virtue score normalization across varying defect counts</li>
+                    <li>• Fixed scoring calculation bug (double-inversion issue resolved)</li>
+                    <li>• Dashboard now reads corrected scores from user_assessment_results table</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -39,7 +80,7 @@ export default function RoadmapPage() {
                       <li>• Add comprehensive error handling with user-friendly messages</li>
                       <li>• Implement proper loading states for all async operations</li>
                       <li>• Add input validation on both client and server sides</li>
-                      <li>• Centralize constants (defects array duplicated across files)</li>
+                      <li>✅ <s>Centralize constants (defects array duplicated across files)</s> - COMPLETED: Assessment now fully database-driven</li>
                     </ul>
                   </div>
                   <div className="p-4 bg-yellow-50 rounded-lg">

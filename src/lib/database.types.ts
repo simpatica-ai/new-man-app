@@ -43,7 +43,31 @@ export type Database = {
           },
         ]
       }
-      defect_virtues: {
+      defects: {
+        Row: {
+          category: string | null
+          definition: string | null
+          icon_name: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          definition?: string | null
+          icon_name?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          category?: string | null
+          definition?: string | null
+          icon_name?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      defects_virtues: {
         Row: {
           defect_id: number
           virtue_id: number
@@ -72,30 +96,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      defects: {
-        Row: {
-          category: string | null
-          definition: string | null
-          icon_name: string | null
-          id: number
-          name: string
-        }
-        Insert: {
-          category?: string | null
-          definition?: string | null
-          icon_name?: string | null
-          id?: number
-          name: string
-        }
-        Update: {
-          category?: string | null
-          definition?: string | null
-          icon_name?: string | null
-          id?: number
-          name?: string
-        }
-        Relationships: []
       }
       journal_entries: {
         Row: {
@@ -321,6 +321,68 @@ export type Database = {
             columns: ["connection_id"]
             isOneToOne: false
             referencedRelation: "sponsor_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_relationships: {
+        Row: {
+          created_at: string | null
+          id: string
+          invitation_token: string | null
+          practitioner_id: string | null
+          sponsor_email: string | null
+          sponsor_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invitation_token?: string | null
+          practitioner_id?: string | null
+          sponsor_email?: string | null
+          sponsor_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invitation_token?: string | null
+          practitioner_id?: string | null
+          sponsor_email?: string | null
+          sponsor_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_relationships_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_relationships_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -803,6 +865,10 @@ export type Database = {
           user_email: string
           user_full_name: string
         }[]
+      }
+      get_database_size: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_my_role: {
         Args: Record<PropertyKey, never>
