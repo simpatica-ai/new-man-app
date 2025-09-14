@@ -54,16 +54,16 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
     onRatingChange: (name: string, value: string) => void;
     onHarmChange: (name: string, value: string) => void;
 }) => (
-    <div className="flex flex-col p-3 border border-stone-200 rounded-lg bg-white hover:shadow-sm transition-all duration-200">
+    <div className="flex flex-col p-2 md:p-3 border border-stone-200 rounded-lg bg-white hover:shadow-sm transition-all duration-200">
         <div className="flex items-start gap-2 mb-2">
-            <div className="text-amber-600 mt-0.5">{getDefectIcon(defect.icon_name)}</div>
-            <div className="flex-1">
+            <div className="text-amber-600 mt-0.5 flex-shrink-0">{getDefectIcon(defect.icon_name)}</div>
+            <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                    <h3 className="font-medium text-stone-800 text-sm leading-tight">{defect.name}</h3>
+                    <h3 className="font-medium text-stone-800 text-sm leading-tight truncate">{defect.name}</h3>
                     <TooltipProvider delayDuration={100}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <button className="text-stone-400 hover:text-stone-600">
+                                <button className="text-stone-400 hover:text-stone-600 flex-shrink-0">
                                     <HelpCircle className="h-3.5 w-3.5" />
                                 </button>
                             </TooltipTrigger>
@@ -76,17 +76,17 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
             </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-3">
             <div>
                 <label className="text-xs font-medium text-stone-600 mb-1 block">Frequency</label>
                 <RadioGroup 
                     onValueChange={(value) => onRatingChange(defect.name, value)} 
                     value={String(rating || '')} 
-                    className="flex items-center justify-between gap-1"
+                    className="flex items-center justify-between gap-0.5 md:gap-1"
                 >
                     {[1,2,3,4,5].map(value => (
                         <div key={value} className="flex flex-col items-center space-y-1 flex-1">
-                            <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-stone-500 cursor-pointer text-center">
+                            <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-stone-500 cursor-pointer text-center leading-tight px-1">
                                 {['Never','Rarely','Sometimes','Often','Always'][value-1]}
                             </Label>
                             <RadioGroupItem 
@@ -165,14 +165,15 @@ export default function AssessmentPage() {
 
     const itemsPerPage = 8;
 
-    // Calculate progress
-    const answeredCount = Object.keys(ratings).filter(key => ratings[key] !== undefined).length;
-    const totalCount = defects.length;
-    const progress = Math.round((answeredCount / totalCount) * 100);
-
     // Pagination
     const currentDefects = defects.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
     const totalPages = Math.ceil(defects.length / itemsPerPage);
+
+    // Calculate progress by panels instead of individual questions
+    const answeredCount = Object.keys(ratings).filter(key => ratings[key] !== undefined).length;
+    const answeredPanels = Math.ceil(answeredCount / itemsPerPage);
+    const totalPanels = totalPages;
+    const progress = Math.round((answeredPanels / totalPanels) * 100);
 
     // --- AI Analysis Trigger ---
     const triggerAndSaveAnalyses = async (assessmentId: number, user: { id: string }, resultsToAnalyze: Result[], ratingsForPrompt: Ratings, harmLevelsForPrompt: HarmLevels) => {
@@ -689,7 +690,7 @@ export default function AssessmentPage() {
                                         {/* Progress Dots Only (No Bar) */}
                                         <div className="border-t border-stone-200 pt-3">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs font-medium text-stone-700">Progress: {answeredCount}/{totalCount}</span>
+                                                <span className="text-xs font-medium text-stone-700">Progress: {answeredPanels}/{totalPanels} panels</span>
                                                 <span className="text-xs text-stone-500">{progress}%</span>
                                             </div>
                                             <div className="flex items-center gap-1 mt-1">

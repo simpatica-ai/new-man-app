@@ -131,3 +131,36 @@
     @apply text-lg font-bold mb-2 mt-3; /* Was text-2xl */
   }
 }
+
+/* Mobile-specific improvements */
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Improve button touch targets on mobile */
+  @media (max-width: 768px) {
+    .btn-touch {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Better spacing for mobile forms */
+    .form-mobile {
+      gap: 1rem;
+    }
+    
+    /* Responsive text sizing */
+    .text-responsive {
+      font-size: clamp(0.875rem, 2.5vw, 1rem);
+    }
+  }
+}

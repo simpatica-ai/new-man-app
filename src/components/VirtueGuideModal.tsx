@@ -21,11 +21,11 @@ interface VirtueGuideModalProps {
 export default function VirtueGuideModal({ isOpen, onClose, hasConnection }: VirtueGuideModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-w-[90vw] max-h-[90vh] overflow-y-auto mx-2">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <DialogTitle className="text-3xl font-light text-stone-800 text-center">Virtue Workspace Guide</DialogTitle>
-            <DialogDescription className="text-stone-600 text-center mt-2">
+            <DialogTitle className="text-xl sm:text-2xl font-light text-stone-800 text-center">Virtue Workspace Guide</DialogTitle>
+            <DialogDescription className="text-stone-600 text-center mt-2 text-sm">
               Your private space for reflection and growth through each virtue stage.
             </DialogDescription>
           </div>
@@ -34,7 +34,7 @@ export default function VirtueGuideModal({ isOpen, onClose, hasConnection }: Vir
           </Button>
         </div>
         
-        <div className="px-6 py-4">
+        <div className="px-2 sm:px-6 py-2 sm:py-4">
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-blue-600" />

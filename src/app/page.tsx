@@ -63,7 +63,7 @@ const HomePage = () => {
               
               <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
                 
-                <div className="text-stone-800 text-center md:text-left">
+                <div className="text-stone-800 text-left">
                   <div className="space-y-4 text-stone-700">
                     <p>
                       Transform your character through intentional virtue development with personalized insights and guidance. The New Man App helps you identify areas for growth, track your progress, and build lasting positive habits with the support of a personal mentor.

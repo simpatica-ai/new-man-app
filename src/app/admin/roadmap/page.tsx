@@ -112,7 +112,7 @@ export default function RoadmapPage() {
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <h4 className="font-semibold text-blue-800 mb-2">User Experience Enhancements</h4>
                     <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Improve mobile responsiveness for charts and assessments</li>
+                      <li>• ✅ Improve mobile responsiveness for charts and assessments (COMPLETED)</li>
                       <li>• Add accessibility features (ARIA labels, keyboard navigation)</li>
                       <li>• Implement performance optimizations (memoization, lazy loading)</li>
                       <li>• Enhanced loading states and progress indicators</li>
@@ -452,8 +452,8 @@ CREATE TABLE virtue_resources (
                         Implement advanced branding features
                       </li>
                       <li className="flex items-center gap-2">
-                        <Circle className="h-3 w-3 text-yellow-500" />
-                        Add mobile app optimization
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        Add mobile app optimization (COMPLETED)
                       </li>
                     </ul>
                   </div>

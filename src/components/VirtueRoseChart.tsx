@@ -25,13 +25,54 @@ export default function VirtueRoseChart({
 }: VirtueRoseChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{virtue: string; score: number; x: number; y: number} | null>(null);
+  const [windowWidth, setWindowWidth] = useState(1024); // Default to desktop size for SSR
   
-  // Conditionally calculate dimensions to preserve web view and fix PDF view
-  const baseSize = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
-  const labelPadding = forPdf ? 180 : 0; // Add padding only for the PDF version
-  const dimensions = baseSize + labelPadding;
+  // Handle window resize for responsive chart
+  useEffect(() => {
+    // Set initial window width on client side
+    if (typeof window !== 'undefined') {
+      setWindowWidth(window.innerWidth);
+    }
+    
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setWindowWidth(window.innerWidth);
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+  
+  // Responsive dimensions based on screen size and props
+  const getResponsiveDimensions = () => {
+    if (forPdf) {
+      const baseSize = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
+      return { baseSize, dimensions: baseSize + 180, labelPadding: 180 };
+    }
+    
+    // Mobile-first responsive sizing
+    const isMobile = windowWidth < 768;
+    const isTablet = windowWidth >= 768 && windowWidth < 1024;
+    
+    if (isMobile) {
+      const baseSize = size === 'thumbnail' ? 160 : size === 'medium' ? 280 : 320;
+      return { baseSize, dimensions: baseSize, labelPadding: 0 };
+    } else if (isTablet) {
+      const baseSize = size === 'thumbnail' ? 180 : size === 'medium' ? 350 : 450;
+      return { baseSize, dimensions: baseSize, labelPadding: 0 };
+    }
+    
+    // Desktop dimensions
+    const baseSize = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
+    return { baseSize, dimensions: baseSize, labelPadding: 0 };
+  };
+
+  const { baseSize, dimensions, labelPadding } = getResponsiveDimensions();
   const center = dimensions / 2;
-  const radius = baseSize / 2 - 5; // Radius of the data part of the chart remains the same
+  const radius = baseSize / 2 - 5;
 
   /**
    * Generates earthy colors based on score (red, amber, green with earth tones)
@@ -74,9 +115,11 @@ export default function VirtueRoseChart({
 
   // Label positioning configuration
   const getLabelPositioning = useCallback((angle: number, virtue: string) => {
+    const isMobile = windowWidth < 768;
+    
     const baseConfig = {
-      labelRadius: radius + (forPdf ? 55 : 45),
-      fontSize: forPdf ? '12' : '14',
+      labelRadius: radius + (forPdf ? 55 : isMobile ? 35 : 45),
+      fontSize: forPdf ? '12' : isMobile ? '10' : '14',
       fontFamily: 'Arial, sans-serif',
       fontWeight: '700'
     };
@@ -88,28 +131,29 @@ export default function VirtueRoseChart({
     // QUADRANT-BASED POSITIONING
     if (angle > Math.PI / 2 && angle < 3 * Math.PI / 2) {
       textAnchor = 'end';
-      dx = forPdf ? -6 : -4;
+      dx = forPdf ? -6 : isMobile ? -3 : -4;
     } 
     else if (angle < Math.PI / 2 || angle > 3 * Math.PI / 2) {
       textAnchor = 'start';
-      dx = forPdf ? 6 : 4;
+      dx = forPdf ? 6 : isMobile ? 3 : 4;
     }
 
-    // VIRTUE-SPECIFIC FINE-TUNING
+    // VIRTUE-SPECIFIC FINE-TUNING with mobile adjustments
+    const mobileMultiplier = isMobile ? 0.7 : 1;
     const virtueAdjustments: { [key: string]: { textAnchor: string; dx: number; dy?: string } } = {
-      'Responsibility': { textAnchor: 'middle', dx: forPdf ? -15 : -12 },
-      'Mindfulness': { textAnchor: 'middle', dx: forPdf ? 15 : 12 },
-      'Compassion': { textAnchor: 'middle', dx: forPdf ? -12 : -10 },
-      'Gratitude': { textAnchor: 'middle', dx: forPdf ? 12 : 10 },
-      'Self-Control': { textAnchor: 'middle', dx: forPdf ? -14 : -11 },
-      'Patience': { textAnchor: 'middle', dx: forPdf ? 14 : 11 },
-      'Honesty': { textAnchor: 'middle', dx: forPdf ? -10 : -8 },
-      'Integrity': { textAnchor: 'middle', dx: forPdf ? 10 : 8 },
-      'Respect': { textAnchor: 'middle', dx: forPdf ? -13 : -10 },
-      'Humility': { textAnchor: 'middle', dx: forPdf ? 13 : 10 },
-      'Vulnerability': { textAnchor: 'middle', dx: forPdf ? -11 : -9 },
-      'Healthy Boundaries': { textAnchor: 'middle', dx: forPdf ? 1 : -2 },
-      'Boundaries': { textAnchor: 'middle', dx: forPdf ? 1 : -2 }
+      'Responsibility': { textAnchor: 'middle', dx: (forPdf ? -15 : -12) * mobileMultiplier },
+      'Mindfulness': { textAnchor: 'middle', dx: (forPdf ? 15 : 12) * mobileMultiplier },
+      'Compassion': { textAnchor: 'middle', dx: (forPdf ? -12 : -10) * mobileMultiplier },
+      'Gratitude': { textAnchor: 'middle', dx: (forPdf ? 12 : 10) * mobileMultiplier },
+      'Self-Control': { textAnchor: 'middle', dx: (forPdf ? -14 : -11) * mobileMultiplier },
+      'Patience': { textAnchor: 'middle', dx: (forPdf ? 14 : 11) * mobileMultiplier },
+      'Honesty': { textAnchor: 'middle', dx: (forPdf ? -10 : -8) * mobileMultiplier },
+      'Integrity': { textAnchor: 'middle', dx: (forPdf ? 10 : 8) * mobileMultiplier },
+      'Respect': { textAnchor: 'middle', dx: (forPdf ? -13 : -10) * mobileMultiplier },
+      'Humility': { textAnchor: 'middle', dx: (forPdf ? 13 : 10) * mobileMultiplier },
+      'Vulnerability': { textAnchor: 'middle', dx: (forPdf ? -11 : -9) * mobileMultiplier },
+      'Healthy Boundaries': { textAnchor: 'middle', dx: (forPdf ? 1 : -2) * mobileMultiplier },
+      'Boundaries': { textAnchor: 'middle', dx: (forPdf ? 1 : -2) * mobileMultiplier }
     };
 
     if (virtueAdjustments[virtue]) {
@@ -131,7 +175,7 @@ export default function VirtueRoseChart({
       dx,
       dy
     };
-  }, [forPdf, radius]);
+  }, [forPdf, radius, windowWidth]);
 
   useEffect(() => {
     if (!svgRef.current || data.length === 0) return;
@@ -273,13 +317,13 @@ export default function VirtueRoseChart({
     centerCircle.setAttribute('stroke-width', '1');
     svg.appendChild(centerCircle);
     
-  }, [data, dimensions, center, radius, showLabels, forPdf, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
+  }, [data, dimensions, center, radius, showLabels, forPdf, windowWidth, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
 
   return (
     <div 
         data-testid={forPdf ? "virtue-chart-pdf" : "virtue-chart"}
-        className={className} style={{ 
-        width: '100%', 
+        className={`${className} w-full flex justify-center`} 
+        style={{ 
         maxWidth: `${dimensions}px`, 
         height: `${dimensions}px`, 
         margin: '0 auto',
@@ -291,19 +335,19 @@ export default function VirtueRoseChart({
         width={dimensions}
         height={dimensions}
         viewBox={`0 0 ${dimensions} ${dimensions}`}
-        style={{ display: 'block', overflow: 'visible' }}
+        style={{ display: 'block', overflow: 'visible', maxWidth: '100%', height: 'auto' }}
       />
       
       {!showLabels && !forPdf && tooltip && (
         <div style={{
           position: 'absolute',
-          left: `${tooltip.x + 10}px`,
-          top: `${tooltip.y + 10}px`,
+          left: `${Math.min(tooltip.x + 10, dimensions - 120)}px`,
+          top: `${Math.max(tooltip.y - 40, 10)}px`,
           backgroundColor: 'rgba(0, 0, 0, 0.9)',
           color: 'white',
           padding: '8px 12px',
           borderRadius: '6px',
-          fontSize: '14px',
+          fontSize: '12px',
           fontWeight: '500',
           zIndex: 9999,
           pointerEvents: 'none',

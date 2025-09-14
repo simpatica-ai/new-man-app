@@ -8,11 +8,12 @@ export default function Footer() {
   return (
     <footer className="bg-stone-100 border-t border-stone-200 py-4 mt-8">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-          <p className="text-sm text-stone-600">
-            © {currentYear} Simpatica AI™ (Patent Pending). All rights reserved.
+        <div className="flex justify-between items-start space-y-0">
+          <p className="text-sm text-stone-600 flex-1 pr-4">
+            © {currentYear} Simpatica AI™<br className="sm:hidden" />
+            <span className="hidden sm:inline"> </span>(Patent Pending). All rights reserved.
           </p>
-          <div className="flex space-x-4 text-sm">
+          <div className="flex space-x-4 text-sm flex-shrink-0">
             <Link 
               href="/disclaimer" 
               className="text-stone-600 hover:text-stone-800 underline"

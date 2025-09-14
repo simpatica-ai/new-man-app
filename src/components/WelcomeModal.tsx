@@ -23,11 +23,11 @@ interface WelcomeModalProps {
 export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl max-w-[95vw] max-h-[90vh] overflow-y-auto mx-4">
+      <DialogContent className="sm:max-w-xl max-w-[90vw] max-h-[90vh] overflow-y-auto mx-2">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1 pr-4">
-            <DialogTitle className="text-2xl sm:text-3xl font-light text-stone-800 text-center">Welcome to A New Man</DialogTitle>
-            <DialogDescription className="text-stone-600 text-center mt-2 text-sm sm:text-base">
+            <DialogTitle className="text-xl sm:text-2xl font-light text-stone-800 text-center">Welcome to A New Man</DialogTitle>
+            <DialogDescription className="text-stone-600 text-center mt-2 text-sm">
               Your private workspace for a journey of self-reflection and growth.
             </DialogDescription>
           </div>
@@ -36,7 +36,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
           </Button>
         </div>
         
-        <div className="px-2 sm:px-8 py-4 sm:py-6">
+        <div className="px-1 sm:px-8 py-2 sm:py-6">
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-amber-600" />

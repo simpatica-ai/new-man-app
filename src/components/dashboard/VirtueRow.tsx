@@ -12,10 +12,10 @@ interface VirtueRowProps {
 
 export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }: VirtueRowProps) {
   return (
-    <li className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">
+    <li className="flex flex-col gap-3 md:gap-4 p-3 md:p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">
       {assessmentTaken && (
-        <div className="flex-shrink-0 flex items-center gap-4 w-full md:w-auto">
-          <div className="relative w-16 h-16 flex items-center justify-center">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
             <svg className="w-full h-full" viewBox="0 0 36 36">
               <path 
                 className="text-stone-200" 
@@ -33,33 +33,36 @@ export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }:
                 strokeWidth="2" 
               />
             </svg>
-            <span className="absolute text-xl font-semibold text-stone-700">
+            <span className="absolute text-lg md:text-xl font-semibold text-stone-700">
               {(virtue.virtue_score || 0).toFixed(1)}
             </span>
           </div>
-          <div className="md:hidden flex-grow">
-            <h3 className="font-semibold text-lg text-stone-800">{virtue.name}</h3>
+          <div className="flex-grow min-w-0">
+            <h3 className="font-semibold text-base md:text-lg text-stone-800 truncate">{virtue.name}</h3>
           </div>
         </div>
       )}
-      <div className="flex-grow w-full">
-        <h3 className="hidden md:block font-semibold text-lg text-stone-800">{virtue.name}</h3>
-        <p className="text-stone-600 text-sm mb-3">
+      
+      <div className="flex-grow">
+        {!assessmentTaken && (
+          <h3 className="font-semibold text-base md:text-lg text-stone-800 mb-2">{virtue.name}</h3>
+        )}
+        <p className="text-stone-600 text-sm mb-3 leading-relaxed">
           {virtue.short_description || virtue.description}
         </p>
-        <div className="flex flex-wrap gap-2">
-          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 1 } }}>
-            <Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 1)}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 1 } }} className="flex-1">
+            <Button size="sm" variant="outline" className={`w-full text-xs md:text-sm ${getStatusClasses(virtue.id, 1)}`}>
               Stage 1: Dismantling
             </Button>
           </Link>
-          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 2 } }}>
-            <Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 2)}>
+          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 2 } }} className="flex-1">
+            <Button size="sm" variant="outline" className={`w-full text-xs md:text-sm ${getStatusClasses(virtue.id, 2)}`}>
               Stage 2: Building
             </Button>
           </Link>
-          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 3 } }}>
-            <Button size="sm" variant="outline" className={getStatusClasses(virtue.id, 3)}>
+          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 3 } }} className="flex-1">
+            <Button size="sm" variant="outline" className={`w-full text-xs md:text-sm ${getStatusClasses(virtue.id, 3)}`}>
               Stage 3: Maintaining
             </Button>
           </Link>

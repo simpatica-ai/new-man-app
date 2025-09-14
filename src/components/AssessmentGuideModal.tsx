@@ -20,11 +20,11 @@ interface AssessmentGuideModalProps {
 export default function AssessmentGuideModal({ isOpen, onClose }: AssessmentGuideModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-w-[90vw] max-h-[90vh] overflow-y-auto mx-2">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <DialogTitle className="text-3xl font-light text-stone-800 text-center">Character Defect Assessment</DialogTitle>
-            <DialogDescription className="text-stone-600 text-center mt-2">
+            <DialogTitle className="text-xl sm:text-2xl font-light text-stone-800 text-center">Character Defect Assessment</DialogTitle>
+            <DialogDescription className="text-stone-600 text-center mt-2 text-sm">
               Your journey begins with brutal honesty and self-reflection.
             </DialogDescription>
           </div>
