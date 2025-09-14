@@ -13,6 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
 import AppHeader from '@/components/AppHeader'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import VirtueGuideModal from '@/components/VirtueGuideModal'
 
 // --- Helper Functions ---
@@ -46,7 +48,7 @@ type ChatMessage = { id: number; sender_id: string; message_text: string; create
 type StageStatus = 'not_started' | 'in_progress' | 'completed';
 
 // --- Standalone StageContent Component for Performance ---
-const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, writingPanelHeight, setWritingPanelHeight }: { 
+const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, writingPanelHeight, setWritingPanelHeight, savingMemo, completingStage }: { 
   stage: Stage, 
   memoContent: string, 
   status: StageStatus,
@@ -55,10 +57,10 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
   onCompleteStage: () => Promise<void>,
   onEditStage: () => Promise<void>,
   writingPanelHeight: number,
-  setWritingPanelHeight: (height: number) => void
+  setWritingPanelHeight: (height: number) => void,
+  savingMemo: boolean,
+  completingStage: boolean
 }) => {
-    const [isSaving, setIsSaving] = useState(false);
-    
     const empatheticTitles: { [key: number]: string } = {
       1: "My Private Reflection for Stage 1: Gently Exploring Areas for Growth",
       2: "My Private Reflection for Stage 2: Building New, Healthy Habits",
@@ -67,15 +69,11 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
     const cardTitle = empatheticTitles[stage.stage_number] || `My Private Reflection for ${stage.title}`;
 
     const handleSave = async () => {
-      setIsSaving(true);
       await onSaveMemo();
-      setIsSaving(false);
     }
     
     const handleComplete = async () => {
-      setIsSaving(true);
       await onCompleteStage();
-      setIsSaving(false);
     }
 
     const StatusBadge = () => {
@@ -145,6 +143,7 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
               <Button 
                 variant="outline" 
                 onClick={onEditStage}
+                disabled={completingStage}
                 className="border-amber-200 text-amber-800 hover:bg-amber-50 transition-mindful"
               >
                 Edit Completed Reflection
@@ -154,17 +153,17 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
                 <Button 
                   variant="outline" 
                   onClick={handleSave} 
-                  disabled={isSaving}
+                  disabled={savingMemo || completingStage}
                   className="border-stone-300 text-stone-700 hover:bg-stone-50 transition-mindful"
                 >
-                  {isSaving ? 'Saving...' : 'Save Draft'}
+                  {savingMemo ? 'Saving...' : 'Save Draft'}
                 </Button>
                 <Button 
                   onClick={handleComplete} 
-                  disabled={isSaving}
+                  disabled={savingMemo || completingStage}
                   className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-mindful shadow-contemplative"
                 >
-                  {isSaving ? 'Saving...' : 'Mark Complete'}
+                  {completingStage ? 'Saving...' : 'Mark Complete'}
                 </Button>
               </>
             )}
@@ -177,6 +176,9 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
 // --- VIRTUE DETAIL PAGE ---
 export default function VirtueDetailPage() {
   const [loading, setLoading] = useState(true)
+  const [savingMemo, setSavingMemo] = useState(false)
+  const [completingStage, setCompletingStage] = useState(false)
+  const [sendingMessage, setSendingMessage] = useState(false)
   const [virtue, setVirtue] = useState<Virtue | null>(null)
   const [memos, setMemos] = useState<Map<number, string>>(new Map())
   const [progress, setProgress] = useState<Map<string, StageStatus>>(new Map())
@@ -222,7 +224,7 @@ export default function VirtueDetailPage() {
       setCurrentUserId(user.id);
 
       // CORRECTED: Updated Supabase query to match the new schema
-      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*)), affirmations(*)').eq('id', parseInt(virtueId as string)).single();
+      const virtuePromise = supabase.from('virtues').select('*, virtue_stages(*, stage_prompts(*)), affirmations(*), virtue_guide').eq('id', parseInt(virtueId as string)).single();
       const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string));
       const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string));
       const connectionPromise = supabase.from('sponsor_connections').select('id').or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`).eq('status', 'active').maybeSingle();
@@ -356,7 +358,8 @@ export default function VirtueDetailPage() {
 
     setIsPromptLoading(true);
     try {
-      const memoHash = generateMemoHash(memos, 1);
+      const currentMemoContent = memos.get(1) || '';
+      const memoHash = generateMemoHash(new Map([[1, currentMemoContent]]), 1);
       
       // Check cache first
       const { data: cachedPrompt } = await supabase
@@ -380,7 +383,7 @@ export default function VirtueDetailPage() {
           virtueName: virtue.name,
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis.analysis_text,
-          stage1MemoContent: memos.get(1) || ''
+          stage1MemoContent: currentMemoContent
         }),
       });
 
@@ -404,7 +407,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, memos, currentUserId]);
+  }, [virtue, defectAnalysis, currentUserId]);
 
   const fetchStage2Prompt = useCallback(async () => {
     if (!virtue || !defectAnalysis || !currentUserId) return;
@@ -412,7 +415,8 @@ export default function VirtueDetailPage() {
     setIsPromptLoading(true);
     try {
       const stage1Status = progress.get(`${virtueId}-1`);
-      const memoHash = generateMemoHash(memos, 2) + `|${stage1Status}`;
+      const currentMemoContent = memos.get(2) || '';
+      const memoHash = generateMemoHash(new Map([[2, currentMemoContent]]), 2) + `|${stage1Status}`;
       
       // Check cache first
       const { data: cachedPrompt } = await supabase
@@ -437,7 +441,7 @@ export default function VirtueDetailPage() {
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis.analysis_text,
           stage1MemoContent: memos.get(1) || '',
-          stage2MemoContent: memos.get(2) || '',
+          stage2MemoContent: currentMemoContent,
           stage1Complete: stage1Status === 'completed'
         }),
       });
@@ -462,7 +466,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, memos, progress, virtueId, currentUserId]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId]);
 
   const fetchStage3Prompt = useCallback(async () => {
     if (!virtue || !defectAnalysis || !currentUserId) return;
@@ -471,7 +475,8 @@ export default function VirtueDetailPage() {
     try {
       const stage1Status = progress.get(`${virtueId}-1`);
       const stage2Status = progress.get(`${virtueId}-2`);
-      const memoHash = generateMemoHash(memos, 3) + `|${stage1Status}|${stage2Status}`;
+      const currentMemoContent = memos.get(3) || '';
+      const memoHash = generateMemoHash(new Map([[3, currentMemoContent]]), 3) + `|${stage1Status}|${stage2Status}`;
       
       // Check cache first
       const { data: cachedPrompt } = await supabase
@@ -497,7 +502,7 @@ export default function VirtueDetailPage() {
           characterDefectAnalysis: defectAnalysis.analysis_text,
           stage1MemoContent: memos.get(1) || '',
           stage2MemoContent: memos.get(2) || '',
-          stage3MemoContent: memos.get(3) || '',
+          stage3MemoContent: currentMemoContent,
           stage1Complete: stage1Status === 'completed',
           stage2Complete: stage2Status === 'completed'
         }),
@@ -523,7 +528,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, memos, progress, virtueId, currentUserId]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId]);
 
   useEffect(() => {
     if (virtue && defectAnalysis) {
@@ -535,7 +540,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, defectAnalysis, progress, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
+  }, [displayedStageNumber, virtue, defectAnalysis, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
@@ -557,6 +562,7 @@ export default function VirtueDetailPage() {
   };
 
   const handleSaveMemo = async (stageNumber: number) => {
+    setSavingMemo(true)
     const memoText = memos.get(stageNumber) || ""
     if (!currentUserId || !virtue) return
 
@@ -583,9 +589,11 @@ export default function VirtueDetailPage() {
     } else if (stageNumber === 3) {
       fetchStage3Prompt();
     }
+    setSavingMemo(false)
   }
 
   const handleCompleteStage = async (stageNumber: number) => {
+    setCompletingStage(true)
     if (!virtue) return;
     const { error } = await updateStageStatus(stageNumber, 'completed');
     if (error) console.error("Error completing stage:", error.message);
@@ -599,11 +607,13 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }, 500);
+    setCompletingStage(false)
   };
   
   const handleSendChatMessage = async () => {
     if (!newChatMessage.trim() || !currentUserId || !connectionId) return;
 
+    setSendingMessage(true)
     const { data: newMessage, error } = await supabase
       .from('sponsor_chat_messages')
       .insert({
@@ -623,6 +633,7 @@ export default function VirtueDetailPage() {
       setChatMessages([...chatMessages, { ...newMessage, sender_name: senderName }]);
       setNewChatMessage("");
     }
+    setSendingMessage(false)
   }
   
 
@@ -697,7 +708,13 @@ export default function VirtueDetailPage() {
               isPromptHidden ? 'lg:col-span-1' : 'lg:col-span-3'
             }`}>
               <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className={`grid w-full gap-2 bg-white/70 backdrop-blur-sm border border-stone-200/60 ${connectionId ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                <TabsList className={`grid w-full gap-2 bg-white/70 backdrop-blur-sm border border-stone-200/60 ${connectionId ? 'grid-cols-6' : 'grid-cols-5'}`}>
+                  <TabsTrigger 
+                    value="discovery" 
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200 text-sm font-medium"
+                  >
+                    Discovery
+                  </TabsTrigger>
                   <TabsTrigger 
                     value="stage-1" 
                     className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
@@ -736,6 +753,36 @@ export default function VirtueDetailPage() {
                   )}
                 </TabsList>
 
+                <TabsContent value="discovery" className="mt-6">
+                  <Card className="border-stone-200 shadow-contemplative">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-semibold text-stone-800 flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-amber-600" />
+                        Understanding {virtue?.name}
+                      </CardTitle>
+                      <CardDescription className="text-stone-600">
+                        A comprehensive guide to developing this virtue
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="max-h-96 overflow-y-auto pr-4">
+                        <div className="prose prose-stone prose-sm max-w-none prose-p:mb-4 prose-headings:mb-3 prose-headings:mt-6">
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              ul: ({children}) => <ul className="list-disc list-outside ml-6 my-4 space-y-1">{children}</ul>,
+                              ol: ({children}) => <ol className="list-decimal list-outside ml-6 my-4 space-y-1">{children}</ol>,
+                              li: ({children}) => <li className="pl-1">{children}</li>
+                            }}
+                          >
+                            {virtue?.virtue_guide || 'Virtue guide content is being prepared...'}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
                 {[1, 2, 3].map(stageNum => {
                   const stageData = virtue.virtue_stages.find(s=>s.stage_number === stageNum);
                   const status = progress.get(`${virtueId}-${stageNum}`) || 'not_started';
@@ -752,6 +799,8 @@ export default function VirtueDetailPage() {
                             onEditStage={() => handleEditStage(stageNum)}
                             writingPanelHeight={writingPanelHeight}
                             setWritingPanelHeight={setWritingPanelHeight}
+                            savingMemo={savingMemo}
+                            completingStage={completingStage}
                           />
                         }
                       </TabsContent>
@@ -805,9 +854,14 @@ export default function VirtueDetailPage() {
                         <Button 
                           onClick={handleSendChatMessage} 
                           size="icon" 
+                          disabled={sendingMessage}
                           className="flex-shrink-0 bg-gradient-primary text-primary-foreground hover:opacity-90 transition-mindful shadow-contemplative"
                         >
-                          <Send size={18} />
+                          {sendingMessage ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                          ) : (
+                            <Send size={18} />
+                          )}
                         </Button>
                       </div>
                     </CardContent>
