@@ -391,14 +391,15 @@ export default function VirtueDetailPage() {
       const data = await response.json();
       
       // Cache the new prompt
-      await supabase.from('user_virtue_ai_prompts').upsert({
+      const { error } = await supabase.from('user_virtue_ai_prompts').upsert({
         user_id: currentUserId,
         virtue_id: virtue.id,
         stage_number: 1,
         prompt_text: data.prompt,
         memo_hash: memoHash
-      });
+      }, { onConflict: 'user_id,virtue_id,stage_number' });
       
+      if (error) console.error('Cache error:', error);
       setStage1AiPrompt(data.prompt);
 
     } catch (error) {
@@ -407,7 +408,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, currentUserId]);
+  }, [virtue, defectAnalysis, currentUserId, memos]);
 
   const fetchStage2Prompt = useCallback(async () => {
     if (!virtue || !defectAnalysis || !currentUserId) return;
@@ -450,14 +451,15 @@ export default function VirtueDetailPage() {
       const data = await response.json();
       
       // Cache the new prompt
-      await supabase.from('user_virtue_ai_prompts').upsert({
+      const { error } = await supabase.from('user_virtue_ai_prompts').upsert({
         user_id: currentUserId,
         virtue_id: virtue.id,
         stage_number: 2,
         prompt_text: data.prompt,
         memo_hash: memoHash
-      });
+      }, { onConflict: 'user_id,virtue_id,stage_number' });
       
+      if (error) console.error('Cache error:', error);
       setStage2AiPrompt(data.prompt);
 
     } catch (error) {
@@ -466,7 +468,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, virtueId, currentUserId]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId, memos, progress]);
 
   const fetchStage3Prompt = useCallback(async () => {
     if (!virtue || !defectAnalysis || !currentUserId) return;
@@ -512,14 +514,15 @@ export default function VirtueDetailPage() {
       const data = await response.json();
       
       // Cache the new prompt
-      await supabase.from('user_virtue_ai_prompts').upsert({
+      const { error } = await supabase.from('user_virtue_ai_prompts').upsert({
         user_id: currentUserId,
         virtue_id: virtue.id,
         stage_number: 3,
         prompt_text: data.prompt,
         memo_hash: memoHash
-      });
+      }, { onConflict: 'user_id,virtue_id,stage_number' });
       
+      if (error) console.error('Cache error:', error);
       setStage3AiPrompt(data.prompt);
 
     } catch (error) {
@@ -528,7 +531,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, virtueId, currentUserId]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId, memos, progress]);
 
   useEffect(() => {
     if (virtue && defectAnalysis) {
@@ -600,13 +603,11 @@ export default function VirtueDetailPage() {
     await fetchPageData();
     
     // Refresh prompts for subsequent stages when a stage is completed
-    setTimeout(() => {
-      if (stageNumber === 1 && displayedStageNumber === 2) {
-        fetchStage2Prompt();
-      } else if (stageNumber === 2 && displayedStageNumber === 3) {
-        fetchStage3Prompt();
-      }
-    }, 500);
+    if (stageNumber === 1 && displayedStageNumber === 2) {
+      fetchStage2Prompt();
+    } else if (stageNumber === 2 && displayedStageNumber === 3) {
+      fetchStage3Prompt();
+    }
     setCompletingStage(false)
   };
   

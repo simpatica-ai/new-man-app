@@ -272,8 +272,6 @@ export default function AssessmentPage() {
                             newMap.set(result.virtue, fallbackAnalysis);
                             return newMap;
                         });
-                    } else {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
             }
