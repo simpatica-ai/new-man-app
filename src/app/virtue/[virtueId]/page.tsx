@@ -226,7 +226,38 @@ export default function VirtueDetailPage() {
       const memosPromise = supabase.from('user_virtue_stage_memos').select('stage_number, memo_text').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string));
       const progressPromise = supabase.from('user_virtue_stage_progress').select('stage_number, status').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string));
       const connectionPromise = supabase.from('sponsor_connections').select('id').or(`practitioner_user_id.eq.${user.id},sponsor_user_id.eq.${user.id}`).eq('status', 'active').maybeSingle();
-      const defectAnalysisPromise = supabase.from('virtue_analysis').select('*').eq('user_id', user.id).eq('virtue_id', parseInt(virtueId as string)).single();
+      // Try to get virtue analysis from user_assessment_results directly as fallback
+      const { data: latestAssessment, error: assessmentError } = await supabase
+        .from('user_assessments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('assessment_type', 'virtue')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let defectAnalysisPromise;
+      if (latestAssessment) {
+        defectAnalysisPromise = supabase
+          .from('virtue_analysis')
+          .select('*')
+          .eq('assessment_id', latestAssessment.id)
+          .eq('virtue_id', parseInt(virtueId as string))
+          .maybeSingle();
+      } else {
+        // Fallback: get virtue name and look up assessment results directly
+        const virtueNames = ['', 'Humility', 'Honesty', 'Courage', 'Patience', 'Respect', 'Gratitude', 'Boundaries', 'Responsibility', 'Forgiveness', 'Compassion', 'Integrity', 'Wisdom'];
+        const virtueName = virtueNames[parseInt(virtueId as string)] || 'Unknown';
+        
+        defectAnalysisPromise = supabase
+          .from('user_assessment_results')
+          .select('virtue_name, defect_intensity, created_at')
+          .eq('user_id', user.id)
+          .eq('virtue_name', virtueName)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+      }
 
       const [virtueResult, memosResult, progressResult, connectionResult, defectAnalysisResult] = await Promise.all([virtuePromise, memosPromise, progressPromise, connectionPromise, defectAnalysisPromise]);
 
@@ -252,7 +283,17 @@ export default function VirtueDetailPage() {
         console.error("Error fetching defect analysis:", defectAnalysisResult.error);
       }
       if (defectAnalysisResult.data) {
-        setDefectAnalysis(defectAnalysisResult.data);
+        // Check if this is virtue_analysis data or user_assessment_results data
+        if (defectAnalysisResult.data.analysis_text) {
+          // This is virtue_analysis data
+          setDefectAnalysis(defectAnalysisResult.data);
+        } else if (defectAnalysisResult.data.virtue_name) {
+          // This is user_assessment_results data - transform it
+          const analysisData = {
+            analysis_text: `Character defect analysis for ${defectAnalysisResult.data.virtue_name}: Based on your assessment, this virtue shows a defect intensity of ${defectAnalysisResult.data.defect_intensity}/10. This indicates areas where focused attention and growth would be beneficial.`
+          };
+          setDefectAnalysis(analysisData);
+        }
       }
       if (connectionResult.data) {
         setConnectionId(connectionResult.data.id);
@@ -324,9 +365,9 @@ export default function VirtueDetailPage() {
         .eq('user_id', currentUserId)
         .eq('virtue_id', virtue.id)
         .eq('stage_number', 1)
-        .single();
+        .maybeSingle();
 
-      if (cachedPrompt && cachedPrompt.memo_hash === memoHash) {
+      if (cachedPrompt && cachedPrompt.memo_hash === memoHash && cachedPrompt.prompt_text) {
         setStage1AiPrompt(cachedPrompt.prompt_text);
         return;
       }
@@ -380,9 +421,9 @@ export default function VirtueDetailPage() {
         .eq('user_id', currentUserId)
         .eq('virtue_id', virtue.id)
         .eq('stage_number', 2)
-        .single();
+        .maybeSingle();
 
-      if (cachedPrompt && cachedPrompt.memo_hash === memoHash) {
+      if (cachedPrompt && cachedPrompt.memo_hash === memoHash && cachedPrompt.prompt_text) {
         setStage2AiPrompt(cachedPrompt.prompt_text);
         return;
       }
@@ -439,9 +480,9 @@ export default function VirtueDetailPage() {
         .eq('user_id', currentUserId)
         .eq('virtue_id', virtue.id)
         .eq('stage_number', 3)
-        .single();
+        .maybeSingle();
 
-      if (cachedPrompt && cachedPrompt.memo_hash === memoHash) {
+      if (cachedPrompt && cachedPrompt.memo_hash === memoHash && cachedPrompt.prompt_text) {
         setStage3AiPrompt(cachedPrompt.prompt_text);
         return;
       }
@@ -485,7 +526,7 @@ export default function VirtueDetailPage() {
   }, [virtue, defectAnalysis, memos, progress, virtueId, currentUserId]);
 
   useEffect(() => {
-    if (virtue && defectAnalysis && progress.size > 0) {
+    if (virtue && defectAnalysis) {
       if (displayedStageNumber === 1) {
         fetchStage1Prompt();
       } else if (displayedStageNumber === 2) {

@@ -227,12 +227,12 @@ export default function AssessmentPage() {
                     }
 
                     // Save to database
-                    const { error: insertError } = await supabase.from('virtue_analysis').insert({
+                    const { error: insertError } = await supabase.from('virtue_analysis').upsert({
                         user_id: user.id,
                         assessment_id: assessmentId,
                         virtue_id: virtueInfo.id,
                         analysis_text: data.analysis
-                    });
+                    }, { onConflict: 'user_id,assessment_id,virtue_id' });
 
                     if (insertError) {
                         throw new Error(`Database error: ${insertError.message}`);
@@ -259,12 +259,12 @@ export default function AssessmentPage() {
                         const fallbackAnalysis = generateFallbackAnalysis(virtueInfo, result);
                         
                         // Save fallback to database
-                        await supabase.from('virtue_analysis').insert({
+                        await supabase.from('virtue_analysis').upsert({
                             user_id: user.id,
                             assessment_id: assessmentId,
                             virtue_id: virtueInfo.id,
                             analysis_text: fallbackAnalysis
-                        });
+                        }, { onConflict: 'user_id,assessment_id,virtue_id' });
                         
                         // Update local state with fallback
                         setAnalyses(prev => {
