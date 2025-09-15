@@ -20,15 +20,15 @@ export function useDashboardData() {
       
       const { data: { user } } = await supabase.auth.getUser();
       console.log('Current user:', user);
+      console.log('Email confirmed at:', user?.email_confirmed_at);
       if (!user) {
         console.log('No user found, returning early');
         return;
       }
 
-      // Check if email is confirmed
+      // Check if email is confirmed (we handle this manually)
       if (!user.email_confirmed_at) {
         console.log('Email not confirmed, user should not access dashboard');
-        // You could redirect to a "please confirm email" page here
         return;
       }
       
@@ -44,6 +44,8 @@ export function useDashboardData() {
 
       console.log('Profile result:', profileResult);
       console.log('Virtues result:', virtuesResult);
+      console.log('Virtues error:', virtuesResult.error);
+      console.log('Virtues data length:', virtuesResult.data?.length);
 
       if (profileResult.error) throw profileResult.error;
       if (virtuesResult.error) throw virtuesResult.error;
@@ -90,7 +92,7 @@ export function useDashboardData() {
         }
       }
 
-      if (!hasCompletedAssessment && !profile?.full_name) {
+      if (!hasCompletedAssessment) {
         setShowWelcomeModal(true);
       }
 
@@ -114,9 +116,13 @@ export function useDashboardData() {
           });
           virtuesWithScores.sort((a, b) => (a.virtue_score || 0) - (b.virtue_score || 0)); // Sort lowest to highest
         }
+      } else {
+        // For new users, sort by virtue ID (default order)
+        virtuesWithScores.sort((a, b) => a.id - b.id);
       }
 
       setVirtues(virtuesWithScores);
+      console.log('Final virtues set:', virtuesWithScores);
 
       if (journalResult.data && journalResult.data.length > 0) {
         setLastJournalEntry(journalResult.data[0].created_at);

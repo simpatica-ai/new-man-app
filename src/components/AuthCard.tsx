@@ -24,15 +24,30 @@ export function AuthCard() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setMessage({ type: 'error', text: error.message });
     } else {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } }
-      });
-      if (error) {
-        setMessage({ type: 'error', text: error.message });
-      } else {
-        setMessage({ type: 'success', text: 'Check your email for a confirmation link!' });
+      // Use custom signup function
+      try {
+        const response = await fetch('/api/supabase/functions/custom-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            fullName: fullName,
+            siteUrl: window.location.origin
+          })
+        })
+
+        const result = await response.json()
+        if (!response.ok) {
+          setMessage({ type: 'error', text: result.error })
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: 'Account created! Please check your email to confirm your account.' 
+          })
+        }
+      } catch (error: any) {
+        setMessage({ type: 'error', text: error.message })
       }
     }
     setLoading(false);

@@ -46,13 +46,16 @@ function SignupContent() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          fullName: formData.fullName
+          fullName: formData.fullName,
+          siteUrl: window.location.origin // Pass current origin
         })
       })
 
       const result = await response.json()
+      console.log('Signup result:', result)
       if (!response.ok) throw new Error(result.error)
 
+      console.log('Setting email sent state')
       setUserEmail(formData.email)
       setEmailSent(true)
       setSuccess(true)
