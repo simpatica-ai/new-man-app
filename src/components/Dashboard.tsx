@@ -71,15 +71,15 @@ export default function Dashboard() {
                           </CardTitle>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="lg"
                             onClick={() => setShowOverview(!showOverview)}
-                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 self-start sm:self-auto p-2"
+                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 self-start sm:self-auto p-3 min-w-[44px] min-h-[44px]"
                           >
-                            {showOverview ? <ChevronUp className="h-5 w-5 md:h-6 md:w-6" /> : <ChevronDown className="h-5 w-5 md:h-6 md:w-6" />}
+                            {showOverview ? <ChevronUp className="h-6 w-6 md:h-7 md:w-7" /> : <ChevronDown className="h-6 w-6 md:h-7 md:w-7" />}
                           </Button>
                         </div>
                       </CardHeader>
-                      {(showOverview || !assessmentTaken) && (
+                      {showOverview && (
                         <CardContent className="pt-0">
                           <div className="space-y-3 md:space-y-4 text-xs md:text-sm text-amber-900">
                             <div className="flex items-start gap-2 md:gap-3">
@@ -187,24 +187,6 @@ export default function Dashboard() {
                 <>
                   {/* Existing layout for users who have taken assessment */}
                   <div className="lg:col-span-2 space-y-4">
-                    {/* Assessment Chart - Show when assessment is completed */}
-                    {assessmentTaken && virtues.length > 0 && (
-                      <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-lg md:text-xl font-light text-stone-800">Your Virtue Assessment</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex justify-center items-center min-h-[280px] md:min-h-[400px] p-2 md:p-6">
-                          <VirtueRoseChart 
-                            data={virtues.map(v => ({
-                              virtue: getChartDisplayVirtueName(v.name),
-                              score: v.virtue_score || 0
-                            }))}
-                            size="medium"
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
-
                     <div className="space-y-3 p-3 md:p-4 bg-white/80 backdrop-blur-sm rounded-lg border border-stone-200/60 shadow-gentle">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <h2 className="text-xl md:text-2xl font-light text-stone-800">
@@ -248,11 +230,11 @@ export default function Dashboard() {
                           </CardTitle>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="lg"
                             onClick={() => setShowOverview(!showOverview)}
-                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 p-2"
+                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 p-3 min-w-[44px] min-h-[44px]"
                           >
-                            {showOverview ? <ChevronUp className="h-5 w-5 md:h-6 md:w-6" /> : <ChevronDown className="h-5 w-5 md:h-6 md:w-6" />}
+                            {showOverview ? <ChevronUp className="h-6 w-6 md:h-7 md:w-7" /> : <ChevronDown className="h-6 w-6 md:h-7 md:w-7" />}
                           </Button>
                         </div>
                       </CardHeader>

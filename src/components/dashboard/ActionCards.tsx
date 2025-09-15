@@ -34,46 +34,51 @@ export default function ActionCards({
 
   return (
     <div className="space-y-6">
-      {assessmentTaken && (
-        <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
-          <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-            <BookOpen className="h-8 w-8 text-amber-700" />
-            <div>
-              <CardTitle className="text-stone-800 font-medium">Assessment</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {virtues.length > 0 ? (
-              <>
-                <div className="p-2">
-                  <VirtueRoseChart 
-                    data={virtues.map(v => ({
-                      virtue: getChartDisplayVirtueName(v.name),
-                      score: v.virtue_score || 0
-                    }))}
-                    size="thumbnail"
-                    showLabels={false}
-                  />
-                </div>
-                <div className="px-6 pb-4 pt-0 text-center">
-                  <Link 
-                    href="/assessment" 
-                    className="text-amber-700 hover:text-amber-800 underline text-sm"
-                  >
-                    View Full Assessment
-                  </Link>
-                </div>
-              </>
-            ) : (
-              <div className="p-6">
-                <p className="text-sm text-stone-600 mb-3">
-                  Loading your assessment results...
-                </p>
+      <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
+        <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+          <BookOpen className="h-8 w-8 text-amber-700" />
+          <div>
+            <CardTitle className="text-stone-800 font-medium">Assessment</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {assessmentTaken && virtues.length > 0 ? (
+            <>
+              <div className="p-2">
+                <VirtueRoseChart 
+                  data={virtues.map(v => ({
+                    virtue: getChartDisplayVirtueName(v.name),
+                    score: v.virtue_score || 0
+                  }))}
+                  size="thumbnail"
+                  showLabels={false}
+                />
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <div className="px-6 pb-4 pt-0 text-center">
+                <Link 
+                  href="/assessment" 
+                  className="text-amber-700 hover:text-amber-800 underline text-sm"
+                >
+                  View Full Assessment
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-3 text-amber-700">
+                <Sparkles size={18} />
+                <p className="text-sm font-medium">Discover your Virtue Rose</p>
+              </div>
+              <p className="text-sm text-stone-600 mb-3">
+                Take the assessment to visualize your virtue strengths and areas for growth.
+              </p>
+              <Link href="/assessment">
+                <Button size="sm" variant="outline">Take Assessment</Button>
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
