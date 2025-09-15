@@ -23,10 +23,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signup?error=invalid_link', request.url))
     }
 
-    // Confirm the user's email
+    // Confirm the user's email by setting email_confirmed_at
     const { error: confirmError } = await supabase.auth.admin.updateUserById(
       user.id,
-      { email_confirm: true }
+      { 
+        email_confirmed_at: new Date().toISOString()
+      }
     )
 
     if (confirmError) throw confirmError
