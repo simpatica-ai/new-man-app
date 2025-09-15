@@ -306,6 +306,7 @@ export default function Dashboard() {
                         </CardContent>
                       )}
                     </Card>
+                  </div>
 
                   <div className="lg:col-span-1 lg:sticky lg:top-24">
                     {/* Desktop: ActionCards in sidebar */}
