@@ -19,7 +19,18 @@ export function useDashboardData() {
       setLoading(true); 
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      console.log('Current user:', user);
+      if (!user) {
+        console.log('No user found, returning early');
+        return;
+      }
+
+      // Check if email is confirmed
+      if (!user.email_confirmed_at) {
+        console.log('Email not confirmed, user should not access dashboard');
+        // You could redirect to a "please confirm email" page here
+        return;
+      }
       
       const profilePromise = supabase.from('profiles').select('full_name, has_completed_first_assessment').eq('id', user.id).single();
       const connectionPromise = supabase.rpc('get_practitioner_connection_details', { practitioner_id_param: user.id });
@@ -30,6 +41,9 @@ export function useDashboardData() {
       const [profileResult, connectionResult, virtuesResult, journalResult, progressResult] = await Promise.all([
         profilePromise, connectionPromise, virtuesPromise, journalPromise, progressPromise
       ]);
+
+      console.log('Profile result:', profileResult);
+      console.log('Virtues result:', virtuesResult);
 
       if (profileResult.error) throw profileResult.error;
       if (virtuesResult.error) throw virtuesResult.error;

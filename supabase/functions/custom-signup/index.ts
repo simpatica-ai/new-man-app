@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       .eq('status', 'email_sent')
       .maybeSingle()
 
-    // Create user WITHOUT email confirmation (since Supabase confirmation is disabled)
+    // Create user WITHOUT confirming email (they need to click link)
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
     if (tokenError) throw tokenError
 
-    // If there's a pending invitation, activate it AFTER email confirmation
+    // If there's a pending invitation, mark it for activation after confirmation
     if (invitation && data.user) {
       await supabase
         .from('sponsor_relationships')

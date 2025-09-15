@@ -20,9 +20,12 @@ type PractitionerDetails = {
   full_name: string | null;
   email: string | null;
   created_at: string | null;
+  email_confirmed_at: string | null;
+  user_status: string;
   connection_id: number | null;
   sponsor_name: string | null;
   sponsor_email: string | null;
+  sponsor_status: string | null;
   last_activity: Date | null;
 };
 
@@ -319,16 +322,32 @@ export default function AdminPage() {
                     return (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{p.full_name}</div>
-                          <div className="text-sm text-gray-500">{p.email || 'No email'}</div>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <div className="font-medium">{p.full_name}</div>
+                            <div className="text-sm text-gray-500">{p.email || 'No email'}</div>
+                          </div>
+                          {p.user_status === 'pending_confirmation' && (
+                            <Badge variant="outline" className="text-xs text-amber-700 border-amber-300 bg-amber-50">
+                              Pending
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         {p.sponsor_name ? (
-                          <div>
-                            <div className="font-medium">{p.sponsor_name}</div>
-                            <div className="text-sm text-gray-500">{p.sponsor_email}</div>
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="font-medium">{p.sponsor_name}</div>
+                              <div className="text-sm text-gray-500">{p.sponsor_email}</div>
+                            </div>
+                          </div>
+                        ) : p.sponsor_status ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-600">Sponsor Invited</span>
+                            <Badge variant="outline" className="text-xs text-blue-700 border-blue-300 bg-blue-50">
+                              {p.sponsor_status === 'invite_pending' ? 'Pending' : 'Confirming'}
+                            </Badge>
                           </div>
                         ) : (
                           <span className="text-gray-400">None</span>

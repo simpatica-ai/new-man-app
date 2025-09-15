@@ -5,6 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { AuthCard } from "@/components/AuthCard";
 import Dashboard from "@/components/Dashboard";
+import EmailConfirmationRequired from "@/components/EmailConfirmationRequired";
 import Footer from "@/components/Footer";
 import heroBackground from "@/assets/hero-background.jpg";
 
@@ -13,18 +14,29 @@ import heroBackground from "@/assets/hero-background.jpg";
 const HomePage = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
 
   useEffect(() => {
     document.title = "New Man App: Home";
     
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      if (session?.user && !session.user.email_confirmed_at) {
+        setNeedsEmailConfirmation(true);
+      } else {
+        setSession(session);
+      }
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
+        if (session?.user && !session.user.email_confirmed_at) {
+          setNeedsEmailConfirmation(true);
+          setSession(null);
+        } else {
+          setSession(session);
+          setNeedsEmailConfirmation(false);
+        }
       }
     );
 
@@ -39,6 +51,10 @@ const HomePage = () => {
         </div>
       </div>
     );
+  }
+
+  if (needsEmailConfirmation) {
+    return <EmailConfirmationRequired />;
   }
 
   if (session) {

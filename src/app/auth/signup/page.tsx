@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CheckCircle } from 'lucide-react'
+import EmailConfirmationWaiting from '@/components/EmailConfirmationWaiting'
 
 function SignupContent() {
   const searchParams = useSearchParams()
@@ -15,6 +16,8 @@ function SignupContent() {
   
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -50,6 +53,8 @@ function SignupContent() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error)
 
+      setUserEmail(formData.email)
+      setEmailSent(true)
       setSuccess(true)
     } catch (error: any) {
       setError(error.message || 'Failed to create account')
@@ -58,28 +63,8 @@ function SignupContent() {
     }
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <CardTitle className="text-green-700">Account Created!</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-stone-600">
-              Check your email for a confirmation link to complete your registration.
-            </p>
-            <Button 
-              onClick={() => window.location.href = '/'}
-              className="w-full bg-amber-600 hover:bg-amber-700"
-            >
-              Return to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  if (success && emailSent) {
+    return <EmailConfirmationWaiting email={userEmail} />
   }
 
   return (
