@@ -3,21 +3,41 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Admin API called')
+    console.log('Environment check:')
+    console.log('NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log('SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase environment variables')
+      return NextResponse.json({ error: 'Missing environment variables' }, { status: 500 })
+    }
+
     // Use service role key to bypass RLS
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    console.log('Getting auth users...')
     // Get auth users with emails
     const { data: { users }, error: authError } = await supabase.auth.admin.listUsers()
-    if (authError) throw authError
+    if (authError) {
+      console.error('Auth users error:', authError)
+      throw authError
+    }
+    console.log('Auth users count:', users?.length || 0)
 
+    console.log('Getting profiles...')
     // Get profiles
     const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('id, full_name, created_at')
-    if (profileError) throw profileError
+    if (profileError) {
+      console.error('Profiles error:', profileError)
+      throw profileError
+    }
+    console.log('Profiles count:', profiles?.length || 0)
 
     // Get connections
     const { data: connections, error: connectionsError } = await supabase
