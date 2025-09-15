@@ -20,11 +20,6 @@ export default function ActionCards({
   connection, 
   lastJournalEntry 
 }: ActionCardsProps) {
-  // Debug logging
-  console.log('ActionCards - assessmentTaken:', assessmentTaken);
-  console.log('ActionCards - virtues length:', virtues.length);
-  console.log('ActionCards - virtues:', virtues);
-
   const calculateDaysSince = (dateString: string | null): number | null => {
     if (!dateString) return null;
     const lastDate = new Date(dateString);
@@ -47,9 +42,6 @@ export default function ActionCards({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="p-2 text-xs text-gray-500 mb-2">
-            Debug: assessmentTaken={assessmentTaken.toString()}, virtues={virtues.length}
-          </div>
           {assessmentTaken && virtues.length > 0 ? (
             <>
               <div className="p-2">

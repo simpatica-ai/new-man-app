@@ -57,6 +57,16 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 items-start">
+              {/* Mobile: ActionCards first, Desktop: Hidden here */}
+              <div className="lg:hidden">
+                <ActionCards 
+                  assessmentTaken={assessmentTaken}
+                  virtues={virtues}
+                  connection={connection}
+                  lastJournalEntry={lastJournalEntry}
+                />
+              </div>
+
               {/* For new users (no assessment), show journey overview and assessment first */}
               {!assessmentTaken ? (
                 <>
@@ -156,12 +166,15 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="lg:col-span-1">
-                    <ActionCards 
-                      assessmentTaken={assessmentTaken}
-                      virtues={virtues}
-                      connection={connection}
-                      lastJournalEntry={lastJournalEntry}
-                    />
+                    {/* Desktop: ActionCards in sidebar */}
+                    <div className="hidden lg:block">
+                      <ActionCards 
+                        assessmentTaken={assessmentTaken}
+                        virtues={virtues}
+                        connection={connection}
+                        lastJournalEntry={lastJournalEntry}
+                      />
+                    </div>
                   </div>
                 </>
               ) : (
@@ -294,12 +307,16 @@ export default function Dashboard() {
                       )}
                     </Card>
 
-                    <ActionCards 
-                      assessmentTaken={assessmentTaken}
-                      virtues={virtues}
-                      connection={connection}
-                      lastJournalEntry={lastJournalEntry}
-                    />
+                  <div className="lg:col-span-1 lg:sticky lg:top-24">
+                    {/* Desktop: ActionCards in sidebar */}
+                    <div className="hidden lg:block">
+                      <ActionCards 
+                        assessmentTaken={assessmentTaken}
+                        virtues={virtues}
+                        connection={connection}
+                        lastJournalEntry={lastJournalEntry}
+                      />
+                    </div>
                   </div>
                 </>
               )}
