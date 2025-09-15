@@ -65,28 +65,32 @@ export default function FeedbackSurveyModal({ isOpen, onClose }: FeedbackSurveyM
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      const { error } = await supabase.from('alpha_feedback').insert({
-        user_id: user.id,
-        name: formData.name || null,
-        show_name: formData.showName,
-        testing_time: formData.testingTime,
-        completed_assessment: formData.completedAssessment,
-        stages_completed: formData.stagesCompleted,
-        overall_ux: formData.overallUX ? parseInt(formData.overallUX) : null,
-        ai_relevance: formData.aiRelevance ? parseInt(formData.aiRelevance) : null,
-        ai_helpfulness: formData.aiHelpfulness ? parseInt(formData.aiHelpfulness) : null,
-        ai_quality: formData.aiQuality || null,
-        writing_experience: formData.writingExperience || null,
-        technical_issues: formData.technicalIssues.length > 0 ? formData.technicalIssues : null,
-        likely_to_use: formData.likelyToUse ? parseInt(formData.likelyToUse) : null,
-        motivation: formData.motivation || null,
-        value_comparison: formData.valueComparison || null,
-        biggest_missing: formData.biggestMissing || null,
-        feature_requests: formData.featureRequests || null,
-        additional_feedback: formData.additionalFeedback || null
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          name: formData.name || null,
+          show_name: formData.showName,
+          testing_time: formData.testingTime,
+          completed_assessment: formData.completedAssessment,
+          stages_completed: formData.stagesCompleted,
+          overall_ux: formData.overallUX ? parseInt(formData.overallUX) : null,
+          ai_relevance: formData.aiRelevance ? parseInt(formData.aiRelevance) : null,
+          ai_helpfulness: formData.aiHelpfulness ? parseInt(formData.aiHelpfulness) : null,
+          ai_quality: formData.aiQuality || null,
+          writing_experience: formData.writingExperience || null,
+          technical_issues: formData.technicalIssues.length > 0 ? formData.technicalIssues : null,
+          likely_to_use: formData.likelyToUse ? parseInt(formData.likelyToUse) : null,
+          motivation: formData.motivation || null,
+          value_comparison: formData.valueComparison || null,
+          biggest_missing: formData.biggestMissing || null,
+          feature_requests: formData.featureRequests || null,
+          additional_feedback: formData.additionalFeedback || null
+        })
       })
 
-      if (error) throw error
+      if (!response.ok) throw new Error('Failed to submit feedback')
 
       alert('Thank you! Your feedback has been submitted.')
       onClose()

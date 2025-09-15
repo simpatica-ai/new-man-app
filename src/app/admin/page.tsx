@@ -18,9 +18,11 @@ import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
 type PractitionerDetails = {
   id: string | null; 
   full_name: string | null;
+  email: string | null;
   created_at: string | null;
   connection_id: number | null;
   sponsor_name: string | null;
+  sponsor_email: string | null;
   last_activity: Date | null;
 };
 
@@ -91,120 +93,31 @@ export default function AdminPage() {
       
       setIsAdmin(true);
 
-      // Fetch practitioners with sponsor info
-      const { data: practitionerData, error: practitionerError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          created_at
-        `);
-
-      // Get recent activity for each user (assessments, journal entries)
-      const { data: recentActivity } = await supabase
-        .from('user_assessments')
-        .select('user_id, created_at')
-        .order('created_at', { ascending: false });
-
-      // Get journal activity too
-      const { data: journalActivity } = await supabase
-        .from('journal_entries')
-        .select('user_id, created_at')
-        .order('created_at', { ascending: false });
+      // Fetch user data from API route (bypasses RLS)
+      const response = await fetch('/api/admin/users')
+      const { users: userData, supportTickets, alphaFeedback } = await response.json()
       
-      // Create activity map
-      const activityMap = new Map<string, Date>();
-      
-      // Process assessment activity
-      recentActivity?.forEach(activity => {
-        if (activity.user_id) {
-          const existingDate = activityMap.get(activity.user_id);
-          const activityDate = new Date(activity.created_at);
-          if (!existingDate || activityDate > existingDate) {
-            activityMap.set(activity.user_id, activityDate);
-          }
-        }
-      });
-
-      // Process journal activity
-      journalActivity?.forEach(activity => {
-        if (activity.user_id) {
-          const existingDate = activityMap.get(activity.user_id);
-          const activityDate = new Date(activity.created_at);
-          if (!existingDate || activityDate > existingDate) {
-            activityMap.set(activity.user_id, activityDate);
-          }
-        }
-      });
-
-      if (practitionerError) throw practitionerError;
-      
-      // Fetch sponsor connections
-      const { data: connections, error: connectionsError } = await supabase
-        .from('sponsor_connections')
-        .select(`
-          practitioner_user_id,
-          sponsor_user_id,
-          status
-        `);
-      
-      if (connectionsError) throw connectionsError;
-      
-      // Merge data
-      const practitionersWithSponsors = practitionerData?.map(p => {
-        const connection = connections?.find(c => c.practitioner_user_id === p.id && c.status === 'active');
-        return {
-          ...p,
-          connection_id: connection ? 1 : null,
-          sponsor_name: connection ? 'Sponsor Connected' : null
-        };
-      }) || [];
-      
-      setPractitioners(practitionersWithSponsors);
-      
-      // Fetch support tickets
-      const { data: ticketData, error: ticketError } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (ticketError) throw ticketError;
-      
-      const formattedTickets = ticketData?.map(t => ({
-        ...t,
-        user_full_name: 'User',
-        user_email: 'user@example.com'
-      })) || [];
-      
-      setSupportTickets(formattedTickets);
-      
-      // Fetch alpha feedback
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from('alpha_feedback')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (feedbackError) throw feedbackError;
-      setAlphaFeedback(feedbackData || []);
+      setPractitioners(userData || [])
+      setSupportTickets(supportTickets || [])
+      setAlphaFeedback(alphaFeedback || [])
       
       // Calculate stats
-      const totalUsers = practitionerData?.length || 0;
-      const activeUsers = Math.floor(totalUsers * 0.3); // Placeholder - would need actual activity tracking
-      
-      const totalSponsors = connections?.filter(c => c.status === 'active').length || 0;
-      const openTickets = formattedTickets.filter(t => t.status === 'Open').length;
-      
-      const { count: assessmentCount } = await supabase
-        .from('user_assessment_results')
-        .select('*', { count: 'exact', head: true });
+      const totalUsers = userData?.length || 0;
+      const activeUsers = userData?.filter(u => {
+        const lastLogin = u.last_sign_in_at ? new Date(u.last_sign_in_at) : null;
+        const daysSince = lastLogin ? Math.floor((Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        return daysSince !== null && daysSince <= 7;
+      }).length || 0;
+      const totalSponsors = userData?.filter(u => u.sponsor_name).length || 0;
+      const openTickets = supportTickets?.filter(t => t.status === 'open').length || 0;
       
       setStats({
         totalUsers,
         activeUsers,
         totalSponsors,
         openTickets,
-        completedAssessments: assessmentCount || 0,
-        avgResponseTime: 2.3 // Placeholder - would need actual monitoring
+        completedAssessments: 0, // Would need actual data
+        avgResponseTime: 2.3 // Placeholder
       });
 
     } catch (error) {
@@ -392,30 +305,43 @@ export default function AdminPage() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Sponsor</TableHead>
-                    <TableHead>Last Active</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Last Login</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {practitioners.length > 0 ? practitioners.filter(p => p.id).map((p) => {
-                    const daysSince = Math.floor(Math.random() * 30); // Placeholder - would need actual activity tracking
-                    const isActive = daysSince <= 7;
+                    const lastLogin = p.last_sign_in_at ? new Date(p.last_sign_in_at) : null;
+                    const daysSince = lastLogin ? Math.floor((Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                    const createdDate = p.created_at ? new Date(p.created_at) : null;
                     
                     return (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <div className="font-medium">{p.full_name}</div>
-                            <div className="text-sm text-gray-500">ID: {p.id?.slice(0, 8)}...</div>
-                          </div>
-                          {isActive && <Badge variant="secondary" className="text-xs">Active</Badge>}
+                        <div>
+                          <div className="font-medium">{p.full_name}</div>
+                          <div className="text-sm text-gray-500">{p.email || 'No email'}</div>
                         </div>
                       </TableCell>
-                      <TableCell>{p.sponsor_name || <span className="text-gray-400">None</span>}</TableCell>
+                      <TableCell>
+                        {p.sponsor_name ? (
+                          <div>
+                            <div className="font-medium">{p.sponsor_name}</div>
+                            <div className="text-sm text-gray-500">{p.sponsor_email}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">None</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {daysSince === 0 ? 'Today' : `${daysSince}d ago`}
+                          {createdDate ? createdDate.toLocaleDateString() : 'Unknown'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {daysSince === null ? 'Never logged in' : daysSince === 0 ? 'Today' : `${daysSince}d ago`}
                         </div>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
@@ -431,7 +357,7 @@ export default function AdminPage() {
                     </TableRow>
                   )}) : (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-gray-500">
+                      <TableCell colSpan={5} className="text-center text-gray-500">
                         No practitioners found.
                       </TableCell>
                     </TableRow>
