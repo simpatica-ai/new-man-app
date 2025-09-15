@@ -87,7 +87,7 @@ export default function AppHeader() {
                 className="border-amber-300 text-amber-700 hover:bg-amber-50 transition-mindful text-xs h-8 px-2"
               >
                 <MessageSquare className="h-3 w-3 mr-1" />
-                <span className="hidden sm:inline">Feedback</span>
+                <span className="hidden xs:inline">Feedback</span>
               </Button>
               <Link href="/get-support">
                 <Button 

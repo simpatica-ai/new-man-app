@@ -10,8 +10,8 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-start space-y-0">
           <p className="text-sm text-stone-600 flex-1 pr-4">
-            © {currentYear} Simpatica AI™<br className="sm:hidden" />
-            <span className="hidden sm:inline"> </span>(Patent Pending). All rights reserved.
+            © {currentYear} Simpatica AI™<br className="xs:hidden" />
+            <span className="hidden xs:inline"> </span>(Patent Pending). All rights reserved.
           </p>
           <div className="flex space-x-4 text-sm flex-shrink-0">
             <Link 
