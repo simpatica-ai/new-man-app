@@ -153,25 +153,6 @@ export default function Dashboard() {
                         </CardContent>
                       )}
                     </Card>
-
-                    {/* Assessment Card for new users */}
-                    <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg md:text-xl font-light text-stone-800">Start Your Journey</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-center py-8">
-                        <div className="flex items-center gap-2 mb-4 text-amber-700 justify-center">
-                          <Sparkles size={24} />
-                          <p className="text-lg font-medium">Take Your Virtue Assessment</p>
-                        </div>
-                        <p className="text-stone-600 mb-6 max-w-md mx-auto">
-                          Discover your personalized virtue development path through a comprehensive character assessment.
-                        </p>
-                        <Link href="/assessment">
-                          <Button size="lg" className="bg-amber-600 hover:bg-amber-700">Begin Assessment</Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
                   </div>
                   
                   <div className="lg:col-span-1">
