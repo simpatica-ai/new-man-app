@@ -72,9 +72,9 @@ export default function Dashboard() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setShowOverview(!showOverview)}
-                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 self-start sm:self-auto"
+                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 self-start sm:self-auto p-2"
                           >
-                            {showOverview ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {showOverview ? <ChevronUp className="h-5 w-5 md:h-6 md:w-6" /> : <ChevronDown className="h-5 w-5 md:h-6 md:w-6" />}
                           </Button>
                         </div>
                       </CardHeader>
@@ -246,9 +246,9 @@ export default function Dashboard() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setShowOverview(!showOverview)}
-                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 p-2"
                           >
-                            {showOverview ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {showOverview ? <ChevronUp className="h-5 w-5 md:h-6 md:w-6" /> : <ChevronDown className="h-5 w-5 md:h-6 md:w-6" />}
                           </Button>
                         </div>
                       </CardHeader>
