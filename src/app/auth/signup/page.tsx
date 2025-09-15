@@ -36,35 +36,19 @@ function SignupContent() {
     setError(null)
 
     try {
-      // Check if there's a pending sponsor invitation for this email
-      const { data: invitation } = await (supabase as any)
-        .from('sponsor_relationships')
-        .select('id, invitation_token')
-        .eq('sponsor_email', formData.email)
-        .eq('status', 'email_sent')
-        .maybeSingle()
-
-      // Sign up the user
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: { full_name: formData.fullName }
-        }
+      // Use custom signup function for styled email
+      const response = await fetch('/api/supabase/functions/custom-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName
+        })
       })
 
-      if (signUpError) throw signUpError
-
-      // If there's a pending invitation, activate it
-      if (invitation && data.user) {
-        await (supabase as any)
-          .from('sponsor_relationships')
-          .update({
-            sponsor_id: data.user.id,
-            status: 'active'
-          })
-          .eq('id', invitation.id)
-      }
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error)
 
       setSuccess(true)
     } catch (error: any) {
