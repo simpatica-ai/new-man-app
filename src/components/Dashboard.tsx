@@ -13,6 +13,7 @@ import ActionCards from './dashboard/ActionCards'
 import ProgressLegend from './dashboard/ProgressLegend'
 import VirtueRoseChart from './VirtueRoseChart'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { getChartDisplayVirtueName } from '@/lib/constants'
 
 export default function Dashboard() {
   const [showOverview, setShowOverview] = useState(false)
@@ -187,14 +188,17 @@ export default function Dashboard() {
                   {/* Existing layout for users who have taken assessment */}
                   <div className="lg:col-span-2 space-y-4">
                     {/* Assessment Chart - Show when assessment is completed */}
-                    {assessmentResults && (
+                    {assessmentTaken && virtues.length > 0 && (
                       <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-lg md:text-xl font-light text-stone-800">Your Virtue Assessment</CardTitle>
                         </CardHeader>
                         <CardContent className="flex justify-center items-center min-h-[280px] md:min-h-[400px] p-2 md:p-6">
                           <VirtueRoseChart 
-                            data={assessmentResults}
+                            data={virtues.map(v => ({
+                              virtue: getChartDisplayVirtueName(v.name),
+                              score: v.virtue_score || 0
+                            }))}
                             size="medium"
                           />
                         </CardContent>
