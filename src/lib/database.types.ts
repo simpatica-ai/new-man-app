@@ -831,6 +831,45 @@ export type Database = {
           },
         ]
       }
+      virtue_training_data: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: number
+          input_text: string
+          is_approved: boolean | null
+          notes: string | null
+          output_text: string
+          philosophical_tradition: string | null
+          prompt_used: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: number
+          input_text: string
+          is_approved?: boolean | null
+          notes?: string | null
+          output_text: string
+          philosophical_tradition?: string | null
+          prompt_used?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: number
+          input_text?: string
+          is_approved?: boolean | null
+          notes?: string | null
+          output_text?: string
+          philosophical_tradition?: string | null
+          prompt_used?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       virtues: {
         Row: {
           author_reflection: string | null

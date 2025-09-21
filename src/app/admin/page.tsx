@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { Users, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 import CloudRunMonitor from '@/components/CloudRunMonitor';
 import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
+import VirtueAIPanel from '@/components/admin/VirtueAIPanel';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -230,68 +231,14 @@ export default function AdminPage() {
         </Link>
       </div>
 
-      {/* Stats Dashboard */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.activeUsers} active this week
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Sponsors</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalSponsors}</div>
-              <p className="text-xs text-muted-foreground">
-                {Math.round((stats.totalSponsors / stats.totalUsers) * 100)}% connection rate
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.openTickets}</div>
-              <p className="text-xs text-muted-foreground">
-                {supportTickets.length} total tickets
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Assessments</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.completedAssessments}</div>
-              <p className="text-xs text-muted-foreground">
-                Avg response: {stats.avgResponseTime}s
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
 
       <Tabs defaultValue="practitioners">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="practitioners">Users</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="virtue-ai">Virtue AI</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="usage">Usage</TabsTrigger>
         </TabsList>
@@ -528,6 +475,10 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="virtue-ai">
+          <VirtueAIPanel />
         </TabsContent>
         
         <TabsContent value="monitoring">

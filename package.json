@@ -10,6 +10,9 @@
     "sync-schema": "npx supabase gen types typescript --project-id ogucnankmxrakkxavelk > src/lib/database.types.ts"
   },
   "dependencies": {
+    "@google-cloud/aiplatform": "^3.35.0",
+    "@google-cloud/storage": "^7.17.1",
+    "@google-cloud/vertexai": "^1.10.0",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
