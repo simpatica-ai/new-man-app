@@ -22,6 +22,20 @@ const HomePage = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user && !session.user.email_confirmed_at) {
         setNeedsEmailConfirmation(true);
+      } else if (session?.user) {
+        // Check if user has completed assessment
+        supabase
+          .from('profiles')
+          .select('has_completed_first_assessment')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (!profile?.has_completed_first_assessment) {
+              window.location.href = '/welcome';
+              return;
+            }
+            setSession(session);
+          });
       } else {
         setSession(session);
       }
