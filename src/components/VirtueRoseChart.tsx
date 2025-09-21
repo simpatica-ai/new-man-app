@@ -65,13 +65,22 @@ export default function VirtueRoseChart({
       return { baseSize, dimensions: baseSize, labelPadding: 0 };
     }
     
-    // Desktop dimensions
+    // Desktop dimensions - no extra width for thumbnails
     const baseSize = size === 'thumbnail' ? 200 : size === 'medium' ? 400 : 600;
     return { baseSize, dimensions: baseSize, labelPadding: 0 };
   };
 
   const { baseSize, dimensions, labelPadding } = getResponsiveDimensions();
-  const center = dimensions / 2;
+  const chartWidth = dimensions;
+  const chartHeight = dimensions;
+  
+  // Expand viewBox to include label space
+  const viewBoxPadding = showLabels ? 80 : (size === 'thumbnail' ? 10 : 20);
+  const viewBoxWidth = chartWidth + (viewBoxPadding * 2);
+  const viewBoxHeight = chartHeight + (viewBoxPadding * 2);
+  
+  const center = viewBoxWidth / 2;
+  const centerY = viewBoxHeight / 2;
   const radius = baseSize / 2 - 5;
 
   /**
@@ -119,7 +128,7 @@ export default function VirtueRoseChart({
     
     const baseConfig = {
       labelRadius: radius + (forPdf ? 55 : isMobile ? 35 : 45),
-      fontSize: forPdf ? '12' : isMobile ? '10' : '14',
+      fontSize: forPdf ? '14' : isMobile ? '12' : '16',
       fontFamily: 'Arial, sans-serif',
       fontWeight: '700'
     };
@@ -184,14 +193,14 @@ export default function VirtueRoseChart({
     const sortedData = [...data].sort((a, b) => a.score - b.score);
     
     const svg = svgRef.current;
-    while (svg.firstChild) {
-      svg.removeChild(svg.firstChild);
-    }
+    
+    // Completely clear the SVG
+    svg.innerHTML = '';
     
     const createBackgroundCircle = (r: number, stroke: string, value?: number) => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', center.toString());
-      circle.setAttribute('cy', center.toString());
+      circle.setAttribute('cy', centerY.toString());
       circle.setAttribute('r', r.toString());
       circle.setAttribute('fill', 'none');
       circle.setAttribute('stroke', stroke);
@@ -202,7 +211,7 @@ export default function VirtueRoseChart({
       if (showLabels && value !== undefined) {
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', (center - r - 5).toString());
-        text.setAttribute('y', center.toString());
+        text.setAttribute('y', centerY.toString());
         text.setAttribute('text-anchor', 'end');
         text.setAttribute('dominant-baseline', 'middle');
         text.setAttribute('fill', '#78716c');
@@ -224,11 +233,11 @@ export default function VirtueRoseChart({
     sortedData.forEach((_, index) => {
       const angle = index * anglePerSegment;
       const x = center + radius * Math.cos(angle);
-      const y = center + radius * Math.sin(angle);
+      const y = centerY + radius * Math.sin(angle);
       
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', center.toString());
-      line.setAttribute('y1', center.toString());
+      line.setAttribute('y1', centerY.toString());
       line.setAttribute('x2', x.toString());
       line.setAttribute('y2', y.toString());
       line.setAttribute('stroke', '#d6d3d1');
@@ -245,14 +254,14 @@ export default function VirtueRoseChart({
       const outerRadius = innerRadius + (radius - innerRadius) * (item.score / 10);
       
       const startInnerX = center + innerRadius * Math.cos(startAngle);
-      const startInnerY = center + innerRadius * Math.sin(startAngle);
+      const startInnerY = centerY + innerRadius * Math.sin(startAngle);
       const startOuterX = center + outerRadius * Math.cos(startAngle);
-      const startOuterY = center + outerRadius * Math.sin(startAngle);
+      const startOuterY = centerY + outerRadius * Math.sin(startAngle);
       
       const endInnerX = center + innerRadius * Math.cos(endAngle);
-      const endInnerY = center + innerRadius * Math.sin(endAngle);
+      const endInnerY = centerY + innerRadius * Math.sin(endAngle);
       const endOuterX = center + outerRadius * Math.cos(endAngle);
-      const endOuterY = center + outerRadius * Math.sin(endAngle);
+      const endOuterY = centerY + outerRadius * Math.sin(endAngle);
       
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
@@ -290,7 +299,7 @@ export default function VirtueRoseChart({
         const angle = index * anglePerSegment + anglePerSegment / 2;
         const positioning = getLabelPositioning(angle, item.virtue);
         const x = center + positioning.labelRadius * Math.cos(angle);
-        const y = center + positioning.labelRadius * Math.sin(angle);
+        const y = centerY + positioning.labelRadius * Math.sin(angle);
         
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', x.toString());
@@ -310,7 +319,7 @@ export default function VirtueRoseChart({
     
     const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     centerCircle.setAttribute('cx', center.toString());
-    centerCircle.setAttribute('cy', center.toString());
+    centerCircle.setAttribute('cy', centerY.toString());
     centerCircle.setAttribute('r', '12');
     centerCircle.setAttribute('fill', '#f5f5f4');
     centerCircle.setAttribute('stroke', '#d6d3d1');
@@ -324,24 +333,24 @@ export default function VirtueRoseChart({
         data-testid={forPdf ? "virtue-chart-pdf" : "virtue-chart"}
         className={`${className} w-full flex justify-center`} 
         style={{ 
-        maxWidth: `${dimensions}px`, 
-        height: `${dimensions}px`, 
+        maxWidth: `${chartWidth}px`, 
+        height: `${chartHeight}px`, 
         margin: '0 auto',
         position: 'relative',
         overflow: 'visible' 
     }}>
       <svg
         ref={svgRef}
-        width={dimensions}
-        height={dimensions}
-        viewBox={`0 0 ${dimensions} ${dimensions}`}
+        width={chartWidth}
+        height={chartHeight}
+        viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
         style={{ display: 'block', overflow: 'visible', maxWidth: '100%', height: 'auto' }}
       />
       
       {!showLabels && !forPdf && tooltip && (
         <div style={{
           position: 'absolute',
-          left: `${Math.min(tooltip.x + 10, dimensions - 120)}px`,
+          left: `${Math.min(tooltip.x + 10, chartWidth - 120)}px`,
           top: `${Math.max(tooltip.y - 40, 10)}px`,
           backgroundColor: 'rgba(0, 0, 0, 0.9)',
           color: 'white',

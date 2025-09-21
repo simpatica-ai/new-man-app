@@ -35,6 +35,7 @@ export default function AppHeader() {
   };
   
   const getPageTitle = () => {
+    if (pathname.startsWith('/welcome')) return 'Welcome!';
     if (pathname.startsWith('/assessment')) return 'Character Assessment';
     if (pathname.startsWith('/journal')) return 'My Journal';
     if (pathname.startsWith('/virtue/')) return 'Virtue Workspace';

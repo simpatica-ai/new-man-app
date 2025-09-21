@@ -8,6 +8,7 @@ import Dashboard from "@/components/Dashboard";
 import EmailConfirmationRequired from "@/components/EmailConfirmationRequired";
 import Footer from "@/components/Footer";
 import heroBackground from "@/assets/hero-background.jpg";
+import { useRouter } from "next/navigation";
 
 
 // ## FIX: Define the component as a constant before exporting ##
@@ -15,33 +16,80 @@ const HomePage = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
+  const [hasCompletedAssessment, setHasCompletedAssessment] = useState<boolean | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     document.title = "New Man App: Home";
     
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkUserStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (session?.user && !session.user.email_confirmed_at) {
         setNeedsEmailConfirmation(true);
-      } else {
-        setSession(session);
+        setIsLoading(false);
+        return;
       }
+      
+      if (session?.user) {
+        // Check if user has completed assessment
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('has_completed_first_assessment')
+          .eq('id', session.user.id)
+          .single();
+        
+        const completed = profile?.has_completed_first_assessment || false;
+        setHasCompletedAssessment(completed);
+        
+        // Only redirect new users to welcome page automatically
+        if (!completed) {
+          router.push('/welcome');
+          return;
+        }
+      }
+      
+      setSession(session);
       setIsLoading(false);
-    });
+    };
+
+    checkUserStatus();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         if (session?.user && !session.user.email_confirmed_at) {
           setNeedsEmailConfirmation(true);
           setSession(null);
+          setHasCompletedAssessment(null);
+        } else if (session?.user) {
+          // Check assessment status for authenticated users
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('has_completed_first_assessment')
+            .eq('id', session.user.id)
+            .single();
+          
+          const completed = profile?.has_completed_first_assessment || false;
+          setHasCompletedAssessment(completed);
+          
+          // Redirect new users to welcome page automatically
+          if (!completed) {
+            router.push('/welcome');
+            return;
+          }
+          
+          setSession(session);
+          setNeedsEmailConfirmation(false);
         } else {
           setSession(session);
+          setHasCompletedAssessment(null);
           setNeedsEmailConfirmation(false);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   if (isLoading) {
     return (
@@ -57,7 +105,7 @@ const HomePage = () => {
     return <EmailConfirmationRequired />;
   }
 
-  if (session) {
+  if (session && hasCompletedAssessment) {
     return <Dashboard />;
   }
 

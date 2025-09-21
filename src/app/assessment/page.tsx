@@ -15,6 +15,7 @@ import AppHeader from '@/components/AppHeader'
 import Footer from '@/components/Footer'
 import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit, Loader2 } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
+import VirtueProgressBar from '@/components/VirtueProgressBar'
 import { useVirtues, type Virtue } from '@/hooks/useVirtues'
 import ReactMarkdown from 'react-markdown'
 import '../print.css'
@@ -765,6 +766,24 @@ export default function AssessmentPage() {
                             ) : (
                             /* Results Page - Redesigned Layout */
                             <div className="space-y-6">
+                                {/* Progress Bar - Discovery Complete */}
+                                <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50">
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="text-lg font-semibold text-emerald-800 text-center">
+                                            Discovery Phase Complete
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <VirtueProgressBar 
+                                            hasCompletedAssessment={true}
+                                            className="py-2"
+                                        />
+                                        <p className="text-sm text-emerald-700 text-center mt-3">
+                                            You've completed your character assessment. Next, begin working on individual virtues through dismantling, building, and practicing.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
                                 {/* Print header - only shows when printing */}
                                 <div className="hidden print:block print-header">
                                     <h1 className="text-2xl font-bold mb-2">New Man New Behaviors Virtue Assessment</h1>

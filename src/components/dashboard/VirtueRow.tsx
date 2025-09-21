@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Button } from '../ui/button'
 import { Virtue, StageProgressStatus } from '@/lib/constants'
+import VirtueProgressBar from '../VirtueProgressBar'
 
 interface VirtueRowProps {
   virtue: Virtue;
@@ -11,6 +12,11 @@ interface VirtueRowProps {
 }
 
 export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }: VirtueRowProps) {
+  // Determine completion status for this virtue
+  const dismantlingComplete = getStatusClasses(virtue.id, 1).includes('bg-green');
+  const buildingComplete = getStatusClasses(virtue.id, 2).includes('bg-green');
+  const practicingComplete = getStatusClasses(virtue.id, 3).includes('bg-green');
+
   return (
     <li className="flex flex-col gap-3 md:gap-4 p-3 md:p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">
       {assessmentTaken && (
@@ -50,23 +56,18 @@ export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }:
         <p className="text-stone-600 text-sm mb-3 leading-relaxed">
           {virtue.short_description || virtue.description}
         </p>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 1 } }} className="flex-1">
-            <Button size="sm" variant="outline" className={`w-full text-xs md:text-sm ${getStatusClasses(virtue.id, 1)}`}>
-              Stage 1: Dismantling
-            </Button>
-          </Link>
-          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 2 } }} className="flex-1">
-            <Button size="sm" variant="outline" className={`w-full text-xs md:text-sm ${getStatusClasses(virtue.id, 2)}`}>
-              Stage 2: Building
-            </Button>
-          </Link>
-          <Link href={{ pathname: `/virtue/${virtue.id}`, query: { stage: 3 } }} className="flex-1">
-            <Button size="sm" variant="outline" className={`w-full text-xs md:text-sm ${getStatusClasses(virtue.id, 3)}`}>
-              Stage 3: Maintaining
-            </Button>
-          </Link>
-        </div>
+        
+        {/* Individual Virtue Progress Bar */}
+        <VirtueProgressBar 
+          hasCompletedAssessment={assessmentTaken}
+          completedDismantlingCount={dismantlingComplete ? 1 : 0}
+          completedBuildingCount={buildingComplete ? 1 : 0}
+          completedPracticingCount={practicingComplete ? 1 : 0}
+          totalVirtues={1}
+          showClickableButtons={true}
+          virtueId={virtue.id}
+          className="py-2"
+        />
       </div>
     </li>
   );

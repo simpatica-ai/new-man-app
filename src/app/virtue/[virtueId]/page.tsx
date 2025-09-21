@@ -16,6 +16,7 @@ import AppHeader from '@/components/AppHeader'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import VirtueGuideModal from '@/components/VirtueGuideModal'
+import VirtueProgressBar from '@/components/VirtueProgressBar'
 import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
@@ -698,8 +699,7 @@ export default function VirtueDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-light text-stone-800 leading-tight">
-                  {virtue.name} 
-                  <span className="block text-xl font-medium text-amber-900 mt-1">Workspace</span>
+                  {virtue.name}
                 </h1>
                 <div className="w-24 h-0.5 bg-gradient-to-r from-amber-600 to-stone-600 mt-3"></div>
               </div>
@@ -724,39 +724,78 @@ export default function VirtueDetailPage() {
               isPromptHidden ? 'lg:col-span-1' : 'lg:col-span-3'
             }`}>
               <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                {/* Progress Bar Navigation */}
+                <div className="mb-6 p-4 bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-lg">
+                  {virtue && (
+                    <VirtueProgressBar 
+                      hasCompletedAssessment={true}
+                      completedDismantlingCount={progress.get(`${virtueId}-1`) === 'completed' ? 1 : 0}
+                      completedBuildingCount={progress.get(`${virtueId}-2`) === 'completed' ? 1 : 0}
+                      completedPracticingCount={progress.get(`${virtueId}-3`) === 'completed' ? 1 : 0}
+                      totalVirtues={1}
+                      showClickableButtons={false}
+                      className="py-2"
+                    />
+                  )}
+                </div>
+
                 <TabsList className={`grid w-full gap-2 bg-white/70 backdrop-blur-sm border border-stone-200/60 ${connectionId ? 'grid-cols-6' : 'grid-cols-5'}`}>
                   <TabsTrigger 
                     value="discovery" 
                     className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200 text-sm font-medium"
                   >
-                    Discovery
+                    Discovering
                   </TabsTrigger>
                   <TabsTrigger 
                     value="stage-1" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                    className="data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                    style={{ 
+                      backgroundColor: activeTab === 'stage-1' ? '#A0522D' : 'transparent',
+                      borderColor: '#A0522D'
+                    }}
                   >
-                    <span className="text-sm font-medium">Stage 1</span>
-                    <span className="text-sm text-stone-600">Dismantling</span>
+                    <span 
+                      className="text-sm font-medium" 
+                      style={{ color: activeTab === 'stage-1' ? 'white' : '#A0522D' }}
+                    >
+                      Dismantling
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="stage-2"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                    className="data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                    style={{ 
+                      backgroundColor: activeTab === 'stage-2' ? '#6B8E23' : 'transparent',
+                      borderColor: '#6B8E23'
+                    }}
                   >
-                    <span className="text-sm font-medium">Stage 2</span>
-                    <span className="text-sm text-stone-600">Building</span>
+                    <span 
+                      className="text-sm font-medium" 
+                      style={{ color: activeTab === 'stage-2' ? 'white' : '#6B8E23' }}
+                    >
+                      Building
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="stage-3"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                    className="data-[state=active]:border-amber-200 transition-mindful flex flex-col py-3 h-auto"
+                    style={{ 
+                      backgroundColor: activeTab === 'stage-3' ? '#556B2F' : 'transparent',
+                      borderColor: '#556B2F'
+                    }}
                   >
-                    <span className="text-sm font-medium">Stage 3</span>
-                    <span className="text-sm text-stone-600">Maintaining</span>
+                    <span 
+                      className="text-sm font-medium" 
+                      style={{ color: activeTab === 'stage-3' ? 'white' : '#556B2F' }}
+                    >
+                      Practicing
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="journal"
                     className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-stone-100 data-[state=active]:text-stone-800 data-[state=active]:border-amber-200 transition-mindful text-sm"
                   >
-                    Journal
+                    Journaling
                   </TabsTrigger>
                   {connectionId && (
                     <TabsTrigger 
@@ -902,19 +941,19 @@ export default function VirtueDetailPage() {
                       <div>
                         <CardTitle className="text-stone-800 font-semibold text-base">Guided Reflection</CardTitle>
                         <CardDescription className="text-stone-600 font-semibold text-sm">
-                          {displayedStageNumber === 1 && "Stage 1: Dismantling"}
-                          {displayedStageNumber === 2 && "Stage 2: Building"}
-                          {displayedStageNumber === 3 && "Stage 3: Maintaining"}
+                          {displayedStageNumber === 1 && "Dismantling"}
+                          {displayedStageNumber === 2 && "Building"}
+                          {displayedStageNumber === 3 && "Practicing"}
                         </CardDescription>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="lg"
                       onClick={() => setIsPromptHidden(true)}
-                      className="text-stone-500 hover:text-stone-700 hover:bg-stone-100/60"
+                      className="text-stone-500 hover:text-stone-700 hover:bg-stone-100/60 p-3"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-8 w-8" />
                     </Button>
                   </CardHeader>
                   <CardContent className="pt-0 relative">
@@ -990,7 +1029,7 @@ export default function VirtueDetailPage() {
                   onClick={() => setIsPromptHidden(false)}
                   className="bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white shadow-lg backdrop-blur-sm border border-amber-300/60 rounded-l-full pr-6 pl-4 py-8 flex items-center gap-2"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-8 w-8" />
                   <span className="font-light text-sm">Show Guidance</span>
                 </Button>
               </div>

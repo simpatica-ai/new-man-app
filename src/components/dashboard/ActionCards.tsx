@@ -54,10 +54,10 @@ export default function ActionCards({
                   showLabels={false}
                 />
               </div>
-              <div className="px-6 pb-4 pt-0 text-center">
+              <div className="px-6 pb-4 pt-0 text-center space-y-2">
                 <Link 
                   href="/assessment" 
-                  className="text-amber-700 hover:text-amber-800 underline text-sm"
+                  className="text-amber-700 hover:text-amber-800 underline text-sm block"
                 >
                   View Full Assessment
                 </Link>
