@@ -47,8 +47,11 @@ const HomePage = () => {
             
             // Redirect to welcome if assessment not completed
             if (!completed) {
+              console.log('Assessment not completed, redirecting to welcome');
               window.location.href = '/welcome';
               return;
+            } else {
+              console.log('Assessment completed, staying on dashboard');
             }
           } catch (error) {
             console.error('Profile check failed:', error);
@@ -103,7 +106,7 @@ const HomePage = () => {
         <div className="bg-black bg-opacity-40 min-h-screen flex flex-col">
           <AppHeader />
           <main className="flex-1 flex items-center justify-center px-4">
-            <div className="text-center text-white max-w-2xl">
+            <div className="text-center text-white max-w-4xl">
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
                 Transform Your Character
               </h1>
@@ -123,6 +126,22 @@ const HomePage = () => {
                 >
                   Sign In
                 </a>
+              </div>
+              
+              {/* Feature highlights */}
+              <div className="mt-16 grid md:grid-cols-3 gap-8 text-left">
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-3">Character Assessment</h3>
+                  <p className="text-gray-200">Discover your virtue strengths and areas for growth through our comprehensive assessment.</p>
+                </div>
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-3">Guided Development</h3>
+                  <p className="text-gray-200">Follow a structured path through dismantling, building, and practicing virtues.</p>
+                </div>
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-3">AI-Powered Insights</h3>
+                  <p className="text-gray-200">Receive personalized guidance and reflections powered by artificial intelligence.</p>
+                </div>
               </div>
             </div>
           </main>
