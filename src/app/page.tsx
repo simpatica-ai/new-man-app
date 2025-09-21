@@ -50,6 +50,11 @@ const HomePage = () => {
           router.push('/welcome');
           return;
         }
+        
+        // If assessment is completed, stay on dashboard
+        if (completed) {
+          console.log('Assessment completed, staying on dashboard');
+        }
       }
       
       setSession(session);
@@ -57,6 +62,12 @@ const HomePage = () => {
     };
 
     checkUserStatus();
+
+    // Failsafe: Force loading to stop after 10 seconds
+    const timeout = setTimeout(() => {
+      console.log('Timeout reached, forcing loading to stop');
+      setIsLoading(false);
+    }, 10000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -84,6 +95,11 @@ const HomePage = () => {
             return;
           }
           
+          // If assessment is completed, stay on dashboard
+          if (completed) {
+            console.log('Assessment completed, staying on dashboard from auth change');
+          }
+          
           setSession(session);
           setNeedsEmailConfirmation(false);
         } else {
@@ -94,7 +110,10 @@ const HomePage = () => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   if (isLoading) {
