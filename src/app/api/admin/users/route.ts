@@ -58,11 +58,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get pending sponsor relationships (invitations not yet accepted)
+    // Note: Removing practitioner_email query as column doesn't exist
     const { data: pendingRelationships, error: pendingError } = await supabase
       .from('sponsor_relationships')
-      .select('practitioner_email, sponsor_id, status')
+      .select('sponsor_id, status')
       .in('status', ['pending', 'pending_confirmation'])
-    if (pendingError) throw pendingError
+    if (pendingError) {
+      console.error('Pending relationships error:', pendingError)
+      // Don't throw, just log and continue with empty array
+      console.log('Continuing without pending relationships data')
+    }
 
     // Get support tickets
     const { data: supportTickets, error: ticketError } = await supabase

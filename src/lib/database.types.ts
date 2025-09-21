@@ -97,6 +97,42 @@ export type Database = {
           },
         ]
       }
+      error_logs: {
+        Row: {
+          context: string
+          created_at: string | null
+          error_code: string | null
+          error_message: string
+          id: number
+          stack_trace: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context: string
+          created_at?: string | null
+          error_code?: string | null
+          error_message: string
+          id?: number
+          stack_trace?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: string
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string
+          id?: number
+          stack_trace?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           created_at: string
@@ -803,6 +839,7 @@ export type Database = {
           name: string
           short_description: string | null
           story_of_virtue: string | null
+          virtue_guide: string | null
         }
         Insert: {
           author_reflection?: string | null
@@ -811,6 +848,7 @@ export type Database = {
           name: string
           short_description?: string | null
           story_of_virtue?: string | null
+          virtue_guide?: string | null
         }
         Update: {
           author_reflection?: string | null
@@ -819,6 +857,7 @@ export type Database = {
           name?: string
           short_description?: string | null
           story_of_virtue?: string | null
+          virtue_guide?: string | null
         }
         Relationships: []
       }
