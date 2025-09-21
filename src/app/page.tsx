@@ -1,85 +1,42 @@
-'use client'
-// VERSION 3.0 - FIXED HOMEPAGE WITH PROPER LANDING PAGE
+'use client';
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-import { Session } from '@supabase/supabase-js'
-import Dashboard from '@/components/Dashboard'
-import AppHeader from '@/components/AppHeader'
+import { useEffect, useState } from "react";
+import { Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
+import { AuthCard } from "@/components/AuthCard";
+import Dashboard from "@/components/Dashboard";
 import EmailConfirmationRequired from "@/components/EmailConfirmationRequired";
 import Footer from "@/components/Footer";
 import heroBackground from "@/assets/hero-background.jpg";
 
+
+// ## FIX: Define the component as a constant before exporting ##
 const HomePage = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
-  const [hasCompletedAssessment, setHasCompletedAssessment] = useState<boolean | null>(null);
 
   useEffect(() => {
     document.title = "New Man App: Home";
-    console.log('HomePage loading - version 3.0 - FIXED HOMEPAGE');
     
-    const checkUserStatus = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !session.user.email_confirmed_at) {
+        setNeedsEmailConfirmation(true);
+      } else {
+        setSession(session);
+      }
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         if (session?.user && !session.user.email_confirmed_at) {
           setNeedsEmailConfirmation(true);
-          setIsLoading(false);
-          return;
+          setSession(null);
+        } else {
+          setSession(session);
+          setNeedsEmailConfirmation(false);
         }
-        
-        if (session?.user) {
-          // Check assessment with timeout
-          try {
-            const profilePromise = supabase
-              .from('profiles')
-              .select('has_completed_first_assessment')
-              .eq('id', session.user.id)
-              .single();
-            
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile timeout')), 3000)
-            );
-            
-            const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
-            const completed = profile?.has_completed_first_assessment || false;
-            setHasCompletedAssessment(completed);
-            
-            // Redirect to welcome if assessment not completed
-            if (!completed) {
-              console.log('Assessment not completed, redirecting to welcome');
-              window.location.href = '/welcome';
-              return;
-            } else {
-              console.log('Assessment completed, staying on dashboard');
-            }
-          } catch (error) {
-            console.error('Profile check failed:', error);
-            // On error, assume assessment completed to avoid redirect loop
-            setHasCompletedAssessment(true);
-          }
-        }
-        
-        setSession(session);
-        console.log('Session set:', !!session, 'Assessment completed:', hasCompletedAssessment);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Auth error:', error);
-        setSession(null);
-        setIsLoading(false);
-      }
-    };
-
-    checkUserStatus();
-
-    // Set up auth listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event);
-        setSession(session);
-        setNeedsEmailConfirmation(false);
       }
     );
 
@@ -100,70 +57,69 @@ const HomePage = () => {
     return <EmailConfirmationRequired />;
   }
 
-  if (!session) {
-    console.log('Showing proper landing page for non-authenticated user - Build:', Date.now());
-    return (
-      <div 
-        className="min-h-screen bg-cover bg-center bg-no-repeat flex flex-col"
-        style={{ backgroundImage: `url(${heroBackground.src})` }}
-      >
-        <div className="bg-black bg-opacity-40 min-h-screen flex flex-col">
-          <AppHeader />
-          <main className="flex-1 flex items-center justify-center px-4">
-            <div className="text-center text-white max-w-4xl">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                Transform Your Character
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 text-gray-200">
-                Discover, develop, and practice virtue through guided reflection and AI-powered insights
-              </p>
-              <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-                <a 
-                  href="/auth" 
-                  className="inline-block bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 shadow-lg"
-                >
-                  Get Started
-                </a>
-                <a 
-                  href="/auth" 
-                  className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
-                >
-                  Sign In
-                </a>
-              </div>
-              
-              {/* Feature highlights */}
-              <div className="mt-16 grid md:grid-cols-3 gap-8 text-left">
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-3">Character Assessment</h3>
-                  <p className="text-gray-200">Discover your virtue strengths and areas for growth through our comprehensive assessment.</p>
-                </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-3">Guided Development</h3>
-                  <p className="text-gray-200">Follow a structured path through dismantling, building, and practicing virtues.</p>
-                </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-3">AI-Powered Insights</h3>
-                  <p className="text-gray-200">Receive personalized guidance and reflections powered by artificial intelligence.</p>
-                </div>
-              </div>
-            </div>
-          </main>
-          <Footer />
-        </div>
-      </div>
-    );
+  if (session) {
+    return <Dashboard />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-amber-50">
-      <AppHeader />
-      <main className="container mx-auto px-4 py-8">
-        <Dashboard />
-      </main>
-      <Footer />
+    <div 
+      className="min-h-screen relative bg-cover bg-center"
+      style={{ backgroundImage: `url(${heroBackground.src})` }}
+    >
+      {/* ## FIX: Removed backdrop-blur-md class ## */}
+      <div className="absolute inset-0 bg-white/80"></div>
+      
+      <div className="relative z-10">
+        <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="w-full">
+              <h1 className="text-4xl md:text-5xl font-light leading-tight mb-8 text-center text-stone-800">
+                A New Man: Your Guide to Virtuous Living
+              </h1>
+              
+              <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
+                
+                <div className="text-stone-800 text-left">
+                  <div className="space-y-4 text-stone-700">
+                    <p>
+                      Transform your character through intentional virtue development with personalized insights and guidance. The New Man App helps you identify areas for growth, track your progress, and build lasting positive habits with the support of a personal mentor.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <h3 className="font-semibold text-stone-800">Key Features:</h3>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Comprehensive Virtue Assessment</strong> - Discover your strengths and growth areas across 12 core virtues with personalized analysis and recommendations</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Detailed Insight Reports</strong> - Receive in-depth reports that analyze your virtue development patterns and provide actionable guidance for improvement</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Personal Journal</strong> - Reflect on your daily experiences with intelligent feedback that helps you recognize growth opportunities</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Mentor Support</strong> - Connect with a sponsor who guides and encourages your growth using insights from your assessments</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Smart Progress Tracking</strong> - Visualize your development with analytics that identify trends and suggest next steps using responsibly applied AI to leverage insights generated by your virtue practice</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Privacy First</strong> - Your personal journey and reflections remain completely private and secure</span></li>
+                      </ul>
+                    </div>
+                    
+                    <p>
+                      Whether you're beginning your journey of personal growth or deepening existing practices, The New Man App combines proven virtue development principles with modern technology to provide personalized guidance and community support.
+                    </p>
+                    
+                    <p className="font-semibold text-amber-800">
+                      Ready to begin your transformation? Create your account today to start your personalized virtue development journey. Thank you for being an early adopter and joining us in this mission to build character and transform lives.
+                    </p>
+                  </div>
+                </div>
+                
+                <div>
+                  <AuthCard />
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };
 
 export default HomePage;
+
