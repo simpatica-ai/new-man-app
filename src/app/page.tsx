@@ -43,7 +43,7 @@ const HomePage = () => {
         setHasCompletedAssessment(completed);
         
         // Only redirect new users to welcome page automatically
-        if (!completed) {
+        if (!completed && typeof window !== 'undefined' && window.location.pathname !== '/welcome') {
           router.push('/welcome');
           return;
         }
@@ -73,7 +73,7 @@ const HomePage = () => {
           setHasCompletedAssessment(completed);
           
           // Redirect new users to welcome page automatically
-          if (!completed) {
+          if (!completed && typeof window !== 'undefined' && window.location.pathname !== '/welcome') {
             router.push('/welcome');
             return;
           }

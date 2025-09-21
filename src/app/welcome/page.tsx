@@ -18,7 +18,7 @@ export default function WelcomePage() {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {
-        router.push('/')
+        router.push('/auth')
         return
       }
 
