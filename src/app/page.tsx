@@ -1,4 +1,5 @@
 'use client'
+// VERSION 3.0 - FIXED HOMEPAGE WITH PROPER LANDING PAGE
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
@@ -17,6 +18,7 @@ const HomePage = () => {
 
   useEffect(() => {
     document.title = "New Man App: Home";
+    console.log('HomePage loading - version 3.0 - FIXED HOMEPAGE');
     
     const checkUserStatus = async () => {
       try {
@@ -32,9 +34,9 @@ const HomePage = () => {
           // Check assessment with timeout
           try {
             const profilePromise = supabase
-              .from('user_profiles')
+              .from('profiles')
               .select('has_completed_first_assessment')
-              .eq('user_id', session.user.id)
+              .eq('id', session.user.id)
               .single();
             
             const timeoutPromise = new Promise((_, reject) => 
@@ -61,6 +63,7 @@ const HomePage = () => {
         }
         
         setSession(session);
+        console.log('Session set:', !!session, 'Assessment completed:', hasCompletedAssessment);
         setIsLoading(false);
       } catch (error) {
         console.error('Auth error:', error);
@@ -98,6 +101,7 @@ const HomePage = () => {
   }
 
   if (!session) {
+    console.log('Showing proper landing page for non-authenticated user - Build:', Date.now());
     return (
       <div 
         className="min-h-screen bg-cover bg-center bg-no-repeat flex flex-col"
