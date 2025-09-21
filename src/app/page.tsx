@@ -63,11 +63,12 @@ const HomePage = () => {
 
     checkUserStatus();
 
-    // Failsafe: Force loading to stop after 10 seconds
+    // Failsafe: Force loading to stop after 3 seconds
     const timeout = setTimeout(() => {
       console.log('Timeout reached, forcing loading to stop');
       setIsLoading(false);
-    }, 10000);
+      setSession(null); // Assume no session on timeout
+    }, 3000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
