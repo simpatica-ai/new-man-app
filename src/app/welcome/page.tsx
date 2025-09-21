@@ -17,7 +17,10 @@ export default function WelcomePage() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       
+      console.log('Welcome page - Session check:', !!session);
+      
       if (!session) {
+        console.log('No session, redirecting to auth');
         router.push('/auth')
         return
       }

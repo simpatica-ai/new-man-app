@@ -42,8 +42,11 @@ const HomePage = () => {
         const completed = profile?.has_completed_first_assessment || false;
         setHasCompletedAssessment(completed);
         
-        // Only redirect new users to welcome page automatically
-        if (!completed && typeof window !== 'undefined' && window.location.pathname !== '/welcome') {
+        console.log('Main page - Assessment completed:', completed, 'Current path:', window?.location?.pathname);
+        
+        // Only redirect new users to welcome page automatically (avoid loop)
+        if (!completed && typeof window !== 'undefined' && window.location.pathname === '/') {
+          console.log('Redirecting to welcome page');
           router.push('/welcome');
           return;
         }
@@ -72,8 +75,11 @@ const HomePage = () => {
           const completed = profile?.has_completed_first_assessment || false;
           setHasCompletedAssessment(completed);
           
-          // Redirect new users to welcome page automatically
-          if (!completed && typeof window !== 'undefined' && window.location.pathname !== '/welcome') {
+          console.log('Auth change - Assessment completed:', completed, 'Current path:', window?.location?.pathname);
+          
+          // Redirect new users to welcome page automatically (avoid loop)
+          if (!completed && typeof window !== 'undefined' && window.location.pathname === '/') {
+            console.log('Redirecting to welcome page from auth change');
             router.push('/welcome');
             return;
           }
