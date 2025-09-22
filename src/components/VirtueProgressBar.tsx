@@ -11,6 +11,7 @@ interface VirtueProgressBarProps {
   className?: string;
   showClickableButtons?: boolean;
   virtueId?: number; // For individual virtue navigation
+  getStatusClasses?: (virtueId: number, stage: number) => string; // Add status function
 }
 
 export default function VirtueProgressBar({ 
@@ -21,34 +22,48 @@ export default function VirtueProgressBar({
   totalVirtues = 12,
   className = "",
   showClickableButtons = false,
-  virtueId
+  virtueId,
+  getStatusClasses
 }: VirtueProgressBarProps) {
   
   const router = useRouter();
+  
+  // Helper function to get stage status
+  const getStageStatus = (stage: number) => {
+    if (!virtueId || !getStatusClasses) return 'not_started';
+    const statusClasses = getStatusClasses(virtueId, stage);
+    if (statusClasses.includes('bg-green')) return 'completed';
+    if (statusClasses.includes('bg-amber')) return 'in_progress';
+    return 'not_started';
+  };
   
   const phases = [
     { 
       name: 'Discovering', 
       color: '#8B4513',
       completed: hasCompletedAssessment,
+      status: hasCompletedAssessment ? 'completed' : 'not_started',
       route: virtueId ? `/virtue/${virtueId}` : '/assessment'
     },
     { 
       name: 'Dismantling', 
       color: '#A0522D',
       completed: completedDismantlingCount >= totalVirtues,
+      status: virtueId ? getStageStatus(1) : (completedDismantlingCount >= totalVirtues ? 'completed' : 'not_started'),
       route: virtueId ? `/virtue/${virtueId}?stage=1` : '/'
     },
     { 
       name: 'Building', 
       color: '#6B8E23',
       completed: completedBuildingCount >= totalVirtues,
+      status: virtueId ? getStageStatus(2) : (completedBuildingCount >= totalVirtues ? 'completed' : 'not_started'),
       route: virtueId ? `/virtue/${virtueId}?stage=2` : '/'
     },
     { 
       name: 'Practicing', 
       color: '#556B2F',
       completed: completedPracticingCount >= totalVirtues,
+      status: virtueId ? getStageStatus(3) : (completedPracticingCount >= totalVirtues ? 'completed' : 'not_started'),
       route: virtueId ? `/virtue/${virtueId}?stage=3` : '/'
     }
   ];
@@ -69,16 +84,18 @@ export default function VirtueProgressBar({
               <button
                 onClick={() => handlePhaseClick(phase)}
                 disabled={!showClickableButtons || !hasCompletedAssessment}
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold text-white transition-all duration-300 ${
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                   showClickableButtons && hasCompletedAssessment ? 'cursor-pointer hover:scale-110' : 'cursor-default'
                 }`}
                 style={{
-                  backgroundColor: phase.completed ? phase.color : 'transparent',
+                  backgroundColor: phase.status === 'completed' ? phase.color : 
+                                 phase.status === 'in_progress' ? '#FCD34D' : 'transparent', // Yellow for in-progress
                   borderColor: phase.color,
-                  color: phase.completed ? 'white' : phase.color
+                  color: phase.status === 'completed' ? 'white' : 
+                         phase.status === 'in_progress' ? '#92400E' : phase.color // Dark yellow text for in-progress
                 }}
               >
-                {phase.completed ? '✓' : index + 1}
+                {phase.status === 'completed' ? '✓' : index + 1}
               </button>
               <span 
                 className="text-xs font-medium mt-1 text-center"

@@ -101,6 +101,19 @@ const TiptapEditor = ({ content, onChange, height }: TiptapEditorProps) => {
         .ProseMirror {
           white-space: pre-wrap;
         }
+        .ProseMirror ul {
+          list-style-type: disc;
+          margin-left: 1.5rem;
+          padding-left: 0;
+        }
+        .ProseMirror ol {
+          list-style-type: decimal;
+          margin-left: 1.5rem;
+          padding-left: 0;
+        }
+        .ProseMirror li {
+          margin: 0.25rem 0;
+        }
       `}</style>
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />

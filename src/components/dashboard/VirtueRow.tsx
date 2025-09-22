@@ -66,6 +66,7 @@ export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }:
           totalVirtues={1}
           showClickableButtons={true}
           virtueId={virtue.id}
+          getStatusClasses={getStatusClasses}
           className="py-2"
         />
       </div>

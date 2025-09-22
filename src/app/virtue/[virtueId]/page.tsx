@@ -64,11 +64,19 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
   completingStage: boolean
 }) => {
     const empatheticTitles: { [key: number]: string } = {
-      1: "My Private Reflection for Stage 1: Gently Exploring Areas for Growth",
-      2: "My Private Reflection for Stage 2: Building New, Healthy Habits",
-      3: "My Private Reflection for Stage 3: Maintaining Your Progress with Grace"
+      1: "Reflections on Dismantling Character Defects",
+      2: "Reflections on Building Virtue", 
+      3: "An Ongoing Virtue Practice"
     };
+    
+    const stageDescriptions: { [key: number]: string } = {
+      1: "Use this space to recognize the adverse impact of character defects, allowing the prompt at the right to inspire your writing.",
+      2: "Use the writing space to reflect on the attributes of the virtue. One must find the virtue to be able to practice the virtue.",
+      3: "Virtue practice is often associated with compromise. Use this writing space to expand on lessons learned as you practice virtue."
+    };
+    
     const cardTitle = empatheticTitles[stage.stage_number] || `My Private Reflection for ${stage.title}`;
+    const cardDescription = stageDescriptions[stage.stage_number] || "Use the guidance above to reflect deeply. Your thoughts here remain private and secure.";
 
     const handleSave = async () => {
       await onSaveMemo();
@@ -104,7 +112,7 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
           <div className="flex items-start justify-between">
             <div className="space-y-2">
               <CardTitle className="text-stone-800 font-medium text-xl leading-relaxed">{cardTitle}</CardTitle>
-              <CardDescription className="text-stone-600">Use the guidance above to reflect deeply. Your thoughts here remain private and secure.</CardDescription>
+              <CardDescription className="text-stone-600">{cardDescription}</CardDescription>
             </div>
             <StatusBadge />
           </div>
@@ -163,7 +171,7 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
                 <Button 
                   onClick={handleComplete} 
                   disabled={savingMemo || completingStage}
-                  className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-mindful shadow-contemplative"
+                  className="bg-amber-600 hover:bg-amber-700 text-white transition-colors"
                 >
                   {completingStage ? 'Saving...' : 'Mark Complete'}
                 </Button>
@@ -545,7 +553,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, defectAnalysis, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
+  }, [displayedStageNumber, virtue, defectAnalysis]); // Removed fetch functions from dependencies
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
@@ -734,6 +742,15 @@ export default function VirtueDetailPage() {
                       completedPracticingCount={progress.get(`${virtueId}-3`) === 'completed' ? 1 : 0}
                       totalVirtues={1}
                       showClickableButtons={false}
+                      virtueId={parseInt(virtueId as string)}
+                      getStatusClasses={(vId: number, stage: number) => {
+                        const status = progress.get(`${vId}-${stage}`);
+                        switch (status) {
+                          case 'in_progress': return 'bg-amber-100 text-amber-800 border-amber-200';
+                          case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+                          default: return 'bg-stone-100 text-stone-600 border-stone-200';
+                        }
+                      }}
                       className="py-2"
                     />
                   )}
@@ -953,7 +970,7 @@ export default function VirtueDetailPage() {
                       onClick={() => setIsPromptHidden(true)}
                       className="text-stone-500 hover:text-stone-700 hover:bg-stone-100/60 p-3"
                     >
-                      <ChevronRight className="h-8 w-8" />
+                      <ChevronRight className="h-12 w-12" style={{ width: '48px', height: '48px' }} />
                     </Button>
                   </CardHeader>
                   <CardContent className="pt-0 relative">
@@ -1029,7 +1046,7 @@ export default function VirtueDetailPage() {
                   onClick={() => setIsPromptHidden(false)}
                   className="bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white shadow-lg backdrop-blur-sm border border-amber-300/60 rounded-l-full pr-6 pl-4 py-8 flex items-center gap-2"
                 >
-                  <ChevronLeft className="h-8 w-8" />
+                  <ChevronLeft className="h-12 w-12" />
                   <span className="font-light text-sm">Show Guidance</span>
                 </Button>
               </div>

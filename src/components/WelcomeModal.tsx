@@ -86,9 +86,16 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         </div>
         
         <DialogFooter className="flex-col sm:flex-row sm:justify-between gap-2 mt-4 sm:mt-6">
-          <Button type="button" variant="ghost" onClick={onClose} className="w-full sm:w-auto text-sm">
-            I&apos;ll Explore on My Own
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button type="button" variant="ghost" onClick={onClose} className="w-full sm:w-auto text-sm">
+              I&apos;ll Explore on My Own
+            </Button>
+            <Link href="/welcome" className="w-full sm:w-auto">
+              <Button type="button" variant="outline" className="w-full sm:w-auto text-sm">
+                View Welcome Page
+              </Button>
+            </Link>
+          </div>
           <Link href="/assessment" className="w-full sm:w-auto">
             <Button type="submit" className="w-full sm:w-auto text-sm">Start My Assessment</Button>
           </Link>
