@@ -76,8 +76,9 @@ const PrintButton = ({ results, analyses, summaryAnalysis, userName }: PrintButt
     <Button 
       onClick={handlePrint} 
       disabled={isGenerating} 
+      variant="outline"
       size="lg"
-      className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-medium transition-all duration-200"
+      className="w-full h-12 border-2 border-amber-300 hover:bg-amber-50 hover:border-amber-400 transition-all duration-200"
     >
       <Download className="h-5 w-5 mr-2" />
       {isGenerating ? 'Generating PDF...' : 'Download PDF Report'}
