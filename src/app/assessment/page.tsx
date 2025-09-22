@@ -392,17 +392,17 @@ export default function AssessmentPage() {
                 }
 
                 // Fetch assessment with summary_analysis
-                const { data: assessmentRecord, error: assessmentError } = await supabase
+                const { data: assessmentRecords, error: assessmentError } = await supabase
                     .from('user_assessments')
                     .select('id, summary_analysis')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single();
+                    .limit(1);
                 
-                if (assessmentError && assessmentError.code !== 'PGRST116') throw assessmentError;
-
-                if (assessmentRecord) {
+                if (assessmentError) {
+                    console.error('Error fetching assessment:', assessmentError);
+                } else if (assessmentRecords && assessmentRecords.length > 0) {
+                    const assessmentRecord = assessmentRecords[0];
                     setCurrentAssessmentId(assessmentRecord.id);
                     setHasExistingAssessment(true);
                     
