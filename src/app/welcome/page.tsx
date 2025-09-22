@@ -130,8 +130,9 @@ export default function WelcomePage() {
                 <h3 className="text-xl font-semibold mb-3" style={{color: '#8B4513'}}>Discovery</h3>
                 <p className="text-stone-700 mb-4">
                   Begin with a comprehensive assessment to understand your current virtue landscape. 
-                  The app analyzes your responses and creates your personal Virtue Rose - a visual representation 
-                  of your character strengths and growth opportunities across 12 core virtues.
+                  The app analyzes your responses to prioritize which virtues to develop based on the 
+                  intensity of character defects associated with each virtue. This ensures you focus 
+                  your energy on the areas where growth will have the most meaningful impact.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-3" style={{color: '#A0522D'}}>Dismantling</h3>

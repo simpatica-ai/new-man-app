@@ -22,6 +22,7 @@ const HomePage = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user && !session.user.email_confirmed_at) {
         setNeedsEmailConfirmation(true);
+        setIsLoading(false);
       } else if (session?.user) {
         // Check if user has completed assessment
         supabase
@@ -34,12 +35,14 @@ const HomePage = () => {
               window.location.href = '/welcome';
               return;
             }
+            // Only set session after assessment check is complete
             setSession(session);
+            setIsLoading(false);
           });
       } else {
         setSession(session);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
