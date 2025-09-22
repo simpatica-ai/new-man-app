@@ -12,6 +12,7 @@ interface VirtueProgressBarProps {
   showClickableButtons?: boolean;
   virtueId?: number; // For individual virtue navigation
   getStatusClasses?: (virtueId: number, stage: number) => string; // Add status function
+  assessmentInProgress?: boolean; // New prop for assessment progress
 }
 
 export default function VirtueProgressBar({ 
@@ -23,7 +24,8 @@ export default function VirtueProgressBar({
   className = "",
   showClickableButtons = false,
   virtueId,
-  getStatusClasses
+  getStatusClasses,
+  assessmentInProgress = false
 }: VirtueProgressBarProps) {
   
   const router = useRouter();
@@ -42,7 +44,8 @@ export default function VirtueProgressBar({
       name: 'Discovering', 
       color: '#8B4513',
       completed: hasCompletedAssessment,
-      status: hasCompletedAssessment ? 'completed' : 'not_started',
+      status: hasCompletedAssessment ? 'completed' : 
+              assessmentInProgress ? 'in_progress' : 'not_started',
       route: virtueId ? `/virtue/${virtueId}` : '/assessment'
     },
     { 

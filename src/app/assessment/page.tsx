@@ -77,7 +77,7 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
             </div>
         </div>
         
-        <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-3">
+        <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-6">
             <div>
                 <label className="text-xs font-medium text-stone-600 mb-1 block">Frequency</label>
                 <RadioGroup 
@@ -162,6 +162,7 @@ export default function AssessmentPage() {
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [userName, setUserName] = useState<string>('');
     const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+    const [showEncouragementDialog, setShowEncouragementDialog] = useState(false);
     const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
 
     const itemsPerPage = 8;
@@ -172,6 +173,8 @@ export default function AssessmentPage() {
 
     // Calculate progress by panels instead of individual questions
     const answeredCount = Object.keys(ratings).filter(key => ratings[key] !== undefined).length;
+    const harmAnsweredCount = Object.keys(harmLevels).filter(key => harmLevels[key] !== undefined && harmLevels[key] !== '').length;
+    const allQuestionsAnswered = answeredCount === defects.length && harmAnsweredCount === defects.length;
     const answeredPanels = Math.ceil(answeredCount / itemsPerPage);
     const totalPanels = totalPages;
     const progress = Math.round((answeredPanels / totalPanels) * 100);
@@ -367,7 +370,7 @@ export default function AssessmentPage() {
         // Wait for virtues to load before proceeding
         if (virtuesLoading || !virtueDetails.length) return;
         
-        document.title = "New Man App: Virtue Assessment";
+        document.title = "New Man App: Discovery";
         
         const fetchInitialData = async () => {
             try {
@@ -517,6 +520,10 @@ export default function AssessmentPage() {
     };
 
     // --- Form Submission Logic ---
+    const handleIncompleteSubmit = () => {
+        setShowEncouragementDialog(true);
+    };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setAnalyses(new Map()); 
@@ -658,20 +665,34 @@ export default function AssessmentPage() {
                     <div id="printable-area">
                         {!results ? (
                             <div className="space-y-4">
+                                {/* Progress Bar */}
+                                <div className="mb-6 p-4 bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-lg">
+                                    <VirtueProgressBar 
+                                        hasCompletedAssessment={allQuestionsAnswered}
+                                        completedDismantlingCount={0}
+                                        completedBuildingCount={0}
+                                        completedPracticingCount={0}
+                                        totalVirtues={1}
+                                        showClickableButtons={false}
+                                        assessmentInProgress={answeredCount > 0 && !allQuestionsAnswered}
+                                        className="py-2"
+                                    />
+                                </div>
+                                
                                 {/* Assessment Questions - Compact */}
                                 <Card className="border-stone-200 shadow-sm">
                                     <CardHeader className="pb-2">
                                         <div className="flex items-center justify-between">
                                             <CardTitle className="text-lg flex items-center gap-2">
                                                 <Target className="h-4 w-4 text-amber-600" />
-                                                Personal Reflection
+                                                Finding Character Defects
                                             </CardTitle>
-                                            <span className="text-sm text-stone-500 bg-stone-100 px-2 py-1 rounded">
+                                            <span className="text-base font-medium text-stone-600 bg-stone-100 px-3 py-1.5 rounded">
                                                 {currentPage + 1}/{totalPages}
                                             </span>
                                         </div>
                                         <CardDescription className="text-sm mt-1">
-                                            Reflect on these areas of personal growth
+                                            You have started your virtue journey! Here you judge the frequency and impact of multiple character defects to offer insights on virtue growth. Complete all questions, and you are rewarded with a virtue recovery plan. Discovering insights starts bringing us to a more virtuous self.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="p-3">
@@ -735,8 +756,8 @@ export default function AssessmentPage() {
                                         {/* Submit Button */}
                                         <div className="mt-3 text-center">
                                             <Button 
-                                                onClick={handleSubmit} 
-                                                disabled={isSubmitting || answeredCount === 0}
+                                                onClick={allQuestionsAnswered ? handleSubmit : handleIncompleteSubmit} 
+                                                disabled={isSubmitting}
                                                 className="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700"
                                                 size="sm"
                                             >
@@ -745,8 +766,8 @@ export default function AssessmentPage() {
                                                         <Loader2 className="h-3 w-3 animate-spin" />
                                                         Creating Plan...
                                                     </div>
-                                                ) : answeredCount === 0 ? (
-                                                    "Begin Reflection"
+                                                ) : !allQuestionsAnswered ? (
+                                                    "View the Virtue Plan"
                                                 ) : hasExistingAssessment ? (
                                                     <div className="flex items-center gap-2 justify-center">
                                                         <CheckCircle className="h-3 w-3" />
@@ -779,7 +800,7 @@ export default function AssessmentPage() {
                                             className="py-2"
                                         />
                                         <p className="text-sm text-emerald-700 text-center mt-3">
-                                            You've completed your character assessment. Next, begin working on individual virtues through dismantling, building, and practicing.
+                                            You've completed your discovery. Next, begin working on individual virtues through dismantling, building, and practicing.
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -957,6 +978,29 @@ export default function AssessmentPage() {
                         <p className="text-xs text-stone-500 text-center">
                             This may take a few moments. Please don&rsquo;t close this window.
                         </p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Encouragement Dialog */}
+            <Dialog open={showEncouragementDialog} onOpenChange={setShowEncouragementDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-amber-800">Complete Your Discovery Journey</DialogTitle>
+                        <DialogDescription className="text-stone-600 mt-2">
+                            You're making great progress! To get the most accurate virtue recovery plan, 
+                            please complete all character defect questions. Each question helps us better 
+                            understand your unique journey and create a personalized plan for growth.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-3 mt-4">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowEncouragementDialog(false)}
+                            className="text-stone-600"
+                        >
+                            Continue Assessment
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

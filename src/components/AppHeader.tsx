@@ -36,7 +36,7 @@ export default function AppHeader() {
   
   const getPageTitle = () => {
     if (pathname.startsWith('/welcome')) return 'Welcome!';
-    if (pathname.startsWith('/assessment')) return 'Character Assessment';
+    if (pathname.startsWith('/assessment')) return 'Discovery';
     if (pathname.startsWith('/journal')) return 'My Journal';
     if (pathname.startsWith('/virtue/')) return 'Virtue Workspace';
     if (pathname.startsWith('/account-settings')) return 'Account Settings';
@@ -82,42 +82,45 @@ export default function AppHeader() {
             <div className="flex items-center space-x-1 flex-shrink-0">
               <Button 
                 onClick={() => setShowFeedbackModal(true)}
-                title="Alpha Feedback" 
+                title="Feedback" 
                 variant="outline" 
                 size="sm"
-                className="border-amber-300 text-amber-700 hover:bg-amber-50 transition-mindful text-xs h-8 px-2"
+                className="border-amber-300 text-amber-700 hover:bg-amber-50 transition-colors h-8 px-2"
               >
-                <MessageSquare className="h-3 w-3 mr-1" />
-                <span className="hidden xs:inline">Feedback</span>
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden md:inline ml-1">Feedback</span>
               </Button>
               <Link href="/get-support">
                 <Button 
                   title="Get Support" 
                   variant="ghost" 
-                  size="icon"
-                  className="text-stone-600 hover:text-amber-700 hover:bg-amber-50 transition-mindful w-8 h-8"
+                  size="sm"
+                  className="text-stone-600 hover:text-amber-700 hover:bg-amber-50 transition-colors h-8 px-2"
                 >
                   <LifeBuoy className="h-4 w-4" />
+                  <span className="hidden md:inline ml-1">Support</span>
                 </Button>
               </Link>
               <Link href="/account-settings">
                 <Button 
-                  title="Settings" 
+                  title="My Account" 
                   variant="ghost" 
-                  size="icon"
-                  className="text-stone-600 hover:text-amber-700 hover:bg-amber-50 transition-mindful w-8 h-8"
+                  size="sm"
+                  className="text-stone-600 hover:text-amber-700 hover:bg-amber-50 transition-colors h-8 px-2"
                 >
                   <Settings className="h-4 w-4" />
+                  <span className="hidden md:inline ml-1">My Account</span>
                 </Button>
               </Link>
               <Button 
                 onClick={handleSignOut} 
-                title="Sign Out" 
+                title="Logout" 
                 variant="ghost" 
-                size="icon"
-                className="text-stone-600 hover:text-red-700 hover:bg-red-50 transition-mindful w-8 h-8"
+                size="sm"
+                className="text-stone-600 hover:text-red-700 hover:bg-red-50 transition-colors h-8 px-2"
               >
                 <LogOut className="h-4 w-4" />
+                <span className="hidden md:inline ml-1">Logout</span>
               </Button>
             </div>
           </div>
