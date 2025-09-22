@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import AppHeader from "@/components/AppHeader"
+import Footer from "@/components/Footer"
 import VirtueProgressBar from "@/components/VirtueProgressBar"
 
 export default function WelcomePage() {
@@ -208,6 +209,7 @@ export default function WelcomePage() {
 
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

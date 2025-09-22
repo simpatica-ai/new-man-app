@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
 import AppHeader from '@/components/AppHeader'
+import Footer from '@/components/Footer'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import VirtueGuideModal from '@/components/VirtueGuideModal'
@@ -1060,6 +1061,7 @@ export default function VirtueDetailPage() {
         onClose={handleCloseGuide}
         hasConnection={!!connectionId}
       />
+      <Footer />
     </div>
   )
 }

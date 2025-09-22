@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { UserPlus, CheckCircle, Clock } from 'lucide-react'
 import AppHeader from '@/components/AppHeader'
+import Footer from '@/components/Footer'
 
 type ConnectionDetails = {
   id: number;
@@ -206,6 +207,7 @@ export default function ManageSponsorPage() {
             </CardContent>
           </Card>
         </main>
+        <Footer />
       </div>
     </div>
   )

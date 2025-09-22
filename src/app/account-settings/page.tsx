@@ -12,6 +12,7 @@ import { User } from '@supabase/supabase-js';
 import { AlertTriangle, User as UserIcon, Shield, Users, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import AppHeader from '@/components/AppHeader';
+import Footer from '@/components/Footer';
 
 type ConnectionDetails = {
   id: number;
@@ -602,6 +603,7 @@ export default function AccountSettingsPage() {
             </Card>
           </div>
         </main>
+        <Footer />
       </div>
     </div>
   );
