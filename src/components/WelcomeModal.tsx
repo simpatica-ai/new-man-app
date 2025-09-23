@@ -9,11 +9,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+
 import Link from "next/link"
-import { Rocket, BookText, UserPlus, Milestone, Award, BookOpen } from "lucide-react"
-
-// ## FIX: New, custom-generated background image URL ##
-
+import { Award, BookText, UserPlus, ArrowRight, ArrowDown } from "lucide-react"
+import { useState } from "react"
 
 interface WelcomeModalProps {
   isOpen: boolean;
@@ -21,84 +21,92 @@ interface WelcomeModalProps {
 }
 
 export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  const handleClose = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('hideWelcomeModal', 'true');
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-xl max-w-[90vw] max-h-[90vh] overflow-y-auto mx-2">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-light text-stone-800 text-center">Welcome to A New Man</DialogTitle>
-            <DialogDescription className="text-stone-600 text-center mt-2 text-sm">
-              Your private workspace for a journey of self-reflection and growth.
-            </DialogDescription>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose} className="text-stone-400 hover:text-stone-600 flex-shrink-0">
-            ✕
-          </Button>
+        <div className="mb-4">
+          <DialogTitle className="text-xl sm:text-2xl font-light text-stone-800 text-center">Congratulations!</DialogTitle>
+          <DialogDescription className="text-stone-600 text-center mt-2 text-sm">
+            You&apos;ve completed the first step - Discovery
+          </DialogDescription>
         </div>
         
         <div className="px-1 sm:px-8 py-2 sm:py-6">
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="h-4 w-4 text-amber-600" />
-              <p className="text-sm font-medium text-amber-800">New! Check out "Your Virtue Journey" overview</p>
+              <Award className="h-5 w-5 text-green-600" />
+              <p className="text-sm font-medium text-green-800">Assessment Complete!</p>
             </div>
-            <p className="text-xs text-amber-700">Click the expandable card in your dashboard to understand how all the pieces fit together in your months-long virtue development journey.</p>
+            <p className="text-sm text-green-700">Twelve virtues are assembled and listed from virtues needing the greatest development work to the least.</p>
           </div>
           
-          <h3 className="mb-4 text-center font-semibold text-stone-700 text-sm sm:text-base">Here&apos;s how your journey will unfold:</h3>
+          <h3 className="mb-4 text-center font-semibold text-stone-700 text-sm sm:text-base">Your Virtue Development Journey:</h3>
           <div className="grid gap-3 sm:gap-4">
-              <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><Rocket className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
-                  <div className="min-w-0">
-                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">1. Take the Assessment</h4>
-                      <p className="text-xs sm:text-sm text-stone-600">Start with a short Virtue Assessment to discover your personalized path.</p>
-                  </div>
-              </div>
-              <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><Milestone className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
-                  <div className="min-w-0">
-                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">2. Work the Stages</h4>
-                      <p className="text-xs sm:text-sm text-stone-600">For each virtue, you&apos;ll move through stages of dismantling, building, and maintaining healthy habits.</p>
-                  </div>
-              </div>
               <div className="flex items-start gap-3 sm:gap-4">
                   <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><BookText className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
                   <div className="min-w-0">
-                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">3. Maintain a Journal</h4>
-                      <p className="text-xs sm:text-sm text-stone-600">Use your private journal to reflect on your progress and insights.</p>
+                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">Four Stages of Development</h4>
+                      <p className="text-xs sm:text-sm text-stone-600">Beneath each virtue are 4 stages: Discovery (complete), Dismantling, Building, and Practicing. The numbered stages are buttons that take you to the virtue desktop.</p>
+                  </div>
+              </div>
+              <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
+                  <div className="min-w-0">
+                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">Navigate Your Path</h4>
+                      <p className="text-xs sm:text-sm text-stone-600">Click stage buttons to access the virtue desktop where you&apos;ll be prompted to reflect. Move right to continue with the same virtue, or down to work on another virtue.</p>
+                  </div>
+              </div>
+              <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
+                  <div className="min-w-0">
+                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">Track Your Progress</h4>
+                      <p className="text-xs sm:text-sm text-stone-600">As you complete stages, your progress will show. Work systematically through each virtue&apos;s stages to build lasting character development.</p>
                   </div>
               </div>
               <div className="flex items-start gap-3 sm:gap-4">
                   <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
                   <div className="min-w-0">
-                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">4. Invite a Sponsor</h4>
+                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">Invite a Sponsor</h4>
                       <p className="text-xs sm:text-sm text-stone-600">When you&apos;re ready, invite a sponsor to share your journey and receive guidance.</p>
-                  </div>
-              </div>
-              <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="bg-amber-100 p-2 rounded-full mt-1 flex-shrink-0"><Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700"/></div>
-                  <div className="min-w-0">
-                      <h4 className="font-semibold text-stone-700 text-sm sm:text-base">5. Track Your Progress</h4>
-                      <p className="text-xs sm:text-sm text-stone-600">Retake the assessment at any time to visualize your growth. Eventually, you will be able to print a &quot;Virtue Journey Book&quot;.</p>
                   </div>
               </div>
           </div>
         </div>
+
+        <div className="px-1 sm:px-8 mb-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="dontShow" 
+              checked={dontShowAgain}
+              onCheckedChange={setDontShowAgain}
+            />
+            <label 
+              htmlFor="dontShow" 
+              className="text-sm text-stone-600 cursor-pointer"
+            >
+              Don&apos;t show this message again
+            </label>
+          </div>
+        </div>
         
         <DialogFooter className="flex-col sm:flex-row sm:justify-between gap-2 mt-4 sm:mt-6">
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button type="button" variant="ghost" onClick={onClose} className="w-full sm:w-auto text-sm">
-              I&apos;ll Explore on My Own
+          <Link href="/welcome" className="w-full sm:w-auto">
+            <Button type="button" variant="outline" className="w-full sm:w-auto text-sm">
+              View Welcome Page
             </Button>
-            <Link href="/welcome" className="w-full sm:w-auto">
-              <Button type="button" variant="outline" className="w-full sm:w-auto text-sm">
-                View Welcome Page
-              </Button>
-            </Link>
-          </div>
-          <Link href="/assessment" className="w-full sm:w-auto">
-            <Button type="submit" className="w-full sm:w-auto text-sm">Start My Assessment</Button>
           </Link>
+          <Button type="button" onClick={handleClose} className="w-full sm:w-auto text-sm">
+            Go to Virtue Dashboard
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -72,8 +72,11 @@ export default function VirtueProgressBar({
   ];
 
   const handlePhaseClick = (phase: typeof phases[0]) => {
-    if (showClickableButtons && hasCompletedAssessment) {
-      router.push(phase.route);
+    if (showClickableButtons) {
+      // Allow Discovery phase to be clicked even without assessment
+      if (phase.name === 'Discovering' || hasCompletedAssessment) {
+        router.push(phase.route);
+      }
     }
   };
 
@@ -86,19 +89,31 @@ export default function VirtueProgressBar({
             <div className="flex flex-col items-center">
               <button
                 onClick={() => handlePhaseClick(phase)}
-                disabled={!showClickableButtons || !hasCompletedAssessment}
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                  showClickableButtons && hasCompletedAssessment ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+                disabled={!showClickableButtons || (!hasCompletedAssessment && phase.name !== 'Discovering')}
+                className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 shadow-sm ${
+                  showClickableButtons && (hasCompletedAssessment || phase.name === 'Discovering')
+                    ? 'cursor-pointer hover:scale-105 hover:shadow-md active:scale-95 transform' 
+                    : 'cursor-default opacity-60'
+                } ${
+                  phase.status === 'completed' 
+                    ? 'bg-gradient-to-br from-white to-gray-50' 
+                    : phase.status === 'in_progress' 
+                    ? 'bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200' 
+                    : 'bg-gradient-to-br from-white to-gray-50 hover:from-gray-50 hover:to-gray-100'
                 }`}
                 style={{
-                  backgroundColor: phase.status === 'completed' ? phase.color : 
-                                 phase.status === 'in_progress' ? '#FCD34D' : 'transparent', // Yellow for in-progress
                   borderColor: phase.color,
-                  color: phase.status === 'completed' ? 'white' : 
-                         phase.status === 'in_progress' ? '#92400E' : phase.color // Dark yellow text for in-progress
+                  color: phase.status === 'completed' ? phase.color : 
+                         phase.status === 'in_progress' ? '#92400E' : phase.color
                 }}
               >
-                {phase.status === 'completed' ? '✓' : index + 1}
+                {phase.status === 'completed' ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <span className="text-xs font-semibold">{index + 1}</span>
+                )}
               </button>
               <span 
                 className="text-xs font-medium mt-1 text-center"
