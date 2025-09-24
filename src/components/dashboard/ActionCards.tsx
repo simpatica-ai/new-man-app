@@ -38,28 +38,26 @@ export default function ActionCards({
         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
           <BookOpen className="h-8 w-8 text-amber-700" />
           <div>
-            <CardTitle className="text-stone-800 font-medium">Assessment</CardTitle>
+            <CardTitle className="text-stone-800 font-medium">Discovery</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {assessmentTaken && virtues.length > 0 ? (
             <>
-              <div className="p-2">
-                <VirtueRoseChart 
-                  data={virtues.map(v => ({
-                    virtue: getChartDisplayVirtueName(v.name),
-                    score: v.virtue_score || 0
-                  }))}
-                  size="thumbnail"
-                  showLabels={false}
-                />
-              </div>
-              <div className="px-6 pb-4 pt-0 text-center space-y-2">
-                <Link 
-                  href="/assessment" 
-                  className="text-amber-700 hover:text-amber-800 underline text-sm block"
-                >
-                  View Full Assessment
+              <p className="text-sm text-stone-600 text-center">
+                Place your pointer above each pedal of the virtue chart to see the virtue and its score, the higher the score the greater perfection. The rose will grow as you take the steps of dismantling, building and practice.
+              </p>
+              <VirtueRoseChart 
+                data={virtues.map(v => ({
+                  virtue: getChartDisplayVirtueName(v.name),
+                  score: v.virtue_score || 0
+                }))}
+                size="medium"
+                showLabels={false}
+              />
+              <div className="px-6 pb-4 pt-2 text-center space-y-2">
+                <Link href="/assessment">
+                  <Button size="sm" variant="outline">View Virtue Growth Plan</Button>
                 </Link>
               </div>
             </>
@@ -83,17 +81,25 @@ export default function ActionCards({
       <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
           <UserCheck className="h-8 w-8 text-amber-700" />
-          <div>
+          <div className="flex-1">
             <CardTitle className="text-stone-800 font-medium">Sponsor Connection</CardTitle>
           </div>
+          {connection?.unread_messages && (
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+          )}
         </CardHeader>
         <CardContent>
           {connection ? (
             <div>
-              <p className="text-sm text-stone-600">Connected with:</p>
-              <p className="font-semibold text-stone-800">
-                {connection.sponsor_name || 'Your Sponsor'}
-              </p>
+              {connection.status === 'pending' ? (
+                <p className="text-sm text-stone-600 mb-2">
+                  Your sponsor connection is still pending.
+                </p>
+              ) : (
+                <p className="text-sm text-stone-600 mb-2">
+                  Your sponsor is {connection.sponsor_name || 'Your Sponsor'}.
+                </p>
+              )}
               <p className={`text-sm font-medium capitalize ${
                 connection.status === 'active' ? 'text-green-600' : 'text-amber-600'
               }`}>
@@ -103,7 +109,7 @@ export default function ActionCards({
           ) : (
             <div>
               <p className="text-sm text-stone-600 mb-2">
-                You have not connected with a sponsor yet.
+                Connecting with a sponsor or coach brings further insights to your virtue development.
               </p>
               <Link href="/account-settings">
                 <Button size="sm" variant="outline">Invite a Sponsor</Button>
@@ -129,7 +135,7 @@ export default function ActionCards({
             </p>
           ) : (
             <p className="text-sm text-stone-600 mb-2">
-              Start your journey with your first journal entry.
+              Journaling is a place to capture more insights about virtue growth.
             </p>
           )}
           <Link href="/journal">
