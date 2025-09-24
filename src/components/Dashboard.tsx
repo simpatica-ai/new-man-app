@@ -26,9 +26,12 @@ export default function Dashboard() {
     progress,
     lastJournalEntry,
     showWelcomeModal,
+    buttonStates,
     handleCloseModal,
     handleOpenModal,
-    getStatusClasses
+    getStatusClasses,
+    debouncedRefresh,
+    setButtonStates
   } = useDashboardData();
 
   console.log('Dashboard render - assessmentTaken:', assessmentTaken);
@@ -81,6 +84,8 @@ export default function Dashboard() {
                       virtue={virtue} 
                       assessmentTaken={assessmentTaken}
                       getStatusClasses={getStatusClasses}
+                      buttonStates={buttonStates}
+                      setButtonStates={setButtonStates}
                     />
                   ))}
                 </div>
@@ -110,6 +115,8 @@ export default function Dashboard() {
                         virtue={virtue} 
                         assessmentTaken={assessmentTaken}
                         getStatusClasses={getStatusClasses}
+                        buttonStates={buttonStates}
+                        setButtonStates={setButtonStates}
                       />
                     ))}
                   </ul>

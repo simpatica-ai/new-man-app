@@ -13,6 +13,8 @@ interface VirtueProgressBarProps {
   virtueId?: number; // For individual virtue navigation
   getStatusClasses?: (virtueId: number, stage: number) => string; // Add status function
   assessmentInProgress?: boolean; // New prop for assessment progress
+  buttonStates?: {[key: string]: boolean}; // Button state tracking
+  setButtonStates?: (fn: (prev: {[key: string]: boolean}) => {[key: string]: boolean}) => void; // Button state setter
 }
 
 export default function VirtueProgressBar({ 
@@ -25,7 +27,9 @@ export default function VirtueProgressBar({
   showClickableButtons = false,
   virtueId,
   getStatusClasses,
-  assessmentInProgress = false
+  assessmentInProgress = false,
+  buttonStates,
+  setButtonStates
 }: VirtueProgressBarProps) {
   
   const router = useRouter();
@@ -73,8 +77,23 @@ export default function VirtueProgressBar({
 
   const handlePhaseClick = (phase: typeof phases[0]) => {
     if (showClickableButtons) {
+      const buttonKey = `phase-${virtueId}-${phase.name}`;
+      
+      // Prevent double-clicks
+      if (buttonStates?.[buttonKey]) return;
+      
       // Allow Discovery phase to be clicked even without assessment
       if (phase.name === 'Discovering' || hasCompletedAssessment) {
+        // Set button state to prevent double-clicks
+        if (setButtonStates) {
+          setButtonStates(prev => ({...prev, [buttonKey]: true}));
+          
+          // Reset button state after navigation
+          setTimeout(() => {
+            setButtonStates(prev => ({...prev, [buttonKey]: false}));
+          }, 1000);
+        }
+        
         router.push(phase.route);
       }
     }
@@ -89,9 +108,9 @@ export default function VirtueProgressBar({
             <div className="flex flex-col items-center">
               <button
                 onClick={() => handlePhaseClick(phase)}
-                disabled={!showClickableButtons || (!hasCompletedAssessment && phase.name !== 'Discovering')}
+                disabled={!showClickableButtons || (!hasCompletedAssessment && phase.name !== 'Discovering') || buttonStates?.[`phase-${virtueId}-${phase.name}`]}
                 className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 shadow-sm ${
-                  showClickableButtons && (hasCompletedAssessment || phase.name === 'Discovering')
+                  showClickableButtons && (hasCompletedAssessment || phase.name === 'Discovering') && !buttonStates?.[`phase-${virtueId}-${phase.name}`]
                     ? 'cursor-pointer hover:scale-105 hover:shadow-md active:scale-95 transform' 
                     : 'cursor-default opacity-60'
                 } ${
@@ -100,7 +119,7 @@ export default function VirtueProgressBar({
                     : phase.status === 'in_progress' 
                     ? 'bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200' 
                     : 'bg-gradient-to-br from-white to-gray-50 hover:from-gray-50 hover:to-gray-100'
-                }`}
+                } ${buttonStates?.[`phase-${virtueId}-${phase.name}`] ? 'animate-pulse' : ''}`}
                 style={{
                   borderColor: phase.color,
                   color: phase.status === 'completed' ? phase.color : 

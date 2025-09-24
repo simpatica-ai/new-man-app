@@ -9,9 +9,11 @@ interface VirtueRowProps {
   virtue: Virtue;
   assessmentTaken: boolean;
   getStatusClasses: (virtueId: number, stage: number) => string;
+  buttonStates?: {[key: string]: boolean};
+  setButtonStates?: (fn: (prev: {[key: string]: boolean}) => {[key: string]: boolean}) => void;
 }
 
-export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }: VirtueRowProps) {
+export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses, buttonStates, setButtonStates }: VirtueRowProps) {
   // Determine completion status for this virtue
   const dismantlingComplete = getStatusClasses(virtue.id, 1).includes('bg-green');
   const buildingComplete = getStatusClasses(virtue.id, 2).includes('bg-green');
@@ -67,6 +69,8 @@ export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses }:
           showClickableButtons={true}
           virtueId={virtue.id}
           getStatusClasses={getStatusClasses}
+          buttonStates={buttonStates}
+          setButtonStates={setButtonStates}
           className="py-2"
         />
       </div>

@@ -21,6 +21,18 @@ import VirtueProgressBar from '@/components/VirtueProgressBar'
 import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
 const generateMemoHash = (memos: Map<number, string>, stageNumber: number) => {
   const relevantMemos = [];
   for (let i = 1; i <= stageNumber; i++) {
@@ -51,7 +63,7 @@ type ChatMessage = { id: number; sender_id: string; message_text: string; create
 type StageStatus = 'not_started' | 'in_progress' | 'completed';
 
 // --- Standalone StageContent Component for Performance ---
-const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, writingPanelHeight, setWritingPanelHeight, savingMemo, completingStage }: { 
+const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, writingPanelHeight, setWritingPanelHeight, savingMemo, completingStage, buttonStates }: { 
   stage: Stage, 
   memoContent: string, 
   status: StageStatus,
@@ -62,7 +74,8 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
   writingPanelHeight: number,
   setWritingPanelHeight: (height: number) => void,
   savingMemo: boolean,
-  completingStage: boolean
+  completingStage: boolean,
+  buttonStates: {[key: string]: boolean}
 }) => {
     const empatheticTitles: { [key: number]: string } = {
       1: "Reflections on Dismantling Character Defects",
@@ -164,17 +177,17 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
                 <Button 
                   variant="outline" 
                   onClick={handleSave} 
-                  disabled={savingMemo || completingStage}
-                  className="border-stone-300 text-stone-700 hover:bg-stone-50 transition-mindful"
+                  disabled={savingMemo || completingStage || buttonStates[`save-${stage.stage_number}`]}
+                  className="border-stone-300 text-stone-700 hover:bg-stone-50 transition-mindful disabled:opacity-50"
                 >
-                  {savingMemo ? 'Saving...' : 'Save Draft'}
+                  {(savingMemo || buttonStates[`save-${stage.stage_number}`]) ? 'Saving...' : 'Save Draft'}
                 </Button>
                 <Button 
                   onClick={handleComplete} 
-                  disabled={savingMemo || completingStage}
-                  className="bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                  disabled={savingMemo || completingStage || buttonStates[`complete-${stage.stage_number}`]}
+                  className="bg-amber-600 hover:bg-amber-700 text-white transition-colors disabled:opacity-50"
                 >
-                  {completingStage ? 'Saving...' : 'Mark Complete'}
+                  {(completingStage || buttonStates[`complete-${stage.stage_number}`]) ? 'Saving...' : 'Mark Complete'}
                 </Button>
               </>
             )}
@@ -208,6 +221,15 @@ export default function VirtueDetailPage() {
   const [isPromptHidden, setIsPromptHidden] = useState(false)
   const [writingPanelHeight, setWritingPanelHeight] = useState(400)
   const [showGuideModal, setShowGuideModal] = useState(false)
+  const [buttonStates, setButtonStates] = useState<{[key: string]: boolean}>({})
+
+  // Debounced memo change handler
+  const debouncedMemoChange = useCallback(
+    debounce((stageNumber: number, content: string) => {
+      setMemos(prev => new Map(prev).set(stageNumber, content))
+    }, 300),
+    []
+  )
 
 
   const params = useParams()
@@ -576,9 +598,18 @@ export default function VirtueDetailPage() {
   };
 
   const handleSaveMemo = async (stageNumber: number) => {
-    setSavingMemo(true)
+    const buttonKey = `save-${stageNumber}`;
+    if (buttonStates[buttonKey]) return; // Prevent double-clicks
+    
+    setButtonStates(prev => ({...prev, [buttonKey]: true}));
+    setSavingMemo(true);
+    
     const memoText = memos.get(stageNumber) || ""
-    if (!currentUserId || !virtue) return
+    if (!currentUserId || !virtue) {
+      setSavingMemo(false);
+      setButtonStates(prev => ({...prev, [buttonKey]: false}));
+      return;
+    }
 
     // Client-side validation
     const validation = validateInput(memoSchema, {
@@ -591,49 +622,79 @@ export default function VirtueDetailPage() {
       console.error('Validation errors:', validation.errors)
       alert('Please check your input: ' + validation.errors.join(', '))
       setSavingMemo(false)
+      setButtonStates(prev => ({...prev, [buttonKey]: false}));
       return
     }
 
-    const saveMemoPromise = supabase.from('user_virtue_stage_memos').upsert({ 
-        user_id: currentUserId,
-        virtue_id: virtue.id,
-        stage_number: stageNumber,
-        memo_text: memoText
-    }, { onConflict: 'user_id, virtue_id, stage_number' });
-    
-    const updateProgressPromise = updateStageStatus(stageNumber, 'in_progress');
+    try {
+      const saveMemoPromise = supabase.from('user_virtue_stage_memos').upsert({ 
+          user_id: currentUserId,
+          virtue_id: virtue.id,
+          stage_number: stageNumber,
+          memo_text: memoText
+      }, { onConflict: 'user_id, virtue_id, stage_number' });
+      
+      const updateProgressPromise = updateStageStatus(stageNumber, 'in_progress');
 
-    const [memoResult, progressResult] = await Promise.all([saveMemoPromise, updateProgressPromise]);
+      const [memoResult, progressResult] = await Promise.all([saveMemoPromise, updateProgressPromise]);
 
-    if (memoResult.error || progressResult.error) {
-      console.error("Error saving memo:", memoResult.error?.message || progressResult.error?.message);
+      if (memoResult.error || progressResult.error) {
+        console.error("Error saving memo:", memoResult.error?.message || progressResult.error?.message);
+      } else {
+        // Update local state instead of full refetch
+        setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'in_progress'));
+        
+        // Refresh prompt only if needed
+        if (stageNumber === 1) {
+          fetchStage1Prompt();
+        } else if (stageNumber === 2) {
+          fetchStage2Prompt();
+        } else if (stageNumber === 3) {
+          fetchStage3Prompt();
+        }
+      }
+    } catch (error) {
+      console.error("Error saving memo:", error);
+    } finally {
+      setSavingMemo(false);
+      setButtonStates(prev => ({...prev, [buttonKey]: false}));
     }
-    await fetchPageData();
-    
-    if (stageNumber === 1) {
-      fetchStage1Prompt();
-    } else if (stageNumber === 2) {
-      fetchStage2Prompt();
-    } else if (stageNumber === 3) {
-      fetchStage3Prompt();
-    }
-    setSavingMemo(false)
   }
 
   const handleCompleteStage = async (stageNumber: number) => {
-    setCompletingStage(true)
-    if (!virtue) return;
-    const { error } = await updateStageStatus(stageNumber, 'completed');
-    if (error) console.error("Error completing stage:", error.message);
-    await fetchPageData();
+    const buttonKey = `complete-${stageNumber}`;
+    if (buttonStates[buttonKey]) return; // Prevent double-clicks
     
-    // Refresh prompts for subsequent stages when a stage is completed
-    if (stageNumber === 1 && displayedStageNumber === 2) {
-      fetchStage2Prompt();
-    } else if (stageNumber === 2 && displayedStageNumber === 3) {
-      fetchStage3Prompt();
+    setButtonStates(prev => ({...prev, [buttonKey]: true}));
+    setCompletingStage(true);
+    
+    if (!virtue) {
+      setCompletingStage(false);
+      setButtonStates(prev => ({...prev, [buttonKey]: false}));
+      return;
     }
-    setCompletingStage(false)
+    
+    try {
+      const { error } = await updateStageStatus(stageNumber, 'completed');
+      if (error) {
+        console.error("Error completing stage:", error.message);
+      } else {
+        // Update local state instead of full refetch
+        setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'completed'));
+        
+        // Refresh prompts for subsequent stages when a stage is completed
+        if (stageNumber === 1 && displayedStageNumber === 2) {
+          fetchStage2Prompt();
+        } else if (stageNumber === 2 && displayedStageNumber === 3) {
+          fetchStage3Prompt();
+        }
+      }
+    } catch (error) {
+      console.error("Error completing stage:", error);
+    } finally {
+      setCompletingStage(false);
+      setButtonStates(prev => ({...prev, [buttonKey]: false}));
+    }
   };
   
   const handleSendChatMessage = async () => {
@@ -866,7 +927,7 @@ export default function VirtueDetailPage() {
                             stage={stageData} 
                             memoContent={memos.get(stageNum) || ''}
                             status={status}
-                            onMemoChange={(html) => setMemos(prev => new Map(prev).set(stageNum, html))}
+                            onMemoChange={(html) => debouncedMemoChange(stageNum, html)}
                             onSaveMemo={() => handleSaveMemo(stageNum)}
                             onCompleteStage={() => handleCompleteStage(stageNum)}
                             onEditStage={() => handleEditStage(stageNum)}
@@ -874,6 +935,7 @@ export default function VirtueDetailPage() {
                             setWritingPanelHeight={setWritingPanelHeight}
                             savingMemo={savingMemo}
                             completingStage={completingStage}
+                            buttonStates={buttonStates}
                           />
                         }
                       </TabsContent>
