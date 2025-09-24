@@ -1,10 +1,12 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { UserCheck, BookOpen, Edit, Sparkles } from 'lucide-react'
+import { UserCheck, BookOpen, Edit, Sparkles, Target } from 'lucide-react'
 import VirtueRoseChart from '../VirtueRoseChart'
+import ReactMarkdown from 'react-markdown'
 import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
 
 interface ActionCardsProps {
@@ -12,14 +14,19 @@ interface ActionCardsProps {
   virtues: Virtue[];
   connection: Connection | null;
   lastJournalEntry: string | null;
+  progress: Map<string, string>;
 }
 
 export default function ActionCards({ 
   assessmentTaken, 
   virtues, 
   connection, 
-  lastJournalEntry 
+  lastJournalEntry,
+  progress 
 }: ActionCardsProps) {
+  const [dashboardPrompt, setDashboardPrompt] = useState<string>('');
+  const [promptLoading, setPromptLoading] = useState(false);
+
   const calculateDaysSince = (dateString: string | null): number | null => {
     if (!dateString) return null;
     const lastDate = new Date(dateString);
@@ -30,10 +37,153 @@ export default function ActionCards({
     return Math.floor(differenceInTime / (1000 * 3600 * 24));
   };
 
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { Button } from '../ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { UserCheck, BookOpen, Edit, Sparkles, Target } from 'lucide-react'
+import VirtueRoseChart from '../VirtueRoseChart'
+import ReactMarkdown from 'react-markdown'
+import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
+import { supabase } from '@/lib/supabaseClient'
+
+interface ActionCardsProps {
+  assessmentTaken: boolean;
+  virtues: Virtue[];
+  connection: Connection | null;
+  lastJournalEntry: string | null;
+  progress: Map<string, string>;
+}
+
+export default function ActionCards({ 
+  assessmentTaken, 
+  virtues, 
+  connection, 
+  lastJournalEntry,
+  progress 
+}: ActionCardsProps) {
+  const [dashboardPrompt, setDashboardPrompt] = useState<string>('');
+  const [promptLoading, setPromptLoading] = useState(false);
+
+  const calculateDaysSince = (dateString: string | null): number | null => {
+    if (!dateString) return null;
+    const lastDate = new Date(dateString);
+    const today = new Date();
+    lastDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    const differenceInTime = today.getTime() - lastDate.getTime();
+    return Math.floor(differenceInTime / (1000 * 3600 * 24));
+  };
+
+  const fetchDashboardPrompt = async () => {
+    if (!assessmentTaken || virtues.length === 0) return;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Create a hash of current progress state
+    const progressHash = Array.from(progress.entries()).sort().join('|');
+    
+    // Check database cache first (using stage_number 0 for dashboard prompts)
+    const { data: cachedPrompt } = await supabase
+      .from('user_virtue_ai_prompts')
+      .select('prompt_text, memo_hash')
+      .eq('user_id', user.id)
+      .eq('virtue_id', virtues[0]?.id || 1) // Use first virtue ID as reference
+      .eq('stage_number', 0) // Special stage number for dashboard prompts
+      .maybeSingle();
+
+    if (cachedPrompt && cachedPrompt.memo_hash === progressHash && cachedPrompt.prompt_text) {
+      setDashboardPrompt(cachedPrompt.prompt_text);
+      return;
+    }
+    
+    setPromptLoading(true);
+    try {
+      const prioritizedVirtues = virtues.map(v => ({
+        virtue: v.name,
+        defectIntensity: 10 - (v.virtue_score || 0),
+        virtueId: v.id
+      }));
+
+      const stageProgress: {[key: string]: string} = {};
+      progress.forEach((status, key) => {
+        stageProgress[key] = status;
+      });
+
+      const response = await fetch('https://getdashboardprompt-917009769018.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assessmentSummary: 'Assessment completed - virtue development journey in progress',
+          prioritizedVirtues,
+          stageProgress,
+          recentProgress: 'Dashboard accessed',
+          isFirstTime: progress.size === 0
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const prompt = data.prompt || 'Continue your virtue development journey by selecting a stage to work on.';
+        setDashboardPrompt(prompt);
+        
+        // Cache the result in database
+        await supabase.from('user_virtue_ai_prompts').upsert({
+          user_id: user.id,
+          virtue_id: virtues[0]?.id || 1,
+          stage_number: 0, // Special stage number for dashboard prompts
+          prompt_text: prompt,
+          memo_hash: progressHash
+        }, { onConflict: 'user_id,virtue_id,stage_number' });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard prompt:', error);
+      setDashboardPrompt('Continue your virtue development journey by selecting a stage to work on.');
+    } finally {
+      setPromptLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardPrompt();
+  }, [assessmentTaken, virtues.length, progress.size]);
+
   const daysSinceJournal = calculateDaysSince(lastJournalEntry);
 
   return (
     <div className="space-y-6">
+      {assessmentTaken && virtues.length > 0 && (
+        <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
+          <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
+            <Target className="h-8 w-8 text-amber-700" />
+            <div>
+              <CardTitle className="text-stone-800 font-medium">Your Next Step</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {promptLoading ? (
+              <div className="space-y-3">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-3 bg-stone-300/40 rounded w-full"></div>
+                  <div className="h-3 bg-stone-300/40 rounded w-5/6"></div>
+                  <div className="h-3 bg-stone-300/40 rounded w-4/6"></div>
+                </div>
+                <p className="text-stone-600 text-xs font-light animate-pulse">
+                  Generating your personalized guidance...
+                </p>
+              </div>
+            ) : (
+              <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none [&>p]:mb-6">
+                <ReactMarkdown>{dashboardPrompt}</ReactMarkdown>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
           <BookOpen className="h-8 w-8 text-amber-700" />

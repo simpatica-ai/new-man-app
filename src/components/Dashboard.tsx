@@ -131,6 +131,7 @@ export default function Dashboard() {
                 virtues={virtues}
                 connection={connection}
                 lastJournalEntry={lastJournalEntry}
+                progress={progress}
               />
             </div>
           </div>
