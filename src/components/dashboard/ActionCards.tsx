@@ -8,45 +8,6 @@ import { UserCheck, BookOpen, Edit, Sparkles, Target } from 'lucide-react'
 import VirtueRoseChart from '../VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
-
-interface ActionCardsProps {
-  assessmentTaken: boolean;
-  virtues: Virtue[];
-  connection: Connection | null;
-  lastJournalEntry: string | null;
-  progress: Map<string, string>;
-}
-
-export default function ActionCards({ 
-  assessmentTaken, 
-  virtues, 
-  connection, 
-  lastJournalEntry,
-  progress 
-}: ActionCardsProps) {
-  const [dashboardPrompt, setDashboardPrompt] = useState<string>('');
-  const [promptLoading, setPromptLoading] = useState(false);
-
-  const calculateDaysSince = (dateString: string | null): number | null => {
-    if (!dateString) return null;
-    const lastDate = new Date(dateString);
-    const today = new Date();
-    lastDate.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-    const differenceInTime = today.getTime() - lastDate.getTime();
-    return Math.floor(differenceInTime / (1000 * 3600 * 24));
-  };
-
-'use client'
-
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '../ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { UserCheck, BookOpen, Edit, Sparkles, Target } from 'lucide-react'
-import VirtueRoseChart from '../VirtueRoseChart'
-import ReactMarkdown from 'react-markdown'
-import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
 import { supabase } from '@/lib/supabaseClient'
 
 interface ActionCardsProps {
