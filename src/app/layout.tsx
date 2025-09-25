@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import QueryProvider from "@/components/QueryProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/Toast";
+import ActivityTracker from "@/components/ActivityTracker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <QueryProvider>
+            <ActivityTracker />
             {children}
           </QueryProvider>
           <ToastContainer />

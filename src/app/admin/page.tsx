@@ -14,6 +14,7 @@ import { Users, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 import CloudRunMonitor from '@/components/CloudRunMonitor';
 import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
 import VirtueAIPanel from '@/components/admin/VirtueAIPanel';
+import UserActivityMonitor from '@/components/admin/UserActivityMonitor';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -72,7 +73,12 @@ export default function AdminPage() {
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
   const [alphaFeedback, setAlphaFeedback] = useState<AlphaFeedback[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [userActivities, setUserActivities] = useState<{user_id: string, is_online: boolean, current_page: string | null}[]>([]);
   const router = useRouter();
+
+  const handleActivityUpdate = (activities: {user_id: string, is_online: boolean, current_page: string | null}[]) => {
+    setUserActivities(activities);
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -250,6 +256,8 @@ export default function AdminPage() {
               <CardDescription>View all practitioners and perform administrative actions.</CardDescription>
             </CardHeader>
             <CardContent>
+              <UserActivityMonitor onActivityUpdate={handleActivityUpdate} />
+              
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -277,6 +285,11 @@ export default function AdminPage() {
                           {p.user_status === 'pending_confirmation' && (
                             <Badge variant="outline" className="text-xs text-amber-700 border-amber-300 bg-amber-50">
                               Pending
+                            </Badge>
+                          )}
+                          {userActivities.find(a => a.user_id === p.id && a.is_online) && (
+                            <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
+                              Online
                             </Badge>
                           )}
                         </div>
