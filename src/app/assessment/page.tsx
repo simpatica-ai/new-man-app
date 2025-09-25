@@ -56,12 +56,12 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
     onRatingChange: (name: string, value: string) => void;
     onHarmChange: (name: string, value: string) => void;
 }) => (
-    <div className="flex flex-col p-2 md:p-3 border border-stone-200 rounded-lg bg-white hover:shadow-sm transition-all duration-200">
-        <div className="flex items-start gap-2 mb-2">
+    <div className="flex flex-col p-3 border border-stone-200 rounded-lg bg-white hover:shadow-sm transition-all duration-200">
+        <div className="flex items-start gap-2 mb-3">
             <div className="text-amber-600 mt-0.5 flex-shrink-0">{getDefectIcon(defect.icon_name)}</div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                    <h3 className="font-medium text-stone-800 text-sm leading-tight truncate">{defect.name}</h3>
+                    <h3 className="font-medium text-stone-800 text-sm leading-tight">{defect.name}</h3>
                     <TooltipProvider delayDuration={100}>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -78,43 +78,51 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
             </div>
         </div>
         
-        <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-6">
+        <div className="space-y-4">
+            {/* Frequency Question */}
             <div>
-                <label className="text-xs font-medium text-stone-600 mb-1 block">Frequency</label>
+                <label className="text-xs font-medium text-stone-600 mb-2 block">Frequency</label>
                 <RadioGroup 
                     onValueChange={(value) => onRatingChange(defect.name, value)} 
                     value={String(rating || '')} 
-                    className="flex items-center justify-between gap-0.5 md:gap-1"
+                    className="flex items-center justify-between gap-1"
                 >
                     {[1,2,3,4,5].map(value => (
                         <div key={value} className="flex flex-col items-center space-y-1 flex-1">
-                            <Label htmlFor={`${defect.name}-${value}`} className="text-xs text-stone-500 cursor-pointer text-center leading-tight px-1">
-                                {['Never','Rarely','Sometimes','Often','Always'][value-1]}
-                            </Label>
                             <RadioGroupItem 
                                 value={String(value)} 
-                                id={`${defect.name}-${value}`}
+                                id={`${defect.name}-freq-${value}`}
                                 className="w-4 h-4 border-2 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600 hover:border-amber-400"
                             />
+                            <Label htmlFor={`${defect.name}-freq-${value}`} className="text-xs text-stone-500 cursor-pointer text-center leading-tight px-1">
+                                {['Never','Rarely','Sometimes','Often','Always'][value-1]}
+                            </Label>
                         </div>
                     ))}
                 </RadioGroup>
             </div>
             
+            {/* Impact Question */}
             <div>
-                <label className="text-xs font-medium text-stone-600 mb-1 block">Impact</label>
-                <Select onValueChange={(value) => onHarmChange(defect.name, value)} value={harmLevel || ''}>
-                    <SelectTrigger className="w-full bg-white text-xs h-8">
-                        <SelectValue placeholder="Select impact" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Minimal">Minimal</SelectItem>
-                        <SelectItem value="Moderate">Moderate</SelectItem>
-                        <SelectItem value="Significant">Significant</SelectItem>
-                        <SelectItem value="Severe">Severe</SelectItem>
-                    </SelectContent>
-                </Select>
+                <label className="text-xs font-medium text-stone-600 mb-2 block">Impact</label>
+                <RadioGroup 
+                    onValueChange={(value) => onHarmChange(defect.name, value)} 
+                    value={harmLevel || 'Moderate'}
+                    className="flex items-center justify-between gap-1"
+                >
+                    {['None', 'Minimal', 'Moderate', 'Significant', 'Severe'].map(impact => (
+                        <div key={impact} className="flex flex-col items-center space-y-1 flex-1">
+                            <RadioGroupItem 
+                                value={impact} 
+                                id={`${defect.name}-impact-${impact}`}
+                                className="w-4 h-4 border-2 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600 hover:border-amber-400"
+                            />
+                            <Label htmlFor={`${defect.name}-impact-${impact}`} className="text-xs text-stone-500 cursor-pointer text-center leading-tight px-1">
+                                {impact}
+                            </Label>
+                        </div>
+                    ))}
+                </RadioGroup>
             </div>
         </div>
     </div>
@@ -166,7 +174,7 @@ export default function AssessmentPage() {
     const [showEncouragementDialog, setShowEncouragementDialog] = useState(false);
     const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
 
-    const itemsPerPage = 8;
+    const itemsPerPage = 9;
 
     // Pagination
     const currentDefects = defects.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
@@ -179,6 +187,17 @@ export default function AssessmentPage() {
     const answeredPanels = Math.ceil(answeredCount / itemsPerPage);
     const totalPanels = totalPages;
     const progress = Math.round((answeredPanels / totalPanels) * 100);
+
+    // Initialize default impact values when defects load
+    useEffect(() => {
+        if (defects.length > 0 && Object.keys(harmLevels).length === 0) {
+            const defaultHarmLevels: HarmLevels = {};
+            defects.forEach(defect => {
+                defaultHarmLevels[defect.name] = 'Moderate';
+            });
+            setHarmLevels(defaultHarmLevels);
+        }
+    }, [defects, harmLevels]);
 
     // --- AI Analysis Trigger ---
     const triggerAndSaveAnalyses = async (assessmentId: number, user: { id: string }, resultsToAnalyze: Result[], ratingsForPrompt: Ratings, harmLevelsForPrompt: HarmLevels) => {
@@ -697,13 +716,13 @@ export default function AssessmentPage() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="p-3">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                                             {currentDefects.map((defect) => (
                                                 <DefectRow 
                                                     key={defect.name} 
                                                     defect={defect} 
                                                     rating={ratings[defect.name]}
-                                                    harmLevel={harmLevels[defect.name]}
+                                                    harmLevel={harmLevels[defect.name] || 'Moderate'}
                                                     onRatingChange={handleRatingChange}
                                                     onHarmChange={handleHarmChange}
                                                 />
