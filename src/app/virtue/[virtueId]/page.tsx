@@ -567,7 +567,7 @@ export default function VirtueDetailPage() {
   }, [virtue, defectAnalysis, virtueId, currentUserId, memos, progress]);
 
   useEffect(() => {
-    if (virtue && defectAnalysis) {
+    if (virtue && currentUserId) {
       if (displayedStageNumber === 1) {
         fetchStage1Prompt();
       } else if (displayedStageNumber === 2) {
@@ -576,7 +576,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, defectAnalysis]); // Removed fetch functions from dependencies
+  }, [displayedStageNumber, virtue, currentUserId]); // Removed defectAnalysis requirement
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
