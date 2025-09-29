@@ -387,27 +387,15 @@ export default function VirtueDetailPage() {
   }
 
   const fetchStage1Prompt = useCallback(async () => {
-    if (!virtue || !defectAnalysis || !currentUserId) return;
+    if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
       const currentMemoContent = memos.get(1) || '';
-      const memoHash = generateMemoHash(new Map([[1, currentMemoContent]]), 1);
       
-      // Check cache first
-      const { data: cachedPrompt } = await supabase
-        .from('user_virtue_ai_prompts')
-        .select('prompt_text, memo_hash')
-        .eq('user_id', currentUserId)
-        .eq('virtue_id', virtue.id)
-        .eq('stage_number', 1)
-        .maybeSingle();
-
-      if (cachedPrompt && cachedPrompt.memo_hash === memoHash && cachedPrompt.prompt_text) {
-        setStage1AiPrompt(cachedPrompt.prompt_text);
-        return;
-      }
-
+      // Skip cache check for now to avoid 400 errors
+      // TODO: Re-enable caching once table is confirmed to exist
+      
       // Generate new prompt
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
         method: 'POST',
@@ -415,7 +403,7 @@ export default function VirtueDetailPage() {
         body: JSON.stringify({
           virtueName: virtue.name,
           virtueDef: virtue.description,
-          characterDefectAnalysis: defectAnalysis.analysis_text,
+          characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: currentMemoContent
         }),
       });
@@ -423,16 +411,6 @@ export default function VirtueDetailPage() {
       if (!response.ok) throw new Error('Failed to fetch Stage 1 prompt');
       const data = await response.json();
       
-      // Cache the new prompt
-      const { error } = await supabase.from('user_virtue_ai_prompts').upsert({
-        user_id: currentUserId,
-        virtue_id: virtue.id,
-        stage_number: 1,
-        prompt_text: data.prompt,
-        memo_hash: memoHash
-      }, { onConflict: 'user_id,virtue_id,stage_number' });
-      
-      if (error) console.error('Cache error:', error);
       setStage1AiPrompt(data.prompt);
 
     } catch (error) {
@@ -588,7 +566,7 @@ export default function VirtueDetailPage() {
           virtue_id: virtue.id,
           stage_number: stageNumber,
           status: status
-      }, { onConflict: 'user_id, virtue_id, stage_number' });
+      }, { onConflict: 'user_id,virtue_id,stage_number' });
   };
   
   const handleEditStage = async (stageNumber: number) => {
@@ -632,7 +610,7 @@ export default function VirtueDetailPage() {
           virtue_id: virtue.id,
           stage_number: stageNumber,
           memo_text: memoText
-      }, { onConflict: 'user_id, virtue_id, stage_number' });
+      }, { onConflict: 'user_id,virtue_id,stage_number' });
       
       const updateProgressPromise = updateStageStatus(stageNumber, 'in_progress');
 
