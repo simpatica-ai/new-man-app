@@ -44,22 +44,8 @@ export default function ActionCards({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Create a hash of current progress state
-    const progressHash = Array.from(progress.entries()).sort().join('|');
-    
-    // Check database cache first (using stage_number 0 for dashboard prompts)
-    const { data: cachedPrompt } = await supabase
-      .from('user_virtue_ai_prompts')
-      .select('prompt_text, memo_hash')
-      .eq('user_id', user.id)
-      .eq('virtue_id', virtues[0]?.id || 1) // Use first virtue ID as reference
-      .eq('stage_number', 0) // Special stage number for dashboard prompts
-      .maybeSingle();
-
-    if (cachedPrompt && cachedPrompt.memo_hash === progressHash && cachedPrompt.prompt_text) {
-      setDashboardPrompt(cachedPrompt.prompt_text);
-      return;
-    }
+    // Skip cache check for now to avoid 400 errors
+    // TODO: Re-enable caching once table is confirmed to exist
     
     setPromptLoading(true);
     try {
@@ -90,15 +76,6 @@ export default function ActionCards({
         const data = await response.json();
         const prompt = data.prompt || 'Continue your virtue development journey by selecting a stage to work on.';
         setDashboardPrompt(prompt);
-        
-        // Cache the result in database
-        await supabase.from('user_virtue_ai_prompts').upsert({
-          user_id: user.id,
-          virtue_id: virtues[0]?.id || 1,
-          stage_number: 0, // Special stage number for dashboard prompts
-          prompt_text: prompt,
-          memo_hash: progressHash
-        }, { onConflict: 'user_id,virtue_id,stage_number' });
       }
     } catch (error) {
       console.error('Error fetching dashboard prompt:', error);

@@ -422,28 +422,13 @@ export default function VirtueDetailPage() {
   }, [virtue, defectAnalysis, currentUserId, memos]);
 
   const fetchStage2Prompt = useCallback(async () => {
-    if (!virtue || !defectAnalysis || !currentUserId) return;
+    if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
       const stage1Status = progress.get(`${virtueId}-1`);
       const currentMemoContent = memos.get(2) || '';
-      const memoHash = generateMemoHash(new Map([[2, currentMemoContent]]), 2) + `|${stage1Status}`;
       
-      // Check cache first
-      const { data: cachedPrompt } = await supabase
-        .from('user_virtue_ai_prompts')
-        .select('prompt_text, memo_hash')
-        .eq('user_id', currentUserId)
-        .eq('virtue_id', virtue.id)
-        .eq('stage_number', 2)
-        .maybeSingle();
-
-      if (cachedPrompt && cachedPrompt.memo_hash === memoHash && cachedPrompt.prompt_text) {
-        setStage2AiPrompt(cachedPrompt.prompt_text);
-        return;
-      }
-
       // Generate new prompt
       const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
         method: 'POST',
@@ -451,7 +436,7 @@ export default function VirtueDetailPage() {
         body: JSON.stringify({
           virtueName: virtue.name,
           virtueDef: virtue.description,
-          characterDefectAnalysis: defectAnalysis.analysis_text,
+          characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: memos.get(1) || '',
           stage2MemoContent: currentMemoContent,
           stage1Complete: stage1Status === 'completed'
@@ -461,16 +446,6 @@ export default function VirtueDetailPage() {
       if (!response.ok) throw new Error('Failed to fetch Stage 2 prompt');
       const data = await response.json();
       
-      // Cache the new prompt
-      const { error } = await supabase.from('user_virtue_ai_prompts').upsert({
-        user_id: currentUserId,
-        virtue_id: virtue.id,
-        stage_number: 2,
-        prompt_text: data.prompt,
-        memo_hash: memoHash
-      }, { onConflict: 'user_id,virtue_id,stage_number' });
-      
-      if (error) console.error('Cache error:', error);
       setStage2AiPrompt(data.prompt);
 
     } catch (error) {
@@ -482,29 +457,14 @@ export default function VirtueDetailPage() {
   }, [virtue, defectAnalysis, virtueId, currentUserId, memos, progress]);
 
   const fetchStage3Prompt = useCallback(async () => {
-    if (!virtue || !defectAnalysis || !currentUserId) return;
+    if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
       const stage1Status = progress.get(`${virtueId}-1`);
       const stage2Status = progress.get(`${virtueId}-2`);
       const currentMemoContent = memos.get(3) || '';
-      const memoHash = generateMemoHash(new Map([[3, currentMemoContent]]), 3) + `|${stage1Status}|${stage2Status}`;
       
-      // Check cache first
-      const { data: cachedPrompt } = await supabase
-        .from('user_virtue_ai_prompts')
-        .select('prompt_text, memo_hash')
-        .eq('user_id', currentUserId)
-        .eq('virtue_id', virtue.id)
-        .eq('stage_number', 3)
-        .maybeSingle();
-
-      if (cachedPrompt && cachedPrompt.memo_hash === memoHash && cachedPrompt.prompt_text) {
-        setStage3AiPrompt(cachedPrompt.prompt_text);
-        return;
-      }
-
       // Generate new prompt
       const response = await fetch('https://getstage3-917009769018.us-central1.run.app', {
         method: 'POST',
@@ -512,7 +472,7 @@ export default function VirtueDetailPage() {
         body: JSON.stringify({
           virtueName: virtue.name,
           virtueDef: virtue.description,
-          characterDefectAnalysis: defectAnalysis.analysis_text,
+          characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: memos.get(1) || '',
           stage2MemoContent: memos.get(2) || '',
           stage3MemoContent: currentMemoContent,
@@ -524,16 +484,6 @@ export default function VirtueDetailPage() {
       if (!response.ok) throw new Error('Failed to fetch Stage 3 prompt');
       const data = await response.json();
       
-      // Cache the new prompt
-      const { error } = await supabase.from('user_virtue_ai_prompts').upsert({
-        user_id: currentUserId,
-        virtue_id: virtue.id,
-        stage_number: 3,
-        prompt_text: data.prompt,
-        memo_hash: memoHash
-      }, { onConflict: 'user_id,virtue_id,stage_number' });
-      
-      if (error) console.error('Cache error:', error);
       setStage3AiPrompt(data.prompt);
 
     } catch (error) {
