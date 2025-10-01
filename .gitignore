@@ -42,3 +42,11 @@ next-env.d.ts
 
 # docs folder
 /docs
+
+# Backup files (contain sensitive data)
+backup_*.sql
+production_env_backup.txt
+backup_env.sh
+
+# Q CLI TODO lists (optional - remove this line if you want to commit them)
+.amazonq/
