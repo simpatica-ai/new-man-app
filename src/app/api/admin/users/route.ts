@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Get all sponsor profiles
     const sponsorIds = connections?.filter(c => c.status === 'active').map(c => c.sponsor_user_id) || []
-    let sponsorProfiles: any[] = []
+    let sponsorProfiles: { id: string; full_name: string }[] = []
     if (sponsorIds.length > 0) {
       const { data: sponsorData, error: sponsorError } = await supabase
         .from('profiles')

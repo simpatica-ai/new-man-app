@@ -46,8 +46,8 @@ export function AuthCard() {
             text: 'Account created! Please check your email to confirm your account.' 
           })
         }
-      } catch (error: any) {
-        setMessage({ type: 'error', text: error.message })
+      } catch (error) {
+        setMessage({ type: 'error', text: error instanceof Error ? error.message : 'An error occurred' })
       }
     }
     setLoading(false);

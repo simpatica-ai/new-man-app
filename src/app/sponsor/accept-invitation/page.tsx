@@ -32,7 +32,7 @@ function AcceptInvitationContent() {
     }
 
     const fetchInvitation = async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('sponsor_relationships')
         .select(`
           id,
@@ -87,7 +87,7 @@ function AcceptInvitationContent() {
       if (!userId) throw new Error('Failed to create or authenticate user')
 
       // Update the invitation
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('sponsor_relationships')
         .update({
           sponsor_id: userId,
@@ -98,8 +98,8 @@ function AcceptInvitationContent() {
       if (updateError) throw updateError
 
       setSuccess(true)
-    } catch (error: any) {
-      setError(error.message || 'Failed to accept invitation')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to accept invitation')
     } finally {
       setLoading(false)
     }

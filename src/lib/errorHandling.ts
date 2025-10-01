@@ -4,10 +4,10 @@ import { logError } from '@/lib/errorLogging'
 export interface AppError {
   message: string
   code?: string
-  details?: any
+  details?: unknown
 }
 
-export function createError(message: string, code?: string, details?: any): AppError {
+export function createError(message: string, code?: string, details?: unknown): AppError {
   return { message, code, details }
 }
 
@@ -21,7 +21,7 @@ export function handleError(error: unknown, context?: string, userId?: string): 
   
   // Supabase errors
   if (error && typeof error === 'object' && 'message' in error) {
-    const supabaseError = error as any
+    const supabaseError = error as { message?: string; code?: string }
     
     if (supabaseError.code === '23505') {
       return createError('This record already exists', 'DUPLICATE_RECORD')

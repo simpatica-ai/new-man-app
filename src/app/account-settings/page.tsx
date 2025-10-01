@@ -67,7 +67,7 @@ export default function AccountSettingsPage() {
       .eq('id', currentUser.id)
       .single();
 
-    const connectionPromise = (supabase as any)
+    const connectionPromise = supabase
       .from('sponsor_relationships')
       .select(`
         id,
@@ -178,7 +178,7 @@ export default function AccountSettingsPage() {
     
     try {
       // Check if practitioner already has a pending or active relationship
-      const { data: existingRelationship } = await (supabase as any)
+      const { data: existingRelationship } = await supabase
         .from('sponsor_relationships')
         .select('id')
         .eq('practitioner_id', user!.id)
@@ -191,7 +191,7 @@ export default function AccountSettingsPage() {
       }
 
       // Check if sponsor email is already a sponsor for someone else
-      const { data: existingSponsor } = await (supabase as any)
+      const { data: existingSponsor } = await supabase
         .from('sponsor_relationships')
         .select('id')
         .eq('sponsor_email', sponsorEmail)
@@ -199,7 +199,7 @@ export default function AccountSettingsPage() {
         .maybeSingle();
 
       // Create invitation with email
-      const { data: relationship, error: insertError } = await (supabase as any)
+      const { data: relationship, error: insertError } = await supabase
         .from('sponsor_relationships')
         .insert({
           practitioner_id: user!.id,
@@ -253,7 +253,7 @@ export default function AccountSettingsPage() {
     setMessage(null);
     
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('sponsor_relationships')
         .delete()
         .eq('id', connection.id);

@@ -16,12 +16,12 @@ export async function logError(
   error: unknown,
   context: string,
   userId?: string,
-  additionalData?: Record<string, any>
+  additionalData?: Record<string, unknown>
 ) {
   try {
     const errorLog: Omit<ErrorLog, 'id' | 'created_at'> = {
       error_message: error instanceof Error ? error.message : String(error),
-      error_code: (error as any)?.code || 'UNKNOWN',
+      error_code: (error as { code?: string })?.code || 'UNKNOWN',
       context,
       user_id: userId,
       user_agent: typeof window !== 'undefined' ? navigator.userAgent : undefined,
@@ -67,7 +67,7 @@ export async function getErrorSummary(days = 7) {
       .gte('created_at', startDate.toISOString())
 
     // Group by context and error_code
-    const summary = (fallbackData || []).reduce((acc: any, log) => {
+    const summary = (fallbackData || []).reduce((acc: Record<string, { context: string; error_code: string; error_message: string; count: number }>, log) => {
       const key = `${log.context}:${log.error_code}`
       if (!acc[key]) {
         acc[key] = {

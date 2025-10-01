@@ -65,7 +65,7 @@ export async function getDefectsWithVirtues(): Promise<DefectWithVirtues[]> {
         category: defect.category,
         definition: defect.definition,
         icon_name: defect.icon_name,
-        virtues: virtueRelations.map((rel: any) => rel.virtues.name)
+        virtues: virtueRelations.map((rel: { virtues: { name: string } }) => rel.virtues.name)
       };
     }) || [];
 

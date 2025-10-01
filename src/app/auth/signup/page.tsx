@@ -59,8 +59,8 @@ function SignupContent() {
       setUserEmail(formData.email)
       setEmailSent(true)
       setSuccess(true)
-    } catch (error: any) {
-      setError(error.message || 'Failed to create account')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to create account')
     } finally {
       setLoading(false)
     }

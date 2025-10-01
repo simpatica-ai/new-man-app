@@ -23,7 +23,7 @@ export default function ErrorMonitoring() {
       ])
       setErrorLogs(logs)
       setErrorSummary(summary)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to load error data:', error)
       // Handle missing table gracefully
       if (error?.code === 'PGRST205' || error?.message?.includes('error_logs')) {

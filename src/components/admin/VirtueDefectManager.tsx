@@ -69,7 +69,7 @@ export default function VirtueDefectManager() {
       const transformedVirtues = virtuesData?.map(virtue => ({
         id: virtue.id,
         name: virtue.name,
-        defects: virtue.defects_virtues?.map((dv: any) => dv.defects) || []
+        defects: virtue.defects_virtues?.map((dv: { defects: { id: number; name: string } }) => dv.defects) || []
       })) || [];
 
       console.log('Transformed virtues:', transformedVirtues);

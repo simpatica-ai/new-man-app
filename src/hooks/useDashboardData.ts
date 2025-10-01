@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabaseClient'
 import { Virtue, Connection, StageProgress } from '@/lib/constants'
 
 // Debounce utility
-const debounce = (func: Function, wait: number) => {
+const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
   let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: any[]) {
+  return function executedFunction(...args: Parameters<T>) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
@@ -100,7 +100,7 @@ export function useDashboardData() {
         if (assessments && assessments.length > 0) {
           const latestAssessment = assessments[0];
           if (latestAssessment?.user_assessment_results && latestAssessment.user_assessment_results.length > 0) {
-            const results = latestAssessment.user_assessment_results.map((result: any) => ({
+            const results = latestAssessment.user_assessment_results.map((result: { virtue_name: string; defect_intensity: number }) => ({
               virtue: result.virtue_name === 'Healthy Boundaries' ? 'Boundaries' : result.virtue_name,
               score: Math.max(0, Math.min(10, result.defect_intensity)) // This should be the virtue score (0-10)
             }));

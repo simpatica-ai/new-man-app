@@ -47,7 +47,7 @@ export default function MappingAnalysis() {
       const mappings = virtuesData?.map(virtue => ({
         virtue: virtue.name,
         virtue_description: virtue.description,
-        defects: virtue.defects_virtues?.map((dv: any) => ({
+        defects: virtue.defects_virtues?.map((dv: { defects: { name: string; definition: string } }) => ({
           name: dv.defects.name,
           definition: dv.defects.definition
         })) || [],

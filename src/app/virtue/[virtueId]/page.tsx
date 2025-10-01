@@ -21,9 +21,9 @@ import VirtueProgressBar from '@/components/VirtueProgressBar'
 import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
-const debounce = (func: Function, wait: number) => {
+const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
   let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: any[]) {
+  return function executedFunction(...args: Parameters<T>) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
