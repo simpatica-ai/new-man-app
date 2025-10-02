@@ -326,7 +326,7 @@ export default function VirtueRoseChart({
     centerCircle.setAttribute('stroke-width', '1');
     svg.appendChild(centerCircle);
     
-  }, [data, dimensions, center, radius, showLabels, forPdf, windowWidth, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
+  }, [data, dimensions, center, centerY, radius, showLabels, forPdf, windowWidth, getColorByScore, handleMouseOver, handleMouseOut, getLabelPositioning]);
 
   return (
     <div 

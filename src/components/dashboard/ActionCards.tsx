@@ -88,7 +88,7 @@ export default function ActionCards({
 
   useEffect(() => {
     fetchDashboardPrompt();
-  }, [assessmentTaken, virtues.length, progress.size]);
+  }, [assessmentTaken, virtues.length, progress.size, fetchDashboardPrompt]);
 
   const daysSinceJournal = calculateDaysSince(lastJournalEntry);
 

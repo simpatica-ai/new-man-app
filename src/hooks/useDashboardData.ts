@@ -30,10 +30,13 @@ export function useDashboardData() {
 
   // Debounced data refresh
   const debouncedRefresh = useCallback(
-    debounce(() => {
-      getDashboardData();
-    }, 500),
-    []
+    () => {
+      const debouncedFn = debounce(() => {
+        getDashboardData();
+      }, 500);
+      debouncedFn();
+    },
+    [getDashboardData]
   );
 
   const getDashboardData = useCallback(async () => {

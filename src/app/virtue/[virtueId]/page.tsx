@@ -226,9 +226,12 @@ export default function VirtueDetailPage() {
 
   // Debounced memo change handler
   const debouncedMemoChange = useCallback(
-    debounce((stageNumber: number, content: string) => {
-      setMemos(prev => new Map(prev).set(stageNumber, content))
-    }, 300),
+    (stageNumber: number, content: string) => {
+      const debouncedFn = debounce((stageNum: number, cont: string) => {
+        setMemos(prev => new Map(prev).set(stageNum, cont))
+      }, 300)
+      debouncedFn(stageNumber, content)
+    },
     []
   )
 
@@ -505,7 +508,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, currentUserId]); // Removed defectAnalysis requirement
+  }, [displayedStageNumber, virtue, currentUserId, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };

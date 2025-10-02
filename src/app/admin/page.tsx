@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { Users, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { } from 'lucide-react';
 import CloudRunMonitor from '@/components/CloudRunMonitor';
 import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
 import VirtueAIPanel from '@/components/admin/VirtueAIPanel';

@@ -439,7 +439,7 @@ export default function AccountSettingsPage() {
                     {connection.status === 'email_sent' && (
                       <div className="p-4 bg-blue-50/60 backdrop-blur-sm rounded-lg border border-blue-200/60">
                         <p className="text-blue-800 text-sm mb-3">
-                          Your sponsor invitation is pending. If they haven't responded or you need to invite someone else, you can cancel this invitation.
+                          Your sponsor invitation is pending. If they haven&apos;t responded or you need to invite someone else, you can cancel this invitation.
                         </p>
                         <Button 
                           variant="outline"
