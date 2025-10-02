@@ -26,6 +26,7 @@ import { getDefectIcon } from '@/lib/iconUtils'
 import { harmLevelsMap } from '@/lib/constants'
 import { clearAssessmentCache } from '@/lib/assessmentService'
 import { withErrorHandling, showErrorToast, showSuccessToast } from '@/lib/errorHandling'
+import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
@@ -129,9 +130,27 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
 );
 
 // --- Markdown Renderer Component ---
-const MarkdownRenderer = ({ content }: { content: string }) => {
+const MarkdownRenderer = ({ 
+  content, 
+  promptName, 
+  showFeedback = false 
+}: { 
+  content: string; 
+  promptName?: string; 
+  showFeedback?: boolean; 
+}) => {
   return (
     <div className="markdown-content text-sm text-stone-700">
+      {showFeedback && promptName && (
+        <div className="flex justify-between items-start mb-2">
+          <div className="text-xs text-stone-500 font-medium">AI Analysis</div>
+          <AIFeedbackButtons 
+            promptName={promptName}
+            promptContent={content}
+            size="sm"
+          />
+        </div>
+      )}
       <ReactMarkdown
         components={{
           h1: ({...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-stone-800" {...props} />,
@@ -844,7 +863,11 @@ export default function AssessmentPage() {
                                         </CardHeader>
                                         <CardContent>
                                             {summaryAnalysis ? (
-                                                <MarkdownRenderer content={summaryAnalysis} />
+                                                <MarkdownRenderer 
+                                                    content={summaryAnalysis} 
+                                                    promptName="Assessment-Summary"
+                                                    showFeedback={true}
+                                                />
                                             ) : isGeneratingSummary ? (
                                                 <div className="space-y-3 text-sm text-stone-500 italic">
                                                     <p>Generating your comprehensive summary analysis...</p>
@@ -914,7 +937,11 @@ export default function AssessmentPage() {
                                                     <CardContent className="pt-0">
                                                         <div className="min-h-[80px]">
                                                             {analysisText ? (
-                                                                <MarkdownRenderer content={analysisText} />
+                                                                <MarkdownRenderer 
+                                                                    content={analysisText} 
+                                                                    promptName={`Assessment-${result.virtue}`}
+                                                                    showFeedback={true}
+                                                                />
                                                             ) : (
                                                                 <div className="flex items-center gap-2 text-stone-500 italic text-xs">
                                                                     <div className="animate-spin rounded-full h-3 w-3 border-b border-stone-400"></div>

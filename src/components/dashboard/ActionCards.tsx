@@ -9,6 +9,7 @@ import VirtueRoseChart from '../VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
 import { supabase } from '@/lib/supabaseClient'
+import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 
 interface ActionCardsProps {
   assessmentTaken: boolean;
@@ -114,8 +115,18 @@ export default function ActionCards({
                 </p>
               </div>
             ) : (
-              <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none [&>p]:mb-6">
-                <ReactMarkdown>{dashboardPrompt}</ReactMarkdown>
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="text-xs text-stone-500 font-medium">AI Guidance</div>
+                  <AIFeedbackButtons 
+                    promptName="Dashboard-NextStep"
+                    promptContent={dashboardPrompt}
+                    size="sm"
+                  />
+                </div>
+                <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none [&>p]:mb-6">
+                  <ReactMarkdown>{dashboardPrompt}</ReactMarkdown>
+                </div>
               </div>
             )}
           </CardContent>
