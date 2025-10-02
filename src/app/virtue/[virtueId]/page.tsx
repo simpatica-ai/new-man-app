@@ -984,7 +984,7 @@ export default function VirtueDetailPage() {
                       <div className="space-y-3">
                         {displayedStageNumber === 1 && stage1AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
-                            <div className="flex justify-end items-start mb-2">
+                            <div className="flex justify-end items-start mb-1">
                               <AIFeedbackButtons 
                                 promptName={`${virtue?.name}-Stage1`}
                                 promptContent={stage1AiPrompt}
@@ -1006,7 +1006,7 @@ export default function VirtueDetailPage() {
                         )}
                         {displayedStageNumber === 2 && stage2AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
-                            <div className="flex justify-end items-start mb-2">
+                            <div className="flex justify-end items-start mb-1">
                               <AIFeedbackButtons 
                                 promptName={`${virtue?.name}-Stage2`}
                                 promptContent={stage2AiPrompt}
@@ -1028,7 +1028,7 @@ export default function VirtueDetailPage() {
                         )}
                         {displayedStageNumber === 3 && stage3AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
-                            <div className="flex justify-end items-start mb-2">
+                            <div className="flex justify-end items-start mb-1">
                               <AIFeedbackButtons 
                                 promptName={`${virtue?.name}-Stage3`}
                                 promptContent={stage3AiPrompt}

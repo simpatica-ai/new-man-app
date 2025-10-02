@@ -13,7 +13,7 @@ This feature implements an automated daily performance monitoring and alerting s
 #### Acceptance Criteria
 
 1. WHEN the daily report schedule triggers THEN the system SHALL generate a comprehensive performance report
-2. WHEN the report is generated THEN the system SHALL send it via email to configured administrator addresses
+2. WHEN the report is generated THEN the system SHALL send it via email to configured administrator addresses - bwenzlau@simpatica.ai
 3. WHEN the email is sent THEN it SHALL include service status, usage metrics, and spending data from the previous 24 hours
 4. IF the email delivery fails THEN the system SHALL retry up to 3 times with exponential backoff
 5. WHEN the report is successfully sent THEN the system SHALL log the delivery confirmation
@@ -45,7 +45,7 @@ This feature implements an automated daily performance monitoring and alerting s
 
 ### Requirement 4
 
-**User Story:** As an administrator, I want to monitor spending and resource costs, so that I can control expenses and avoid unexpected charges.
+**User Story:** As an administrator, I want to monitor spending and resource costs, so that I can control expenses and avoid unexpected charges. The area of any application spending now is Google Cloudrun.  
 
 #### Acceptance Criteria
 
@@ -70,6 +70,19 @@ This feature implements an automated daily performance monitoring and alerting s
 6. WHEN invalid settings are provided THEN the system SHALL display clear error messages and prevent saving
 
 ### Requirement 6
+
+**User Story:** As an administrator, I want to monitor AI feedback and user satisfaction, so that I can identify issues with AI-generated content and improve user experience.
+
+#### Acceptance Criteria
+
+1. WHEN generating the report THEN the system SHALL include all AI feedback submitted since the last report
+2. WHEN AI feedback is included THEN the system SHALL show thumbs up/down ratios for each prompt type
+3. WHEN negative feedback is received THEN the system SHALL include the full feedback text and context
+4. WHEN generating the report THEN the system SHALL calculate overall AI satisfaction scores for the reporting period
+5. IF AI satisfaction drops below 70% for any prompt type THEN the system SHALL flag this as an AI quality alert
+6. WHEN generating the report THEN the system SHALL include trending data showing AI feedback patterns over time
+
+### Requirement 7
 
 **User Story:** As an administrator, I want the reports to be well-formatted and actionable, so that I can quickly understand the status and take appropriate actions.
 

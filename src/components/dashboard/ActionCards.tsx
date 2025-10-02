@@ -96,11 +96,18 @@ export default function ActionCards({
     <div className="space-y-6">
       {assessmentTaken && virtues.length > 0 && (
         <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
-          <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-            <Target className="h-8 w-8 text-amber-700" />
-            <div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="flex flex-row items-center gap-4">
+              <Target className="h-8 w-8 text-amber-700" />
               <CardTitle className="text-stone-800 font-medium">Your Next Step</CardTitle>
             </div>
+            {!promptLoading && (
+              <AIFeedbackButtons 
+                promptName="Dashboard-NextStep"
+                promptContent={dashboardPrompt || "Dashboard guidance content"}
+                size="sm"
+              />
+            )}
           </CardHeader>
           <CardContent>
             {promptLoading ? (
@@ -115,17 +122,8 @@ export default function ActionCards({
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex justify-end items-start mb-3">
-                  <AIFeedbackButtons 
-                    promptName="Dashboard-NextStep"
-                    promptContent={dashboardPrompt || "Dashboard guidance content"}
-                    size="sm"
-                  />
-                </div>
-                <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none [&>p]:mb-6">
-                  <ReactMarkdown>{dashboardPrompt}</ReactMarkdown>
-                </div>
+              <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none [&>p]:mb-6">
+                <ReactMarkdown>{dashboardPrompt}</ReactMarkdown>
               </div>
             )}
           </CardContent>

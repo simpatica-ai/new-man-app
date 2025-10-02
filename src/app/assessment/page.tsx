@@ -852,20 +852,29 @@ export default function AssessmentPage() {
                                     {/* AI Summary - 50% width */}
                                     <Card className="ai-summary-card">
                                         <CardHeader className="pb-3">
-                                            <CardTitle className="flex items-center gap-2 text-base">
-                                                <Sparkles className="h-4 w-4 text-amber-600" />
-                                                Virtue Journey
-                                                {isGeneratingSummary && (
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600 ml-2"></div>
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    <Sparkles className="h-4 w-4 text-amber-600" />
+                                                    Virtue Journey
+                                                    {isGeneratingSummary && (
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600 ml-2"></div>
+                                                    )}
+                                                </CardTitle>
+                                                {summaryAnalysis && (
+                                                    <AIFeedbackButtons 
+                                                        promptName="Assessment-Summary"
+                                                        promptContent={summaryAnalysis}
+                                                        size="sm"
+                                                    />
                                                 )}
-                                            </CardTitle>
+                                            </div>
                                         </CardHeader>
                                         <CardContent>
                                             {summaryAnalysis ? (
                                                 <MarkdownRenderer 
                                                     content={summaryAnalysis} 
                                                     promptName="Assessment-Summary"
-                                                    showFeedback={true}
+                                                    showFeedback={false}
                                                 />
                                             ) : isGeneratingSummary ? (
                                                 <div className="space-y-3 text-sm text-stone-500 italic">
@@ -926,7 +935,16 @@ export default function AssessmentPage() {
                                                 <Card key={result.virtue} className="border-stone-200 print:break-inside-avoid">
                                                     <CardHeader className="pb-2">
                                                         <div className="flex items-center justify-between">
-                                                            <CardTitle className="text-sm font-semibold">{result.virtue}</CardTitle>
+                                                            <div className="flex items-center gap-3">
+                                                                <CardTitle className="text-sm font-semibold">{result.virtue}</CardTitle>
+                                                                {analysisText && (
+                                                                    <AIFeedbackButtons 
+                                                                        promptName={`Assessment-${result.virtue}`}
+                                                                        promptContent={analysisText}
+                                                                        size="sm"
+                                                                    />
+                                                                )}
+                                                            </div>
                                                             <div className="virtue-score">
                                                                 {virtueScore.toFixed(1)}
                                                                 <span className="score-label">/10</span>
@@ -939,7 +957,7 @@ export default function AssessmentPage() {
                                                                 <MarkdownRenderer 
                                                                     content={analysisText} 
                                                                     promptName={`Assessment-${result.virtue}`}
-                                                                    showFeedback={true}
+                                                                    showFeedback={false}
                                                                 />
                                                             ) : (
                                                                 <div className="flex items-center gap-2 text-stone-500 italic text-xs">
