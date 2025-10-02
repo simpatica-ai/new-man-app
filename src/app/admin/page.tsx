@@ -15,6 +15,7 @@ import CloudRunMonitor from '@/components/CloudRunMonitor';
 import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
 import VirtueAIPanel from '@/components/admin/VirtueAIPanel';
 import UserActivityMonitor from '@/components/admin/UserActivityMonitor';
+import { AIFeedbackViewer } from '@/components/admin/AIFeedbackViewer';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -240,10 +241,11 @@ export default function AdminPage() {
 
 
       <Tabs defaultValue="practitioners">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="practitioners">Users</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
           <TabsTrigger value="virtue-ai">Virtue AI</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="usage">Usage</TabsTrigger>
@@ -488,6 +490,10 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="ai-feedback">
+          <AIFeedbackViewer />
         </TabsContent>
         
         <TabsContent value="virtue-ai">
