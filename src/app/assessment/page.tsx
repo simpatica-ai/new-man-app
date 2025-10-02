@@ -142,8 +142,7 @@ const MarkdownRenderer = ({
   return (
     <div className="markdown-content text-sm text-stone-700">
       {showFeedback && promptName && (
-        <div className="flex justify-between items-start mb-2">
-          <div className="text-xs text-stone-500 font-medium">AI Analysis</div>
+        <div className="flex justify-end items-start mb-2">
           <AIFeedbackButtons 
             promptName={promptName}
             promptContent={content}

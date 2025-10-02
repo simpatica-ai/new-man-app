@@ -88,7 +88,7 @@ export default function ActionCards({
 
   useEffect(() => {
     fetchDashboardPrompt();
-  }, [assessmentTaken, virtues.length, progress.size, fetchDashboardPrompt]);
+  }, [assessmentTaken, virtues.length, progress.size]);
 
   const daysSinceJournal = calculateDaysSince(lastJournalEntry);
 
@@ -116,11 +116,10 @@ export default function ActionCards({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="text-xs text-stone-500 font-medium">AI Guidance</div>
+                <div className="flex justify-end items-start mb-3">
                   <AIFeedbackButtons 
                     promptName="Dashboard-NextStep"
-                    promptContent={dashboardPrompt}
+                    promptContent={dashboardPrompt || "Dashboard guidance content"}
                     size="sm"
                   />
                 </div>
