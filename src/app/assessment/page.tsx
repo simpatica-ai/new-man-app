@@ -1057,7 +1057,7 @@ export default function AssessmentPage() {
                     <DialogHeader>
                         <DialogTitle className="text-amber-800">Complete Your Discovery Journey</DialogTitle>
                         <DialogDescription className="text-stone-600 mt-2">
-                            You're making great progress! To get the most accurate virtue recovery plan, 
+                            You&apos;re making great progress! To get the most accurate virtue recovery plan, 
                             please complete all character defect questions. Each question helps us better 
                             understand your unique journey and create a personalized plan for growth.
                         </DialogDescription>

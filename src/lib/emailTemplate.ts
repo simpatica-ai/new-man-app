@@ -1,4 +1,16 @@
-export function generateDailyReportEmail(metrics: any): string {
+export function generateDailyReportEmail(metrics: {
+  date: string;
+  newUsers: number;
+  totalUsers: number;
+  activeUsers: number;
+  aiFeedback: { positive: number; negative: number; total: number };
+  errors: number;
+  journalEntries: number;
+  assessments: number;
+  supportTickets: { open: number; closed: number };
+  system?: { cloudRun?: { errorRate?: number } };
+  dataQuality?: { isPartial?: boolean; criticalError?: string };
+}): string {
   const { date, newUsers, totalUsers, activeUsers, aiFeedback, errors, journalEntries, assessments, supportTickets, system } = metrics;
   
   // Format date for display

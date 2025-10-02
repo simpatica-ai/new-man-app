@@ -115,7 +115,7 @@ const HomePage = () => {
                     </div>
                     
                     <p>
-                      Whether you're beginning your journey of personal growth or deepening existing practices, The New Man App combines proven virtue development principles with modern technology to provide personalized guidance and community support.
+                      Whether you&apos;re beginning your journey of personal growth or deepening existing practices, The New Man App combines proven virtue development principles with modern technology to provide personalized guidance and community support.
                     </p>
                     
                     <p className="font-semibold text-amber-800">

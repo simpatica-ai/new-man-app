@@ -8,7 +8,7 @@ import { useAssessmentData } from '@/hooks/useAssessmentData';
 import { getDefectIcon } from '@/lib/iconUtils';
 
 export default function DatabaseCheck() {
-  const [virtues, setVirtues] = useState<any[]>([]);
+  const [virtues, setVirtues] = useState<{ id: number; name: string; description: string }[]>([]);
   const [defectVirtueCount, setDefectVirtueCount] = useState(0);
   const { defects, loading, error, healthyBoundariesExists } = useAssessmentData();
 

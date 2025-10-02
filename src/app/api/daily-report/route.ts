@@ -349,7 +349,19 @@ async function collectDailyMetrics() {
 }
 
 // Email sending function
-async function sendDailyReport(metrics: any) {
+async function sendDailyReport(metrics: {
+  date: string;
+  newUsers: number;
+  totalUsers: number;
+  activeUsers: number;
+  aiFeedback: { positive: number; negative: number; total: number };
+  errors: number;
+  journalEntries: number;
+  assessments: number;
+  supportTickets: { open: number; closed: number };
+  system?: { cloudRun?: { errorRate?: number } };
+  dataQuality?: { isPartial?: boolean; criticalError?: string };
+}) {
 
   // Check for required environment variables
   const gmailUser = process.env.GMAIL_USER;
@@ -402,7 +414,7 @@ async function sendDailyReport(metrics: any) {
 }
 
 // Failure notification function
-async function sendFailureNotification(failureInfo: any) {
+async function sendFailureNotification(failureInfo: { error: string; timestamp: string; details?: string }) {
 
   const gmailUser = process.env.GMAIL_USER;
   const gmailPassword = process.env.GMAIL_APP_PASSWORD;

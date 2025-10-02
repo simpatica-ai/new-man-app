@@ -38,7 +38,7 @@ export function AIFeedbackButtons({
         try {
             const { data: { user } } = await supabase.auth.getUser()
 
-            await supabase.from('ai_prompt_feedback' as any).insert({
+            await supabase.from('ai_prompt_feedback').insert({
                 user_id: user?.id,
                 prompt_name: promptName,
                 prompt_content: promptContent,

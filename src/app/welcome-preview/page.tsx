@@ -78,7 +78,7 @@ export default function WelcomePreviewPage() {
                 <h3 className="text-xl font-semibold text-green-600 mb-3">Building</h3>
                 <p className="text-gray-700 mb-4">
                   Actively cultivate new virtuous habits and practices. Through consistent effort 
-                  and intentional action, you'll develop the character traits that align with your 
+                  and intentional action, you&apos;ll develop the character traits that align with your 
                   values and aspirations.
                 </p>
 

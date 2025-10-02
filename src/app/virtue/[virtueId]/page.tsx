@@ -397,9 +397,6 @@ export default function VirtueDetailPage() {
     try {
       const currentMemoContent = memos.get(1) || '';
       
-      // Skip cache check for now to avoid 400 errors
-      // TODO: Re-enable caching once table is confirmed to exist
-      
       // Generate new prompt
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
         method: 'POST',

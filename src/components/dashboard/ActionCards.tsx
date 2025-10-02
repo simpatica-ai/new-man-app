@@ -45,9 +45,6 @@ export default function ActionCards({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Skip cache check for now to avoid 400 errors
-    // TODO: Re-enable caching once table is confirmed to exist
-    
     setPromptLoading(true);
     try {
       const prioritizedVirtues = virtues.map(v => ({
