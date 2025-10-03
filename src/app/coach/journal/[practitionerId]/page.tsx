@@ -41,7 +41,7 @@ type ChatMessage = {
 
 type SelectedMemo = SharedMemo & { virtue_name: string };
 
-export default function SponsorJournalView() {
+export default function CoachJournalView() {
   const [loading, setLoading] = useState(true);
   const [practitioner, setPractitioner] = useState<PractitionerProfile | null>(null);
   const [virtues, setVirtues] = useState<Virtue[]>([]);
@@ -121,7 +121,7 @@ export default function SponsorJournalView() {
 
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Error fetching sponsor data:", error);
+        console.error("Error fetching coach data:", error);
         alert(error.message);
       }
     } finally {
@@ -207,7 +207,7 @@ export default function SponsorJournalView() {
     <div className="container mx-auto p-4 md:p-8 bg-gray-50 min-h-screen">
       <div className="mb-6">
         <Link href="/" className="mb-4 inline-block">
-          <Button variant="outline">&larr; Back to Sponsor Hub</Button>
+          <Button variant="outline">&larr; Back to Coach Hub</Button>
         </Link>
         {/* ## FIX: Replaced ' with &apos; */}
         <h1 className="text-4xl font-bold text-gray-800">Viewing Journal for {practitioner.full_name || 'Practitioner'}</h1>

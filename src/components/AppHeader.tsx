@@ -41,7 +41,7 @@ export default function AppHeader() {
     if (pathname.startsWith('/virtue/')) return 'Virtue Workspace';
     if (pathname.startsWith('/account-settings')) return 'Account Settings';
     if (pathname.startsWith('/get-support')) return 'Get Support';
-    if (pathname.startsWith('/sponsor')) return 'Sponsor Dashboard';
+    if (pathname.startsWith('/coach')) return 'Coach Dashboard';
     return 'Dashboard';
   }
 

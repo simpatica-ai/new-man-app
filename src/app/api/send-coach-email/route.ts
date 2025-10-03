@@ -3,10 +3,10 @@ import nodemailer from 'nodemailer'
 import { z } from 'zod'
 
 const emailSchema = z.object({
-  sponsorEmail: z.string().email('Invalid email address'),
+  coachEmail: z.string().email('Invalid email address'),
   practitionerName: z.string().min(1, 'Practitioner name is required').max(100, 'Name too long'),
   invitationLink: z.string().url('Invalid invitation link'),
-  isExistingSponsor: z.boolean().optional()
+  isExistingCoach: z.boolean().optional()
 })
 
 export async function POST(request: NextRequest) {
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { sponsorEmail, practitionerName, invitationLink, isExistingSponsor } = validation.data
-    console.log('Request data:', { sponsorEmail, practitionerName, invitationLink, isExistingSponsor })
+    const { coachEmail, practitionerName, invitationLink, isExistingCoach } = validation.data
+    console.log('Request data:', { coachEmail, practitionerName, invitationLink, isExistingCoach })
 
     const gmailUser = process.env.GMAIL_USER
     const gmailPassword = process.env.GMAIL_APP_PASSWORD
@@ -56,17 +56,17 @@ export async function POST(request: NextRequest) {
     console.log('Sending email...')
     const mailOptions = {
       from: `"A New Man App" <new-man-app@simpatica.ai>`,
-      to: sponsorEmail,
-      subject: isExistingSponsor 
+      to: coachEmail,
+      subject: isExistingCoach 
         ? 'New practitioner invitation - A New Man App'
-        : 'You\'ve been invited to be a sponsor - A New Man App',
-      html: isExistingSponsor ? `
+        : 'You\'ve been invited to be a coach - A New Man App',
+      html: isExistingCoach ? `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #d97706;">New Practitioner Invitation</h2>
           <p>Hello,</p>
-          <p>You're receiving this email because you're already a sponsor on the "A New Man" virtue development platform.</p>
-          <p><strong>${practitionerName}</strong> would like you to be their sponsor as well.</p>
-          <p>As their sponsor, you'll guide and support their journey of personal growth and virtue development, just as you do for your other practitioners.</p>
+          <p>You're receiving this email because you're already a coach on the "A New Man" virtue development platform.</p>
+          <p><strong>${practitionerName}</strong> would like you to be their coach as well.</p>
+          <p>As their coach, you'll guide and support their journey of personal growth and virtue development, just as you do for your other practitioners.</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${invitationLink}" 
                style="background-color: #d97706; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
@@ -82,10 +82,10 @@ export async function POST(request: NextRequest) {
         </div>
       ` : `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #d97706;">You've been invited to be a sponsor!</h2>
+          <h2 style="color: #d97706;">You've been invited to be a coach!</h2>
           <p>Hello,</p>
-          <p><strong>${practitionerName}</strong> has invited you to be their sponsor on the "A New Man" virtue development platform.</p>
-          <p>As a sponsor, you'll be able to guide and support their journey of personal growth and virtue development.</p>
+          <p><strong>${practitionerName}</strong> has invited you to be their coach on the "A New Man" virtue development platform.</p>
+          <p>As a coach, you'll be able to guide and support their journey of personal growth and virtue development.</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${invitationLink}" 
                style="background-color: #d97706; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">

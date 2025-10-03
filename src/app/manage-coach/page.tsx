@@ -13,10 +13,10 @@ import Footer from '@/components/Footer'
 type ConnectionDetails = {
   id: number;
   status: string;
-  sponsor_name: string | null;
+  coach_name: string | null;
 }
 
-export default function ManageSponsorPage() {
+export default function ManageCoachPage() {
   const [connection, setConnection] = useState<ConnectionDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [sponsorEmail, setSponsorEmail] = useState('')
@@ -46,14 +46,14 @@ export default function ManageSponsorPage() {
         setConnection({
           id: data.id,
           status: data.status,
-          sponsor_name: data.profiles?.full_name || 'Your Sponsor'
+          coach_name: data.profiles?.full_name || 'Your Coach'
         });
       } else {
         setConnection(null);
       }
     } catch (error) {
       if (error instanceof Error) {
-        alert("Failed to fetch sponsor details: " + error.message);
+        alert("Failed to fetch coach details: " + error.message);
       }
     } finally {
       setLoading(false)
@@ -64,9 +64,9 @@ export default function ManageSponsorPage() {
     fetchConnection()
   }, [fetchConnection])
 
-  const handleInviteSponsor = async () => {
+  const handleInviteCoach = async () => {
     if (!sponsorEmail) {
-      alert('Please enter your sponsor\'s email address.')
+      alert('Please enter your coach\'s email address.')
       return
     }
     try {
@@ -129,8 +129,8 @@ export default function ManageSponsorPage() {
         <main className="container mx-auto p-4 md:p-8 max-w-2xl">
           <div className="mb-6">
             <h1 className="text-3xl font-light text-stone-800 leading-tight">
-              Sponsor Connection
-              <span className="block text-xl font-medium text-amber-900 mt-1">Manage Your Mentorship</span>
+              Coach Connection
+              <span className="block text-xl font-medium text-amber-900 mt-1">Manage Your Coaching</span>
             </h1>
             <div className="w-24 h-0.5 bg-gradient-to-r from-amber-600 to-stone-600 mt-3"></div>
           </div>
@@ -139,8 +139,8 @@ export default function ManageSponsorPage() {
             <CardHeader className="flex flex-row items-center gap-4">
               <UserPlus className="h-6 w-6 text-amber-700" />
               <div>
-                <CardTitle className="text-stone-800 font-medium">Your Sponsor</CardTitle>
-                <CardDescription className="text-stone-600">Connect with a mentor to guide your virtue journey.</CardDescription>
+                <CardTitle className="text-stone-800 font-medium">Your Coach</CardTitle>
+                <CardDescription className="text-stone-600">Connect with a coach to guide your virtue journey.</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
@@ -149,7 +149,7 @@ export default function ManageSponsorPage() {
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-stone-50 rounded-lg border border-amber-200/60">
                     <div>
                       <p className="text-sm text-stone-600">Connected with:</p>
-                      <p className="text-lg font-medium text-stone-800">{connection.sponsor_name || 'Your Sponsor'}</p>
+                      <p className="text-lg font-medium text-stone-800">{connection.coach_name || 'Your Coach'}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {connection.status === 'active' ? (
@@ -172,33 +172,33 @@ export default function ManageSponsorPage() {
                   </div>
                   {connection.status === 'active' && (
                     <p className="text-sm text-stone-600 bg-stone-50 p-3 rounded-lg">
-                      Your sponsor can now view your virtue progress and chat with you through the virtue workspace.
+                      Your coach can now view your virtue progress and chat with you through the virtue workspace.
                     </p>
                   )}
                   {connection.status === 'email_sent' && (
                     <p className="text-sm text-stone-600 bg-blue-50 p-3 rounded-lg">
-                      An invitation email has been sent to your sponsor. They need to create an account and accept the invitation to complete the connection.
+                      An invitation email has been sent to your coach. They need to create an account and accept the invitation to complete the connection.
                     </p>
                   )}
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div className="p-4 bg-stone-50 rounded-lg border border-stone-200">
-                    <p className="text-stone-700 mb-4">You are not currently connected with a sponsor. Enter your sponsor&apos;s email address below to invite them to guide your journey.</p>
+                    <p className="text-stone-700 mb-4">You are not currently connected with a coach. Enter your coach&apos;s email address below to invite them to guide your journey.</p>
                     <div className="space-y-3">
                       <Input
                         type="email"
-                        placeholder="sponsor@example.com"
+                        placeholder="coach@example.com"
                         value={sponsorEmail}
                         onChange={(e) => setSponsorEmail(e.target.value)}
                         className="bg-white border-stone-300 focus:border-amber-500"
                       />
                       <Button 
-                        onClick={handleInviteSponsor} 
+                        onClick={handleInviteCoach} 
                         disabled={isSubmitting}
                         className="w-full bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white transition-all duration-200"
                       >
-                        {isSubmitting ? 'Sending Invite...' : 'Invite Sponsor'}
+                        {isSubmitting ? 'Sending Invite...' : 'Invite Coach'}
                       </Button>
                     </div>
                   </div>

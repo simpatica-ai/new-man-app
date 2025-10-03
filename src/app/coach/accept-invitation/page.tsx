@@ -30,7 +30,7 @@ function AcceptInvitationContent() {
   })
 
   useEffect(() => {
-    document.title = "New Man App: Accept Sponsor Invitation";
+    document.title = "New Man App: Accept Coach Invitation";
     
     if (!token) {
       setError('Invalid invitation link')
@@ -133,20 +133,20 @@ function AcceptInvitationContent() {
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <CardTitle className="text-green-700">Welcome as a Sponsor!</CardTitle>
+            <CardTitle className="text-green-700">Welcome as a Coach!</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-stone-600">
-              You have successfully accepted the sponsorship invitation.
+              You have successfully accepted the coaching invitation.
             </p>
             <p className="text-stone-600">
               You can now guide and support {invitation?.profiles?.full_name || 'your practitioner'} on their journey of virtue development.
             </p>
             <Button 
-              onClick={() => window.location.href = '/sponsor/dashboard'}
+              onClick={() => window.location.href = '/coach/dashboard'}
               className="w-full bg-amber-600 hover:bg-amber-700"
             >
-              Go to Sponsor Dashboard
+              Go to Coach Dashboard
             </Button>
           </CardContent>
         </Card>
@@ -170,9 +170,9 @@ function AcceptInvitationContent() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100 flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-stone-800">Accept Sponsor Invitation</CardTitle>
+          <CardTitle className="text-2xl text-stone-800">Accept Coach Invitation</CardTitle>
           <p className="text-stone-600 mt-2">
-            You have been invited to sponsor <strong>{invitation.profiles?.full_name}</strong> on their virtue development journey.
+            You have been invited to coach <strong>{invitation.profiles?.full_name}</strong> on their virtue development journey.
           </p>
         </CardHeader>
         <CardContent>

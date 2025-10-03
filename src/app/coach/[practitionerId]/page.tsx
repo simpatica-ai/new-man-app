@@ -42,7 +42,7 @@ type ChatMessage = {
 
 type SelectedMemo = SharedMemo & { virtue_name: string };
 
-export default function SponsorView() {
+export default function CoachView() {
   const [loading, setLoading] = useState(true);
   const [practitioner, setPractitioner] = useState<PractitionerProfile | null>(null);
   const [virtues, setVirtues] = useState<Virtue[]>([]);
@@ -259,7 +259,7 @@ export default function SponsorView() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-light text-stone-800 leading-tight">
-                  Sponsoring {practitioner.full_name || 'Practitioner'}
+                  Coaching {practitioner.full_name || 'Practitioner'}
                   <span className="block text-xl font-medium text-amber-900 mt-1">Virtue Progress Review</span>
                 </h1>
                 <div className="w-24 h-0.5 bg-gradient-to-r from-amber-600 to-stone-600 mt-3"></div>
