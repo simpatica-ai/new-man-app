@@ -9,7 +9,7 @@ import { getErrorStats, getErrorSummary, type ErrorLog } from '@/lib/errorLoggin
 
 export default function ErrorMonitoring() {
   const [errorLogs, setErrorLogs] = useState<ErrorLog[]>([])
-  const [errorSummary, setErrorSummary] = useState<any[]>([])
+  const [errorSummary, setErrorSummary] = useState<{ error_message: string; count: number; latest_occurrence: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState(7)
   const [tableExists, setTableExists] = useState(true)

@@ -14,7 +14,13 @@ function AcceptInvitationContent() {
   const token = searchParams.get('token')
   
   const [loading, setLoading] = useState(false)
-  const [invitation, setInvitation] = useState<any>(null)
+  const [invitation, setInvitation] = useState<{
+    id: string;
+    email: string;
+    role: string;
+    organization_name: string;
+    expires_at: string;
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState({

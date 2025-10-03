@@ -7,14 +7,14 @@ import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 import AppHeader from '@/components/AppHeader'
 import Footer from '@/components/Footer'
-import { Sparkles, Heart, Shield, Users, Target, Clock, Zap, Star, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit, Loader2 } from 'lucide-react'
+import { Sparkles, Target, HelpCircle, ArrowLeft, ArrowRight, CheckCircle, Edit, Loader2 } from 'lucide-react'
 import VirtueRoseChart from '@/components/VirtueRoseChart'
 import VirtueProgressBar from '@/components/VirtueProgressBar'
 import { useVirtues, type Virtue } from '@/hooks/useVirtues'
@@ -26,6 +26,7 @@ import { getDefectIcon } from '@/lib/iconUtils'
 import { harmLevelsMap } from '@/lib/constants'
 import { clearAssessmentCache } from '@/lib/assessmentService'
 import { withErrorHandling, showErrorToast, showSuccessToast } from '@/lib/errorHandling'
+import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 
 // --- Data & Types ---
 const coreVirtuesList = ["Humility", "Honesty", "Gratitude", "Self-Control", "Mindfulness", "Patience", "Integrity", "Compassion", "Healthy Boundaries", "Responsibility", "Vulnerability", "Respect"]
@@ -129,9 +130,26 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
 );
 
 // --- Markdown Renderer Component ---
-const MarkdownRenderer = ({ content }: { content: string }) => {
+const MarkdownRenderer = ({ 
+  content, 
+  promptName, 
+  showFeedback = false 
+}: { 
+  content: string; 
+  promptName?: string; 
+  showFeedback?: boolean; 
+}) => {
   return (
     <div className="markdown-content text-sm text-stone-700">
+      {showFeedback && promptName && (
+        <div className="flex justify-end items-start mb-2">
+          <AIFeedbackButtons 
+            promptName={promptName}
+            promptContent={content}
+            size="sm"
+          />
+        </div>
+      )}
       <ReactMarkdown
         components={{
           h1: ({...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-stone-800" {...props} />,
@@ -834,17 +852,30 @@ export default function AssessmentPage() {
                                     {/* AI Summary - 50% width */}
                                     <Card className="ai-summary-card">
                                         <CardHeader className="pb-3">
-                                            <CardTitle className="flex items-center gap-2 text-base">
-                                                <Sparkles className="h-4 w-4 text-amber-600" />
-                                                Virtue Journey
-                                                {isGeneratingSummary && (
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600 ml-2"></div>
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    <Sparkles className="h-4 w-4 text-amber-600" />
+                                                    Virtue Journey
+                                                    {isGeneratingSummary && (
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600 ml-2"></div>
+                                                    )}
+                                                </CardTitle>
+                                                {summaryAnalysis && (
+                                                    <AIFeedbackButtons 
+                                                        promptName="Assessment-Summary"
+                                                        promptContent={summaryAnalysis}
+                                                        size="sm"
+                                                    />
                                                 )}
-                                            </CardTitle>
+                                            </div>
                                         </CardHeader>
                                         <CardContent>
                                             {summaryAnalysis ? (
-                                                <MarkdownRenderer content={summaryAnalysis} />
+                                                <MarkdownRenderer 
+                                                    content={summaryAnalysis} 
+                                                    promptName="Assessment-Summary"
+                                                    showFeedback={false}
+                                                />
                                             ) : isGeneratingSummary ? (
                                                 <div className="space-y-3 text-sm text-stone-500 italic">
                                                     <p>Generating your comprehensive summary analysis...</p>
@@ -904,7 +935,16 @@ export default function AssessmentPage() {
                                                 <Card key={result.virtue} className="border-stone-200 print:break-inside-avoid">
                                                     <CardHeader className="pb-2">
                                                         <div className="flex items-center justify-between">
-                                                            <CardTitle className="text-sm font-semibold">{result.virtue}</CardTitle>
+                                                            <div className="flex items-center gap-3">
+                                                                <CardTitle className="text-sm font-semibold">{result.virtue}</CardTitle>
+                                                                {analysisText && (
+                                                                    <AIFeedbackButtons 
+                                                                        promptName={`Assessment-${result.virtue}`}
+                                                                        promptContent={analysisText}
+                                                                        size="sm"
+                                                                    />
+                                                                )}
+                                                            </div>
                                                             <div className="virtue-score">
                                                                 {virtueScore.toFixed(1)}
                                                                 <span className="score-label">/10</span>
@@ -914,7 +954,11 @@ export default function AssessmentPage() {
                                                     <CardContent className="pt-0">
                                                         <div className="min-h-[80px]">
                                                             {analysisText ? (
-                                                                <MarkdownRenderer content={analysisText} />
+                                                                <MarkdownRenderer 
+                                                                    content={analysisText} 
+                                                                    promptName={`Assessment-${result.virtue}`}
+                                                                    showFeedback={false}
+                                                                />
                                                             ) : (
                                                                 <div className="flex items-center gap-2 text-stone-500 italic text-xs">
                                                                     <div className="animate-spin rounded-full h-3 w-3 border-b border-stone-400"></div>
@@ -1013,7 +1057,7 @@ export default function AssessmentPage() {
                     <DialogHeader>
                         <DialogTitle className="text-amber-800">Complete Your Discovery Journey</DialogTitle>
                         <DialogDescription className="text-stone-600 mt-2">
-                            You're making great progress! To get the most accurate virtue recovery plan, 
+                            You&apos;re making great progress! To get the most accurate virtue recovery plan, 
                             please complete all character defect questions. Each question helps us better 
                             understand your unique journey and create a personalized plan for growth.
                         </DialogDescription>

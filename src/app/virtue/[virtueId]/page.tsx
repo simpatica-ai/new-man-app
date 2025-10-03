@@ -18,6 +18,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import VirtueGuideModal from '@/components/VirtueGuideModal'
 import VirtueProgressBar from '@/components/VirtueProgressBar'
+import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
@@ -225,9 +226,12 @@ export default function VirtueDetailPage() {
 
   // Debounced memo change handler
   const debouncedMemoChange = useCallback(
-    debounce((stageNumber: number, content: string) => {
-      setMemos(prev => new Map(prev).set(stageNumber, content))
-    }, 300),
+    (stageNumber: number, content: string) => {
+      const debouncedFn = debounce((stageNum: number, cont: string) => {
+        setMemos(prev => new Map(prev).set(stageNum, cont))
+      }, 300)
+      debouncedFn(stageNumber, content)
+    },
     []
   )
 
@@ -393,9 +397,6 @@ export default function VirtueDetailPage() {
     try {
       const currentMemoContent = memos.get(1) || '';
       
-      // Skip cache check for now to avoid 400 errors
-      // TODO: Re-enable caching once table is confirmed to exist
-      
       // Generate new prompt
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
         method: 'POST',
@@ -504,7 +505,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, currentUserId]); // Removed defectAnalysis requirement
+  }, [displayedStageNumber, virtue, currentUserId, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
@@ -980,6 +981,13 @@ export default function VirtueDetailPage() {
                       <div className="space-y-3">
                         {displayedStageNumber === 1 && stage1AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+                            <div className="flex justify-end items-start mb-1">
+                              <AIFeedbackButtons 
+                                promptName={`${virtue?.name}-Stage1`}
+                                promptContent={stage1AiPrompt}
+                                size="sm"
+                              />
+                            </div>
                             <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none">
                               {stage1AiPrompt.split('\n').map((line, i) => (
                                 <p key={i} className="mb-2 last:mb-0">
@@ -995,6 +1003,13 @@ export default function VirtueDetailPage() {
                         )}
                         {displayedStageNumber === 2 && stage2AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+                            <div className="flex justify-end items-start mb-1">
+                              <AIFeedbackButtons 
+                                promptName={`${virtue?.name}-Stage2`}
+                                promptContent={stage2AiPrompt}
+                                size="sm"
+                              />
+                            </div>
                             <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none">
                               {stage2AiPrompt.split('\n').map((line, i) => (
                                 <p key={i} className="mb-2 last:mb-0">
@@ -1010,6 +1025,13 @@ export default function VirtueDetailPage() {
                         )}
                         {displayedStageNumber === 3 && stage3AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+                            <div className="flex justify-end items-start mb-1">
+                              <AIFeedbackButtons 
+                                promptName={`${virtue?.name}-Stage3`}
+                                promptContent={stage3AiPrompt}
+                                size="sm"
+                              />
+                            </div>
                             <div className="text-sm text-stone-700 leading-relaxed prose prose-sm prose-stone max-w-none">
                               {stage3AiPrompt.split('\n').map((line, i) => (
                                 <p key={i} className="mb-2 last:mb-0">

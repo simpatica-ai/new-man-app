@@ -8,7 +8,13 @@ import { Users, CheckCircle } from 'lucide-react'
 import AppHeader from '@/components/AppHeader'
 
 export default function SponsorDashboard() {
-  const [relationships, setRelationships] = useState<any[]>([])
+  const [relationships, setRelationships] = useState<{
+    id: string;
+    practitioner_name: string;
+    practitioner_email: string;
+    created_at: string;
+    last_activity?: string;
+  }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export default function SponsorDashboard() {
                   <Users className="h-12 w-12 text-stone-400 mx-auto mb-4" />
                   <CardTitle className="text-stone-600">No Connections Yet</CardTitle>
                   <CardDescription>
-                    You haven't been connected with any practitioners yet.
+                    You haven&apos;t been connected with any practitioners yet.
                   </CardDescription>
                 </CardHeader>
               </Card>

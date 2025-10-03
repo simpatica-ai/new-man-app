@@ -4,18 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Virtue, Connection, StageProgress } from '@/lib/constants'
 
-// Debounce utility
-const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
-  let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
+
 
 export function useDashboardData() {
   const [loading, setLoading] = useState(true);
@@ -27,14 +16,6 @@ export function useDashboardData() {
   const [lastJournalEntry, setLastJournalEntry] = useState<string | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [buttonStates, setButtonStates] = useState<{[key: string]: boolean}>({});
-
-  // Debounced data refresh
-  const debouncedRefresh = useCallback(
-    debounce(() => {
-      getDashboardData();
-    }, 500),
-    []
-  );
 
   const getDashboardData = useCallback(async () => {
     try {
@@ -165,6 +146,8 @@ export function useDashboardData() {
     }
   }, []);
 
+
+
   useEffect(() => {
     getDashboardData();
   }, [getDashboardData]);
@@ -199,7 +182,7 @@ export function useDashboardData() {
     handleCloseModal,
     handleOpenModal,
     getStatusClasses,
-    debouncedRefresh,
+
     setButtonStates
   };
 }

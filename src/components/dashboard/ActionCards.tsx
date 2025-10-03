@@ -9,6 +9,7 @@ import VirtueRoseChart from '../VirtueRoseChart'
 import ReactMarkdown from 'react-markdown'
 import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
 import { supabase } from '@/lib/supabaseClient'
+import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 
 interface ActionCardsProps {
   assessmentTaken: boolean;
@@ -44,9 +45,6 @@ export default function ActionCards({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Skip cache check for now to avoid 400 errors
-    // TODO: Re-enable caching once table is confirmed to exist
-    
     setPromptLoading(true);
     try {
       const prioritizedVirtues = virtues.map(v => ({
@@ -95,11 +93,18 @@ export default function ActionCards({
     <div className="space-y-6">
       {assessmentTaken && virtues.length > 0 && (
         <Card className="order-first bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
-          <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-            <Target className="h-8 w-8 text-amber-700" />
-            <div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="flex flex-row items-center gap-4">
+              <Target className="h-8 w-8 text-amber-700" />
               <CardTitle className="text-stone-800 font-medium">Your Next Step</CardTitle>
             </div>
+            {!promptLoading && (
+              <AIFeedbackButtons 
+                promptName="Dashboard-NextStep"
+                promptContent={dashboardPrompt || "Dashboard guidance content"}
+                size="sm"
+              />
+            )}
           </CardHeader>
           <CardContent>
             {promptLoading ? (
