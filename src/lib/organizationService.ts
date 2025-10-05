@@ -452,6 +452,33 @@ export const isCurrentUserAdmin = async (): Promise<boolean> => {
 };
 
 /**
+ * Check if current user is organization therapist
+ */
+export const isCurrentUserTherapist = async (): Promise<boolean> => {
+  try {
+    // Check if we should use mock data
+    if (isTestMode() || !(await hasOrganizationalSchema())) {
+      console.log('🧪 Mock therapist check - returning true for demo');
+      return true;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('roles')
+      .eq('id', user.id)
+      .single();
+
+    return profile?.roles?.includes('therapist') || false;
+  } catch (error) {
+    console.error('Error checking therapist status:', error);
+    return false;
+  }
+};
+
+/**
  * Format time since last activity
  */
 export const formatLastActivity = (lastActivity: string | null): string => {

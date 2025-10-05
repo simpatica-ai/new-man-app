@@ -67,7 +67,7 @@ export default function OrgAdminDashboard() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteForm, setInviteForm] = useState({
     email: '',
-    role: 'practitioner' as 'admin' | 'coach' | 'practitioner'
+    role: 'practitioner' as 'admin' | 'coach' | 'therapist' | 'practitioner'
   });
   const [sendingInvite, setSendingInvite] = useState(false);
   const [invitationSystemAvailable, setInvitationSystemAvailable] = useState(true);
@@ -414,6 +414,7 @@ export default function OrgAdminDashboard() {
                         >
                           <option value="practitioner">Practitioner</option>
                           <option value="coach">Coach</option>
+                          <option value="therapist">Therapist</option>
                           <option value="admin">Admin</option>
                         </select>
                       </div>

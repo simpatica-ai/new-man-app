@@ -7,6 +7,7 @@ import { AuthCard } from "@/components/AuthCard";
 import Dashboard from "@/components/Dashboard";
 import EmailConfirmationRequired from "@/components/EmailConfirmationRequired";
 import Footer from "@/components/Footer";
+import PublicHeader from "@/components/PublicHeader";
 import heroBackground from "@/assets/hero-background.jpg";
 
 
@@ -87,6 +88,7 @@ const HomePage = () => {
       <div className="absolute inset-0 bg-white/80"></div>
       
       <div className="relative z-10">
+        <PublicHeader />
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
           <div className="min-h-screen flex items-center justify-center">
             <div className="w-full">
@@ -124,8 +126,25 @@ const HomePage = () => {
                   </div>
                 </div>
                 
-                <div>
+                <div className="space-y-6">
                   <AuthCard />
+                  
+                  <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+                    <h3 className="text-lg font-semibold text-amber-800 mb-2">
+                      Looking to support your entire organization?
+                    </h3>
+                    <p className="text-amber-700 mb-4">
+                      Empower your team, students, or community with organizational accounts featuring custom branding, progress tracking, and coaching support.
+                    </p>
+                    <div className="flex justify-end">
+                      <a 
+                        href="/organizations" 
+                        className="inline-flex items-center justify-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium transition-colors"
+                      >
+                        Learn About Organizations
+                      </a>
+                    </div>
+                  </div>
                 </div>
 
               </div>

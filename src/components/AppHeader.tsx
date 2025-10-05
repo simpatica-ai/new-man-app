@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // <-- Import the hook
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare, Shield } from 'lucide-react';
+import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare, Shield, Stethoscope } from 'lucide-react';
 import FeedbackSurveyModal from './FeedbackSurveyModal';
 
 type Profile = {
@@ -43,6 +43,7 @@ export default function AppHeader() {
     if (pathname.startsWith('/account-settings')) return 'Account Settings';
     if (pathname.startsWith('/get-support')) return 'Get Support';
     if (pathname.startsWith('/coach')) return 'Coach Dashboard';
+    if (pathname.startsWith('/therapist')) return 'Therapist Dashboard';
     if (pathname.startsWith('/orgadmin')) return 'Organization Admin';
     return 'Dashboard';
   }
@@ -107,6 +108,17 @@ export default function AppHeader() {
                   </Button>
                 </Link>
               )}
+              <Link href="/therapist">
+                <Button 
+                  title="Therapist Dashboard" 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors h-8 px-2"
+                >
+                  <Stethoscope className="h-4 w-4" />
+                  <span className="hidden md:inline ml-1">Therapist</span>
+                </Button>
+              </Link>
               <Link href="/get-support">
                 <Button 
                   title="Get Support" 
