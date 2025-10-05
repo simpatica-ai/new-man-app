@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import PublicHeader from '@/components/PublicHeader';
-import heroBackground2 from '@/assets/hero-background2.jpg';
+import heroBackgroundOrg from '@/assets/hero-background-org.jpg';
 
 export default function OrganizationsPage() {
   const [demoFormData, setDemoFormData] = useState({
@@ -62,7 +62,7 @@ export default function OrganizationsPage() {
   return (
     <div 
       className="min-h-screen relative bg-cover bg-center"
-      style={{ backgroundImage: `url(${heroBackground2.src})` }}
+      style={{ backgroundImage: `url(${heroBackgroundOrg.src})` }}
     >
       <div className="absolute inset-0 bg-white/65"></div>
       
