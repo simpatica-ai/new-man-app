@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import {
 import PublicHeader from '@/components/PublicHeader';
 import Footer from '@/components/Footer';
 
-export default function OrganizationWelcomePage() {
+function OrganizationWelcomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -168,5 +168,13 @@ export default function OrganizationWelcomePage() {
 
       <Footer />
     </div>
+  );
+}
+export d
+efault function OrganizationWelcomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <OrganizationWelcomeContent />
+    </Suspense>
   );
 }

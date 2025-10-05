@@ -1,15 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { 
-  CheckCircle, 
-  ArrowRight
+  CheckCircle
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import PublicHeader from '@/components/PublicHeader';
@@ -98,14 +96,14 @@ export default function OrganizationsPage() {
                     </div>
                     
                     <p>
-                      Whether you're a treatment center, sober living home, or recovery coaching practice, 
+                      Whether you&apos;re a treatment center, sober living home, or recovery coaching practice, 
                       New Man App provides the tools to integrate virtue development into your existing programming 
                       and support long-term character growth.
                     </p>
                     
                     <p className="font-semibold text-amber-800">
                       Ready to enhance your recovery programming? This service is still in early development 
-                      and there is no charge at this time. We'd love to work with you to see how 
+                      and there is no charge at this time. We&apos;d love to work with you to see how 
                       virtue development can complement your existing services and support lasting transformation.
                     </p>
                   </div>
