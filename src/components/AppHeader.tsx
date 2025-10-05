@@ -6,11 +6,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // <-- Import the hook
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare, Shield } from 'lucide-react';
 import FeedbackSurveyModal from './FeedbackSurveyModal';
 
 type Profile = {
   full_name: string | null;
+  role: string | null;
 }
 
 export default function AppHeader() {
@@ -22,7 +23,7 @@ export default function AppHeader() {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).single();
         setProfile(data);
       }
     };
@@ -42,8 +43,11 @@ export default function AppHeader() {
     if (pathname.startsWith('/account-settings')) return 'Account Settings';
     if (pathname.startsWith('/get-support')) return 'Get Support';
     if (pathname.startsWith('/coach')) return 'Coach Dashboard';
+    if (pathname.startsWith('/orgadmin')) return 'Organization Admin';
     return 'Dashboard';
   }
+
+  const isAdmin = profile?.role === 'admin' || false;
 
   const isDashboard = pathname === '/';
 
@@ -90,6 +94,19 @@ export default function AppHeader() {
                 <MessageSquare className="h-4 w-4" />
                 <span className="hidden md:inline ml-1">Feedback</span>
               </Button>
+              {isAdmin && (
+                <Link href="/orgadmin">
+                  <Button 
+                    title="Organization Admin" 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-colors h-8 px-2"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">Org Admin</span>
+                  </Button>
+                </Link>
+              )}
               <Link href="/get-support">
                 <Button 
                   title="Get Support" 

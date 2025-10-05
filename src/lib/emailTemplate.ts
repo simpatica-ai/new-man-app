@@ -1,3 +1,229 @@
+// Organization invitation email template
+export function generateOrganizationInvitationEmail(data: {
+  inviteeEmail: string;
+  organizationName: string;
+  inviterName: string;
+  roles: string[];
+  invitationLink: string;
+  organizationLogo?: string;
+  primaryColor?: string;
+}): string {
+  const { inviteeEmail, organizationName, inviterName, roles, invitationLink, organizationLogo, primaryColor = '#5F4339' } = data;
+  
+  const roleText = roles.length === 1 
+    ? roles[0] 
+    : roles.slice(0, -1).join(', ') + ' and ' + roles[roles.length - 1];
+
+  const roleDescription = roles.includes('admin') 
+    ? 'As an admin, you\'ll have full access to manage the organization, invite users, and oversee all activities.'
+    : roles.includes('therapist')
+    ? 'As a therapist, you\'ll have clinical oversight capabilities and can provide therapeutic guidance to practitioners.'
+    : roles.includes('coach')
+    ? 'As a coach, you\'ll guide and support practitioners on their virtue development journey.'
+    : 'As a practitioner, you\'ll have access to virtue development tools and resources.';
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Invitation - ${organizationName}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9fafb;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: ${primaryColor};
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .logo {
+            max-width: 80px;
+            max-height: 80px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .invitation-details {
+            background: #f8fafc;
+            border-left: 4px solid ${primaryColor};
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .invitation-details h3 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .invitation-details p {
+            margin: 5px 0;
+            color: #6b7280;
+        }
+        .role-badge {
+            display: inline-block;
+            background: ${primaryColor};
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin: 2px;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background: ${primaryColor};
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        .cta-button:hover {
+            background: color-mix(in srgb, ${primaryColor} 85%, black);
+        }
+        .link-fallback {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            word-break: break-all;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .footer {
+            background: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer p {
+            margin: 0;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .footer a {
+            color: ${primaryColor};
+            text-decoration: none;
+        }
+        .expiry-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            ${organizationLogo ? `<img src="${organizationLogo}" alt="${organizationName}" class="logo">` : ''}
+            <h1>You're Invited!</h1>
+            <p>Join ${organizationName} on A New Man</p>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello!</div>
+            
+            <p>
+                <strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> 
+                on the "A New Man" virtue development platform.
+            </p>
+            
+            <div class="invitation-details">
+                <h3>Invitation Details</h3>
+                <p><strong>Organization:</strong> ${organizationName}</p>
+                <p><strong>Invited by:</strong> ${inviterName}</p>
+                <p><strong>Your role(s):</strong> 
+                    ${roles.map(role => `<span class="role-badge">${role}</span>`).join('')}
+                </p>
+            </div>
+            
+            <p>${roleDescription}</p>
+            
+            <p>
+                The "A New Man" platform helps individuals develop virtue through structured assessment, 
+                reflection, and practice. You'll be part of a supportive community focused on personal 
+                growth and character development.
+            </p>
+            
+            <div class="cta-section">
+                <a href="${invitationLink}" class="cta-button">
+                    Accept Invitation
+                </a>
+            </div>
+            
+            <div class="link-fallback">
+                <p><strong>If the button doesn't work, copy and paste this link:</strong></p>
+                <p>${invitationLink}</p>
+            </div>
+            
+            <div class="expiry-notice">
+                <strong>⏰ This invitation expires in 7 days.</strong> 
+                Please accept it soon to join your organization.
+            </div>
+            
+            <p>
+                If you have any questions about this invitation or the platform, 
+                feel free to reach out to ${inviterName} or our support team.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>
+                This invitation was sent by ${organizationName} via A New Man App<br>
+                <a href="https://new-man-app.simpatica.ai">Visit A New Man</a> | 
+                <a href="https://new-man-app.simpatica.ai/get-support">Get Support</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+  `.trim();
+}
+
 export function generateDailyReportEmail(metrics: {
   date: string;
   newUsers: number;

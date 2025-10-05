@@ -56,10 +56,16 @@ export function AuthCard() {
   // ## FUNCTION TO HANDLE GOOGLE SIGN-IN ##
   const signInWithGoogle = async () => {
     setLoading(true);
+    
+    // Use local URL for development, production URL for production
+    const redirectUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:3000' 
+      : window.location.origin;
+    
     const { error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google',
         options: {
-            redirectTo: window.location.origin // Redirect back to the app after auth
+            redirectTo: redirectUrl // Redirect back to the app after auth
         }
     });
     if (error) {
