@@ -170,8 +170,8 @@ function OrganizationWelcomeContent() {
     </div>
   );
 }
-export d
-efault function OrganizationWelcomePage() {
+
+export default function OrganizationWelcomePage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
       <OrganizationWelcomeContent />
