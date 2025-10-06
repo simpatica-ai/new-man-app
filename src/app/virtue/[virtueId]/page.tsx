@@ -22,7 +22,7 @@ import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
-const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
+const debounce = <T extends (...args: any[]) => void>(func: T, wait: number) => {
   let timeout: NodeJS.Timeout;
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
@@ -390,12 +390,12 @@ export default function VirtueDetailPage() {
 
   }
 
-  const fetchStage1Prompt = useCallback(async () => {
+  const fetchStage1Prompt = useCallback(async (memoContent?: string) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const currentMemoContent = memos.get(1) || '';
+      const currentMemoContent = memoContent ?? memos.get(1) ?? '';
       
       // Generate new prompt
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
@@ -420,15 +420,16 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, currentUserId, memos]);
+  }, [virtue, defectAnalysis, currentUserId]);
 
-  const fetchStage2Prompt = useCallback(async () => {
+  const fetchStage2Prompt = useCallback(async (stage1MemoContent?: string, stage2MemoContent?: string, stage1Status?: StageStatus) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const stage1Status = progress.get(`${virtueId}-1`);
-      const currentMemoContent = memos.get(2) || '';
+      const currentStage1Status = stage1Status ?? progress.get(`${virtueId}-1`);
+      const currentStage1Memo = stage1MemoContent ?? memos.get(1) ?? '';
+      const currentStage2Memo = stage2MemoContent ?? memos.get(2) ?? '';
       
       // Generate new prompt
       const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
@@ -438,9 +439,9 @@ export default function VirtueDetailPage() {
           virtueName: virtue.name,
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
-          stage1MemoContent: memos.get(1) || '',
-          stage2MemoContent: currentMemoContent,
-          stage1Complete: stage1Status === 'completed'
+          stage1MemoContent: currentStage1Memo,
+          stage2MemoContent: currentStage2Memo,
+          stage1Complete: currentStage1Status === 'completed'
         }),
       });
 
@@ -455,16 +456,18 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, virtueId, currentUserId, memos, progress]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId]);
 
-  const fetchStage3Prompt = useCallback(async () => {
+  const fetchStage3Prompt = useCallback(async (stage1MemoContent?: string, stage2MemoContent?: string, stage3MemoContent?: string, stage1Status?: StageStatus, stage2Status?: StageStatus) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const stage1Status = progress.get(`${virtueId}-1`);
-      const stage2Status = progress.get(`${virtueId}-2`);
-      const currentMemoContent = memos.get(3) || '';
+      const currentStage1Status = stage1Status ?? progress.get(`${virtueId}-1`);
+      const currentStage2Status = stage2Status ?? progress.get(`${virtueId}-2`);
+      const currentStage1Memo = stage1MemoContent ?? memos.get(1) ?? '';
+      const currentStage2Memo = stage2MemoContent ?? memos.get(2) ?? '';
+      const currentStage3Memo = stage3MemoContent ?? memos.get(3) ?? '';
       
       // Generate new prompt
       const response = await fetch('https://getstage3-917009769018.us-central1.run.app', {
@@ -474,11 +477,11 @@ export default function VirtueDetailPage() {
           virtueName: virtue.name,
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
-          stage1MemoContent: memos.get(1) || '',
-          stage2MemoContent: memos.get(2) || '',
-          stage3MemoContent: currentMemoContent,
-          stage1Complete: stage1Status === 'completed',
-          stage2Complete: stage2Status === 'completed'
+          stage1MemoContent: currentStage1Memo,
+          stage2MemoContent: currentStage2Memo,
+          stage3MemoContent: currentStage3Memo,
+          stage1Complete: currentStage1Status === 'completed',
+          stage2Complete: currentStage2Status === 'completed'
         }),
       });
 
@@ -493,7 +496,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, virtueId, currentUserId, memos, progress]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId]);
 
   useEffect(() => {
     if (virtue && currentUserId) {
@@ -505,7 +508,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, currentUserId, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
+  }, [displayedStageNumber, virtue, currentUserId]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
@@ -573,13 +576,13 @@ export default function VirtueDetailPage() {
         // Update local state instead of full refetch
         setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'in_progress'));
         
-        // Refresh prompt only if needed
+        // Refresh prompt only if needed with current memo content
         if (stageNumber === 1) {
-          fetchStage1Prompt();
+          fetchStage1Prompt(memoText);
         } else if (stageNumber === 2) {
-          fetchStage2Prompt();
+          fetchStage2Prompt(memos.get(1) || '', memoText, progress.get(`${virtueId}-1`));
         } else if (stageNumber === 3) {
-          fetchStage3Prompt();
+          fetchStage3Prompt(memos.get(1) || '', memos.get(2) || '', memoText, progress.get(`${virtueId}-1`), progress.get(`${virtueId}-2`));
         }
       }
     } catch (error) {
@@ -613,9 +616,9 @@ export default function VirtueDetailPage() {
         
         // Refresh prompts for subsequent stages when a stage is completed
         if (stageNumber === 1 && displayedStageNumber === 2) {
-          fetchStage2Prompt();
+          fetchStage2Prompt(memos.get(1) || '', memos.get(2) || '', 'completed');
         } else if (stageNumber === 2 && displayedStageNumber === 3) {
-          fetchStage3Prompt();
+          fetchStage3Prompt(memos.get(1) || '', memos.get(2) || '', memos.get(3) || '', progress.get(`${virtueId}-1`), 'completed');
         }
       }
     } catch (error) {
