@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 
 const passwordResetSchema = z.object({
   email: z.string().email('Invalid email address')
@@ -28,17 +28,29 @@ export async function POST(request: NextRequest) {
     const { email } = validation.data
     console.log('Password reset request for:', email)
 
+    // Create admin Supabase client for server-side operations
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
     // Check if user exists (for security, we still send success message regardless)
-    const { data: userExists } = await supabase
+    console.log('Checking if user exists...')
+    const { data: userExists, error: userCheckError } = await supabase
       .from('profiles')
       .select('email')
       .eq('email', email)
       .single()
 
+    console.log('User exists check result:', { userExists: !!userExists, error: userCheckError?.message })
+
     // Generate reset token using Supabase (but don't send their email)
+    console.log('Generating Supabase reset token...')
     const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://new-man-app.simpatica.ai'}/auth/reset-password`,
     })
+
+    console.log('Supabase reset result:', { success: !resetError, error: resetError?.message })
 
     // If user exists and Supabase generated a token, send our custom email
     if (userExists && !resetError) {
@@ -53,7 +65,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.log('Creating transporter...')
+      console.log('Gmail credentials found, creating transporter...')
       const transporter = nodemailer.createTransporter({
         service: 'gmail',
         auth: {
@@ -62,7 +74,7 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      console.log('Sending custom password reset email...')
+      console.log('Sending custom password reset email to:', email)
       const mailOptions = {
         from: `"A New Man App" <new-man-app@simpatica.ai>`,
         to: email,
