@@ -22,7 +22,7 @@ import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 import { memoSchema, validateInput } from '@/lib/validation'
 
 // --- Helper Functions ---
-const debounce = <T extends (...args: any[]) => void>(func: T, wait: number) => {
+const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
   let timeout: NodeJS.Timeout;
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
@@ -133,7 +133,7 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg border border-stone-200/60 p-1 relative">
+          <div className="relative">
             <TiptapEditor
               content={memoContent}
               onChange={onMemoChange}
@@ -420,7 +420,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, currentUserId]);
+  }, [virtue, defectAnalysis, currentUserId, memos]);
 
   const fetchStage2Prompt = useCallback(async (stage1MemoContent?: string, stage2MemoContent?: string, stage1Status?: StageStatus) => {
     if (!virtue || !currentUserId) return;
@@ -508,7 +508,7 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, currentUserId]);
+  }, [displayedStageNumber, virtue, currentUserId, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
