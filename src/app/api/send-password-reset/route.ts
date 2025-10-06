@@ -44,16 +44,9 @@ export async function POST(request: NextRequest) {
 
     console.log('User exists check result:', { userExists: !!userExists, error: userCheckError?.message })
 
-    // Generate reset token using Supabase (but don't send their email)
-    console.log('Generating Supabase reset token...')
-    const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://new-man-app.simpatica.ai'}/auth/reset-password`,
-    })
-
-    console.log('Supabase reset result:', { success: !resetError, error: resetError?.message })
-
-    // If user exists and Supabase generated a token, send our custom email
-    if (userExists && !resetError) {
+    // If user exists, send our custom email
+    if (userExists) {
+      console.log('User exists, proceeding with email sending...')
       const gmailUser = process.env.GMAIL_USER
       const gmailPassword = process.env.GMAIL_APP_PASSWORD
       
@@ -94,11 +87,11 @@ export async function POST(request: NextRequest) {
               <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 15px 0;">Hello,</p>
               
               <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 15px 0;">
-                You requested to reset your password for your A New Man App account. You should receive a password reset email from Supabase shortly with a secure link.
+                You requested to reset your password for your A New Man App account.
               </p>
 
               <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 15px 0;">
-                Click the "Reset Password" button in that email to create your new password.
+                You should receive a separate email with a secure reset link shortly. Click the "Reset Password" button in that email to create your new password.
               </p>
 
               <!-- Security Notice -->
