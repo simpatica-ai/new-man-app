@@ -28,13 +28,16 @@ export function AuthCard() {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
 
-    if (error) {
+    // Always show success message for security (prevents email enumeration)
+    // Supabase will only send email if account actually exists
+    setMessage({ 
+      type: 'success', 
+      text: 'If an account exists with this email, you will receive a password reset link shortly.' 
+    });
+
+    // Only show error for actual system errors, not "user not found"
+    if (error && !error.message.includes('User not found')) {
       setMessage({ type: 'error', text: error.message });
-    } else {
-      setMessage({ 
-        type: 'success', 
-        text: 'Password reset email sent! Check your inbox for instructions.' 
-      });
     }
     setLoading(false);
   };
