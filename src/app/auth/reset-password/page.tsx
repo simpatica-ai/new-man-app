@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Eye, EyeOff } from 'lucide-react';
 import { Suspense } from 'react';
 
 function ResetPasswordForm() {
@@ -14,6 +15,8 @@ function ResetPasswordForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -72,29 +75,47 @@ function ResetPasswordForm() {
           <form onSubmit={handlePasswordUpdate} className="space-y-4">
             <div className="grid gap-1.5">
               <Label htmlFor="password" className="text-stone-700">New Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your new password"
-                required
-                minLength={6}
-                className="bg-stone-50 border-stone-300"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your new password"
+                  required
+                  minLength={6}
+                  className="bg-stone-50 border-stone-300 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="confirmPassword" className="text-stone-700">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your new password"
-                required
-                minLength={6}
-                className="bg-stone-50 border-stone-300"
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your new password"
+                  required
+                  minLength={6}
+                  className="bg-stone-50 border-stone-300 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             {message && (
               <p className={`text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>

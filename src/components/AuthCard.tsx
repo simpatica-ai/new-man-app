@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function AuthCard() {
   const [loading, setLoading] = useState(false);
@@ -14,6 +15,7 @@ export function AuthCard() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handlePasswordReset = async () => {
     if (!email) {
@@ -146,15 +148,24 @@ export function AuthCard() {
                 </button>
               )}
             </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              className="bg-stone-50 border-stone-300"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="bg-stone-50 border-stone-300 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           {message && (
             <p className={`text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>
