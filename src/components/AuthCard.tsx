@@ -26,32 +26,20 @@ export function AuthCard() {
     setLoading(true);
     setMessage(null);
 
-    try {
-      // Use our custom password reset API that uses the same email system as daily reports
-      const response = await fetch('/api/send-password-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
 
-      const result = await response.json();
+    // Always show success message for security (prevents email enumeration)
+    setMessage({ 
+      type: 'success', 
+      text: 'If an account exists with this email, you will receive password reset instructions shortly.' 
+    });
 
-      if (response.ok) {
-        setMessage({ 
-          type: 'success', 
-          text: 'If an account exists with this email, you will receive password reset instructions shortly.' 
-        });
-      } else {
-        throw new Error(result.error || 'Failed to send reset email');
-      }
-
-    } catch (error) {
+    // Only show error for actual system errors, not "user not found"
+    if (error && !error.message.includes('User not found')) {
       console.error('Password reset error:', error);
-      // Always show success message for security (prevents email enumeration)
-      setMessage({ 
-        type: 'success', 
-        text: 'If an account exists with this email, you will receive password reset instructions shortly.' 
-      });
+      setMessage({ type: 'error', text: 'There was an issue sending the reset email. Please try again.' });
     }
     
     setLoading(false);
