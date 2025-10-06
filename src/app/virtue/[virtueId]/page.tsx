@@ -390,14 +390,39 @@ export default function VirtueDetailPage() {
 
   }
 
-  const fetchStage1Prompt = useCallback(async (memoContent?: string) => {
+  const fetchStage1Prompt = useCallback(async (forceRefresh = false) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const currentMemoContent = memoContent ?? memos.get(1) ?? '';
+      const currentMemoContent = memos.get(1) || '';
       
-      // Generate new prompt
+      // Check for cached prompt first (unless forcing refresh)
+      if (!forceRefresh) {
+        const { data: existingPrompts } = await supabase
+          .from('virtue_prompts')
+          .select('id, prompt_text, created_at')
+          .eq('user_id', currentUserId)
+          .eq('virtue_id', virtue.id)
+          .eq('stage_number', 1)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        // Use cached prompt if it exists and is recent (within 72 hours)
+        if (existingPrompts && existingPrompts.length > 0) {
+          const cachedPrompt = existingPrompts[0];
+          const promptAge = Date.now() - new Date(cachedPrompt.created_at).getTime();
+          const seventyTwoHours = 72 * 60 * 60 * 1000;
+          
+          if (promptAge < seventyTwoHours) {
+            setStage1AiPrompt(cachedPrompt.prompt_text);
+            setIsPromptLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // Generate new prompt if no cache, cache is old, or forcing refresh
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -412,6 +437,16 @@ export default function VirtueDetailPage() {
       if (!response.ok) throw new Error('Failed to fetch Stage 1 prompt');
       const data = await response.json();
       
+      // Save the new prompt to database
+      await supabase
+        .from('virtue_prompts')
+        .insert({
+          user_id: currentUserId,
+          virtue_id: virtue.id,
+          stage_number: 1,
+          prompt_text: data.prompt
+        });
+      
       setStage1AiPrompt(data.prompt);
 
     } catch (error) {
@@ -420,18 +455,43 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, currentUserId, memos]);
+  }, [virtue, defectAnalysis, currentUserId]);
 
-  const fetchStage2Prompt = useCallback(async (stage1MemoContent?: string, stage2MemoContent?: string, stage1Status?: StageStatus) => {
+  const fetchStage2Prompt = useCallback(async (forceRefresh = false) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const currentStage1Status = stage1Status ?? progress.get(`${virtueId}-1`);
-      const currentStage1Memo = stage1MemoContent ?? memos.get(1) ?? '';
-      const currentStage2Memo = stage2MemoContent ?? memos.get(2) ?? '';
+      const stage1Status = progress.get(`${virtueId}-1`);
+      const currentStage1Memo = memos.get(1) || '';
+      const currentStage2Memo = memos.get(2) || '';
       
-      // Generate new prompt
+      // Check for cached prompt first (unless forcing refresh)
+      if (!forceRefresh) {
+        const { data: existingPrompts } = await supabase
+          .from('virtue_prompts')
+          .select('id, prompt_text, created_at')
+          .eq('user_id', currentUserId)
+          .eq('virtue_id', virtue.id)
+          .eq('stage_number', 2)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        // Use cached prompt if it exists and is recent (within 72 hours)
+        if (existingPrompts && existingPrompts.length > 0) {
+          const cachedPrompt = existingPrompts[0];
+          const promptAge = Date.now() - new Date(cachedPrompt.created_at).getTime();
+          const seventyTwoHours = 72 * 60 * 60 * 1000;
+          
+          if (promptAge < seventyTwoHours) {
+            setStage2AiPrompt(cachedPrompt.prompt_text);
+            setIsPromptLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // Generate new prompt if no cache, cache is old, or forcing refresh
       const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -441,12 +501,22 @@ export default function VirtueDetailPage() {
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: currentStage1Memo,
           stage2MemoContent: currentStage2Memo,
-          stage1Complete: currentStage1Status === 'completed'
+          stage1Complete: stage1Status === 'completed'
         }),
       });
 
       if (!response.ok) throw new Error('Failed to fetch Stage 2 prompt');
       const data = await response.json();
+      
+      // Save the new prompt to database
+      await supabase
+        .from('virtue_prompts')
+        .insert({
+          user_id: currentUserId,
+          virtue_id: virtue.id,
+          stage_number: 2,
+          prompt_text: data.prompt
+        });
       
       setStage2AiPrompt(data.prompt);
 
@@ -458,18 +528,43 @@ export default function VirtueDetailPage() {
     }
   }, [virtue, defectAnalysis, virtueId, currentUserId]);
 
-  const fetchStage3Prompt = useCallback(async (stage1MemoContent?: string, stage2MemoContent?: string, stage3MemoContent?: string, stage1Status?: StageStatus, stage2Status?: StageStatus) => {
+  const fetchStage3Prompt = useCallback(async (forceRefresh = false) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const currentStage1Status = stage1Status ?? progress.get(`${virtueId}-1`);
-      const currentStage2Status = stage2Status ?? progress.get(`${virtueId}-2`);
-      const currentStage1Memo = stage1MemoContent ?? memos.get(1) ?? '';
-      const currentStage2Memo = stage2MemoContent ?? memos.get(2) ?? '';
-      const currentStage3Memo = stage3MemoContent ?? memos.get(3) ?? '';
+      const stage1Status = progress.get(`${virtueId}-1`);
+      const stage2Status = progress.get(`${virtueId}-2`);
+      const currentStage1Memo = memos.get(1) || '';
+      const currentStage2Memo = memos.get(2) || '';
+      const currentStage3Memo = memos.get(3) || '';
       
-      // Generate new prompt
+      // Check for cached prompt first (unless forcing refresh)
+      if (!forceRefresh) {
+        const { data: existingPrompts } = await supabase
+          .from('virtue_prompts')
+          .select('id, prompt_text, created_at')
+          .eq('user_id', currentUserId)
+          .eq('virtue_id', virtue.id)
+          .eq('stage_number', 3)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        // Use cached prompt if it exists and is recent (within 72 hours)
+        if (existingPrompts && existingPrompts.length > 0) {
+          const cachedPrompt = existingPrompts[0];
+          const promptAge = Date.now() - new Date(cachedPrompt.created_at).getTime();
+          const seventyTwoHours = 72 * 60 * 60 * 1000;
+          
+          if (promptAge < seventyTwoHours) {
+            setStage3AiPrompt(cachedPrompt.prompt_text);
+            setIsPromptLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // Generate new prompt if no cache, cache is old, or forcing refresh
       const response = await fetch('https://getstage3-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -480,13 +575,23 @@ export default function VirtueDetailPage() {
           stage1MemoContent: currentStage1Memo,
           stage2MemoContent: currentStage2Memo,
           stage3MemoContent: currentStage3Memo,
-          stage1Complete: currentStage1Status === 'completed',
-          stage2Complete: currentStage2Status === 'completed'
+          stage1Complete: stage1Status === 'completed',
+          stage2Complete: stage2Status === 'completed'
         }),
       });
 
       if (!response.ok) throw new Error('Failed to fetch Stage 3 prompt');
       const data = await response.json();
+      
+      // Save the new prompt to database
+      await supabase
+        .from('virtue_prompts')
+        .insert({
+          user_id: currentUserId,
+          virtue_id: virtue.id,
+          stage_number: 3,
+          prompt_text: data.prompt
+        });
       
       setStage3AiPrompt(data.prompt);
 
@@ -576,13 +681,13 @@ export default function VirtueDetailPage() {
         // Update local state instead of full refetch
         setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'in_progress'));
         
-        // Refresh prompt only if needed with current memo content
+        // Refresh prompt with new content (force refresh)
         if (stageNumber === 1) {
-          fetchStage1Prompt(memoText);
+          fetchStage1Prompt(true);
         } else if (stageNumber === 2) {
-          fetchStage2Prompt(memos.get(1) || '', memoText, progress.get(`${virtueId}-1`));
+          fetchStage2Prompt(true);
         } else if (stageNumber === 3) {
-          fetchStage3Prompt(memos.get(1) || '', memos.get(2) || '', memoText, progress.get(`${virtueId}-1`), progress.get(`${virtueId}-2`));
+          fetchStage3Prompt(true);
         }
       }
     } catch (error) {
@@ -614,11 +719,11 @@ export default function VirtueDetailPage() {
         // Update local state instead of full refetch
         setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'completed'));
         
-        // Refresh prompts for subsequent stages when a stage is completed
+        // Refresh prompts for subsequent stages when a stage is completed (force refresh)
         if (stageNumber === 1 && displayedStageNumber === 2) {
-          fetchStage2Prompt(memos.get(1) || '', memos.get(2) || '', 'completed');
+          fetchStage2Prompt(true);
         } else if (stageNumber === 2 && displayedStageNumber === 3) {
-          fetchStage3Prompt(memos.get(1) || '', memos.get(2) || '', memos.get(3) || '', progress.get(`${virtueId}-1`), 'completed');
+          fetchStage3Prompt(true);
         }
       }
     } catch (error) {
