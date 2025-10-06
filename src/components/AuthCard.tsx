@@ -15,6 +15,30 @@ export function AuthCard() {
   const [fullName, setFullName] = useState('');
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setMessage({ type: 'error', text: 'Please enter your email address first.' });
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message });
+    } else {
+      setMessage({ 
+        type: 'success', 
+        text: 'Password reset email sent! Check your inbox for instructions.' 
+      });
+    }
+    setLoading(false);
+  };
+
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -107,7 +131,18 @@ export function AuthCard() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="password" className="text-stone-700">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-stone-700">Password</Label>
+              {isLoginView && (
+                <button
+                  type="button"
+                  onClick={() => handlePasswordReset()}
+                  className="text-xs text-stone-600 hover:text-stone-800 underline"
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
             <Input
               id="password"
               type="password"
