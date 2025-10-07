@@ -1,63 +1,82 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { createClient } from "npm:@supabase/supabase-js@2.35.0";
 
-// This function handles the permanent deletion of a practitioner.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 Deno.serve(async (req) => {
-  // This is needed for CORS preflight requests.
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Create a Supabase client with the service role key to perform admin actions.
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Get the authorization header to identify the calling user.
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error("Missing Authorization header");
-
-    // Get the user from the token to verify they are an admin.
-    const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user) throw new Error("User not found");
-
-    // Fetch the user's profile to check their role.
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) throw profileError;
-    
-    // Security Check: Ensure the user has the 'admin' role.
-    if (profile?.role !== 'admin') {
-      throw new Error('Unauthorized: User is not an admin.');
+    const url = new URL(req.url);
+    if (req.method !== 'POST') {
+      return new Response('Method Not Allowed', { 
+        status: 405, 
+        headers: corsHeaders 
+      });
     }
 
-    // Get the ID of the practitioner to be deleted from the request body.
-    const { practitioner_id } = await req.json();
-    if (!practitioner_id) throw new Error("Missing practitioner_id in request body");
+    const body = await req.json();
+    const { user_id, confirm } = body;
 
-    // Use the admin client to delete the user from the auth system.
-    // Cascading deletes in the database will handle removing all their related data.
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(practitioner_id);
+    if (!confirm) {
+      return new Response(JSON.stringify({ error: 'confirmation required' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: 'user_id required' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
-    if (deleteError) throw deleteError;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const svc = createClient(supabaseUrl, supabaseServiceRole, { auth: { persistSession: false } });
+    
+    console.log('Testing user deletion for:', user_id);
 
-    // Return a success response.
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
+    // Use the safe deletion function first to clean up all data
+    const { data: cleanupResult, error: cleanupError } = await svc.rpc('safe_delete_user_and_data', { 
+      target_user_id: user_id 
     });
+    
+    if (cleanupError) {
+      console.error('Error during safe cleanup:', cleanupError);
+      return new Response(JSON.stringify({ error: cleanupError.message }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
-  } catch (error) {
-    // Handle any errors.
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+    console.log('Safe cleanup completed:', cleanupResult);
+
+    // Delete auth user (this should now work cleanly)
+    const { error: delErr } = await svc.auth.admin.deleteUser(user_id);
+    if (delErr) {
+      console.error('Error deleting auth user:', delErr);
+      return new Response(JSON.stringify({ error: delErr.message }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ error: err.message }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
