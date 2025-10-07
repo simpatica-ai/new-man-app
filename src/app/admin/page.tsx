@@ -193,7 +193,10 @@ export default function AdminPage() {
       if (!session) throw new Error("No active session");
       
       const { error } = await supabase.functions.invoke('admin-remove-practitioner', {
-        body: { practitioner_id },
+        body: { 
+          user_id: practitioner_id,
+          confirm: true 
+        },
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
 

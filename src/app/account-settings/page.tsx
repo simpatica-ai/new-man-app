@@ -282,10 +282,27 @@ export default function AccountSettingsPage() {
     setMessage(null);
 
     try {
-      // Delete user account (this will cascade delete related data due to foreign key constraints)
-      const { error } = await supabase.auth.admin.deleteUser(user!.id);
-      
-      if (error) throw error;
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      // Call the Supabase Edge Function for safe user deletion
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: {
+          user_id: user!.id,
+          confirm: true
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to delete account');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       
       // Sign out and redirect
       await supabase.auth.signOut();
