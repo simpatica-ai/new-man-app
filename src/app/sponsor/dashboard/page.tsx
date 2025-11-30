@@ -24,20 +24,49 @@ export default function SponsorDashboard() {
   const fetchRelationships = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('🔍 Current user:', user?.id)
       if (!user) return
 
-      const { data, error } = await supabase
+      // Fetch relationships
+      const { data: relationshipsData, error: relError } = await supabase
         .from('sponsor_relationships')
-        .select(`
-          id,
-          status,
-          created_at,
-          profiles!sponsor_relationships_practitioner_id_fkey(full_name, email)
-        `)
+        .select('id, status, created_at, practitioner_id')
         .eq('sponsor_id', user.id)
 
-      if (error) throw error
-      setRelationships(data || [])
+      console.log('📊 Relationships data:', relationshipsData)
+      if (relError) {
+        console.error('❌ Relationships error:', relError)
+        throw relError
+      }
+
+      // Fetch practitioner profiles
+      if (relationshipsData && relationshipsData.length > 0) {
+        const practitionerIds = relationshipsData.map(r => r.practitioner_id)
+        console.log('👥 Practitioner IDs:', practitionerIds)
+        
+        const { data: profilesData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', practitionerIds)
+
+        console.log('👤 Profiles data:', profilesData)
+        if (profileError) {
+          console.error('❌ Profiles error:', profileError)
+          throw profileError
+        }
+
+        // Merge the data
+        const merged = relationshipsData.map(rel => ({
+          ...rel,
+          profiles: profilesData?.find(p => p.id === rel.practitioner_id)
+        }))
+
+        console.log('✅ Merged data:', merged)
+        setRelationships(merged)
+      } else {
+        console.log('⚠️ No relationships found')
+        setRelationships([])
+      }
     } catch (err) {
       console.error('Error fetching relationships:', err)
     } finally {
@@ -74,14 +103,16 @@ export default function SponsorDashboard() {
                 </CardHeader>
               </Card>
             ) : (
-              relationships.map((relationship) => (
-                <Card key={relationship.id} className="bg-white/80 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-stone-800">
-                          {relationship.profiles?.full_name || relationship.profiles?.email}
-                        </CardTitle>
+              relationships.map((relationship: any) => {
+                console.log('🎨 Rendering relationship:', relationship)
+                return (
+                  <Card key={relationship.id} className="bg-white/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-stone-800">
+                            {relationship.profiles?.full_name || 'Unknown Practitioner'}
+                          </CardTitle>
                         <CardDescription>
                           Connected since {new Date(relationship.created_at).toLocaleDateString()}
                         </CardDescription>
@@ -97,7 +128,8 @@ export default function SponsorDashboard() {
                     </div>
                   </CardHeader>
                 </Card>
-              ))
+                )
+              })
             )}
           </div>
         )}

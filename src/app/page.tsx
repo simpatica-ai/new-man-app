@@ -24,18 +24,27 @@ const HomePage = () => {
         setNeedsEmailConfirmation(true);
         setIsLoading(false);
       } else if (session?.user) {
-        // Check if user has completed assessment
+        // Check user role and redirect appropriately
         supabase
           .from('profiles')
-          .select('has_completed_first_assessment')
+          .select('has_completed_first_assessment, role')
           .eq('id', session.user.id)
           .single()
           .then(({ data: profile }) => {
+            // Redirect sponsors to sponsor dashboard - keep loading state
+            if (profile?.role === 'sponsor' || profile?.role === 'ind-sponsor') {
+              // Keep loading state true during redirect
+              window.location.href = '/sponsor/dashboard';
+              return;
+            }
+            
+            // Redirect practitioners who haven't completed assessment to welcome
             if (!profile?.has_completed_first_assessment) {
               window.location.href = '/welcome';
               return;
             }
-            // Only set session after assessment check is complete
+            
+            // Only set session after checks are complete
             setSession(session);
             setIsLoading(false);
           });
@@ -50,6 +59,23 @@ const HomePage = () => {
         if (session?.user && !session.user.email_confirmed_at) {
           setNeedsEmailConfirmation(true);
           setSession(null);
+        } else if (session?.user) {
+          // Check role before setting session
+          supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single()
+            .then(({ data: profile }) => {
+              // Redirect sponsors - don't set session
+              if (profile?.role === 'sponsor' || profile?.role === 'ind-sponsor') {
+                window.location.href = '/sponsor/dashboard';
+                return;
+              }
+              // For practitioners, set session normally
+              setSession(session);
+              setNeedsEmailConfirmation(false);
+            });
         } else {
           setSession(session);
           setNeedsEmailConfirmation(false);
