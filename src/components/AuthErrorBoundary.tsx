@@ -22,7 +22,7 @@ class AuthErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  async componentDidCatch(error: Error, errorInfo: any) {
+  async componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('AuthErrorBoundary caught an error:', error, errorInfo);
     
     // Check if this is an auth-related error

@@ -179,7 +179,7 @@ export default function FinalRefinement() {
             <strong className="text-blue-800">Reduce Compassion Defect Count</strong>
           </div>
           <p className="text-blue-700 text-sm mb-3">
-            This rebalances defect mappings to reduce Compassion's defect count by moving Apathy and Indifference to Responsibility.
+            This rebalances defect mappings to reduce Compassion&apos;s defect count by moving Apathy and Indifference to Responsibility.
           </p>
           <div className="text-xs text-blue-600">
             <strong>Key Changes:</strong> Move Apathy & Indifference from Compassion to Responsibility, 

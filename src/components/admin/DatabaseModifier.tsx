@@ -244,13 +244,13 @@ export default function DatabaseModifier() {
           </p>
           <div className="bg-gray-900 text-gray-100 p-3 rounded text-xs font-mono">
             <div>-- Allow all operations for authenticated users</div>
-            <div>CREATE POLICY "Allow all operations on defects" ON defects</div>
+            <div>CREATE POLICY &quot;Allow all operations on defects&quot; ON defects</div>
             <div>FOR ALL TO authenticated USING (true) WITH CHECK (true);</div>
             <br />
-            <div>CREATE POLICY "Allow all operations on virtues" ON virtues</div>
+            <div>CREATE POLICY &quot;Allow all operations on virtues&quot; ON virtues</div>
             <div>FOR ALL TO authenticated USING (true) WITH CHECK (true);</div>
             <br />
-            <div>CREATE POLICY "Allow all operations on defects_virtues" ON defects_virtues</div>
+            <div>CREATE POLICY &quot;Allow all operations on defects_virtues&quot; ON defects_virtues</div>
             <div>FOR ALL TO authenticated USING (true) WITH CHECK (true);</div>
           </div>
         </div>

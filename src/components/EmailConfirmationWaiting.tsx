@@ -74,7 +74,7 @@ export default function EmailConfirmationWaiting({ email }: EmailConfirmationWai
         <CardContent className="space-y-4">
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              We've sent a confirmation email to:
+              We&apos;ve sent a confirmation email to:
             </p>
             <p className="font-medium text-gray-900">{email}</p>
           </div>
@@ -99,7 +99,7 @@ export default function EmailConfirmationWaiting({ email }: EmailConfirmationWai
                   Checking...
                 </>
               ) : (
-                'I\'ve Confirmed - Check Status'
+                'I&apos;ve Confirmed - Check Status'
               )}
             </Button>
             
@@ -114,7 +114,7 @@ export default function EmailConfirmationWaiting({ email }: EmailConfirmationWai
           </div>
           
           <div className="text-xs text-gray-500 text-center space-y-1">
-            <p>Check your spam folder if you don't see the email.</p>
+            <p>Check your spam folder if you don&apos;t see the email.</p>
             <p>The confirmation link will expire in 24 hours.</p>
           </div>
         </CardContent>

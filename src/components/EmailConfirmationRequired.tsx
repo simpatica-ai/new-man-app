@@ -45,7 +45,7 @@ export default function EmailConfirmationRequired() {
             <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-blue-800">
               <p className="font-medium mb-1">Email confirmation required</p>
-              <p>We've sent a confirmation email to your inbox. Please click the link in the email to verify your account and access the platform.</p>
+              <p>We&apos;ve sent a confirmation email to your inbox. Please click the link in the email to verify your account and access the platform.</p>
             </div>
           </div>
           
@@ -59,7 +59,7 @@ export default function EmailConfirmationRequired() {
           </div>
           
           <div className="text-xs text-gray-500 text-center">
-            <p>Check your spam folder if you don't see the email.</p>
+            <p>Check your spam folder if you don&apos;t see the email.</p>
           </div>
         </CardContent>
       </Card>

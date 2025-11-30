@@ -103,7 +103,7 @@ export default function SponsorDashboard() {
                 </CardHeader>
               </Card>
             ) : (
-              relationships.map((relationship: any) => {
+              relationships.map((relationship: { id: string; profiles?: { full_name?: string }; status?: string; created_at?: string }) => {
                 console.log('🎨 Rendering relationship:', relationship)
                 return (
                   <Card key={relationship.id} className="bg-white/80 backdrop-blur-sm">

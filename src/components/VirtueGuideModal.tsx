@@ -40,7 +40,7 @@ export default function VirtueGuideModal({ isOpen, onClose, hasConnection }: Vir
               <BookOpen className="h-4 w-4 text-blue-600" />
               <p className="text-sm font-medium text-blue-800">Start with the Discovery Tab</p>
             </div>
-            <p className="text-xs text-blue-700">Begin each virtue with the "Discovery" tab to understand the virtue's meaning and development approach before diving into the reflection stages.</p>
+            <p className="text-xs text-blue-700">Begin each virtue with the &quot;Discovery&quot; tab to understand the virtue&apos;s meaning and development approach before diving into the reflection stages.</p>
           </div>
           
           <h3 className="mb-4 text-center font-semibold text-stone-700">How to use your Virtue Workspace:</h3>

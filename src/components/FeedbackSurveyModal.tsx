@@ -272,7 +272,7 @@ export default function FeedbackSurveyModal({ isOpen, onClose }: FeedbackSurveyM
               </div>
 
               <div>
-                <label className="block font-medium mb-2">What's the biggest thing missing?</label>
+                <label className="block font-medium mb-2">What&apos;s the biggest thing missing?</label>
                 <Textarea 
                   value={formData.biggestMissing}
                   onChange={(e) => setFormData(prev => ({ ...prev, biggestMissing: e.target.value }))}

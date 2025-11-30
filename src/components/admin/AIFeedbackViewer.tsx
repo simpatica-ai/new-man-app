@@ -177,7 +177,7 @@ export function AIFeedbackViewer() {
                       </div>
                       {item.feedback_text && (
                         <p className="text-sm text-stone-700 mt-1 bg-stone-50 p-2 rounded">
-                          "{item.feedback_text}"
+                          &quot;{item.feedback_text}&quot;
                         </p>
                       )}
                     </div>
