@@ -7,12 +7,9 @@ SELECT
   'Bob Profile' as check_type,
   id,
   full_name,
-  email,
   has_completed_first_assessment
 FROM public.profiles
-WHERE full_name ILIKE '%Bob%Wenzlau%'
-   OR email ILIKE '%bob%'
-   OR id = '0dba2cfa-1a91-4c4e-a363-7dfb22ba67eb';
+WHERE id = '0dba2cfa-1a91-4c4e-a363-7dfb22ba67eb';
 
 -- 2. Check user_assessments table for Bob
 SELECT 
