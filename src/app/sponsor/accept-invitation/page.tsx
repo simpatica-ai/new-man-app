@@ -68,16 +68,16 @@ function AcceptInvitationContent() {
     setError(null)
 
     try {
-      // Check if user already exists
-      const { data: existingUser } = await supabase.auth.signInWithPassword({
+      // Try to sign in with existing credentials
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
 
-      let userId = existingUser?.user?.id
+      let userId = signInData?.user?.id
 
-      if (!userId) {
-        // Create new user
+      // If sign in failed, try to create new user
+      if (!userId && signInError) {
         const { data: newUser, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -86,7 +86,13 @@ function AcceptInvitationContent() {
           }
         })
 
-        if (signUpError) throw signUpError
+        if (signUpError) {
+          // Check if error is because user already exists
+          if (signUpError.message.includes('already registered') || signUpError.message.includes('already exists')) {
+            throw new Error('An account with this email already exists. Please use your existing password to accept the invitation.')
+          }
+          throw signUpError
+        }
         userId = newUser?.user?.id
       }
 
