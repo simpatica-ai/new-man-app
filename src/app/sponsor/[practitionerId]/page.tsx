@@ -11,6 +11,8 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Send, AlertCircle, MessageCircle, BookOpen, Bell, BarChart3 } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 import VirtueRoseChart from '@/components/VirtueRoseChart';
+import VirtueRow from '@/components/dashboard/VirtueRow';
+import { Virtue as VirtueType } from '@/lib/constants';
 import DOMPurify from 'dompurify';
 
 // --- Type Definitions ---
@@ -25,10 +27,7 @@ type SharedMemo = {
   memo_text: string | null;
 };
 
-type Virtue = {
-  id: number;
-  name: string;
-};
+// Using Virtue type from constants
 
 type ChatMessage = { 
   id: number; 
@@ -43,7 +42,7 @@ type SelectedMemo = SharedMemo & { virtue_name: string };
 export default function SponsorView() {
   const [loading, setLoading] = useState(true);
   const [practitioner, setPractitioner] = useState<PractitionerProfile | null>(null);
-  const [virtues, setVirtues] = useState<Virtue[]>([]);
+  const [virtues, setVirtues] = useState<VirtueType[]>([]);
   const [sharedMemos, setSharedMemos] = useState<SharedMemo[]>([]);
   const [selectedMemo, setSelectedMemo] = useState<SelectedMemo | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -73,7 +72,7 @@ export default function SponsorView() {
       setCurrentUserId(user.id);
 
       const practitionerPromise = supabase.from('profiles').select('id, full_name').eq('id', practitionerId).single();
-      const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
+      const virtuesPromise = supabase.from('virtues').select('id, name, description, short_description').order('id');
       // Query user_virtue_stage_memos to get the actual memo content
       const memosPromise = supabase.from('user_virtue_stage_memos').select('virtue_id, stage_number, memo_text').eq('user_id', practitionerId);
       // Query assessment results directly instead of through join (RLS may be blocking the join)
@@ -197,7 +196,31 @@ export default function SponsorView() {
     fetchData();
   }, [fetchData]);
 
-  const handleSelectMemo = (virtue: Virtue, stageNumber: number) => {
+  // Custom status classes for sponsor view - shows progress and memo availability
+  const getSponsorStatusClasses = (virtueId: number, stage: number) => {
+    const progressStatus = progress.get(`${virtueId}-${stage}`);
+    const memo = sharedMemos.find(m => m.virtue_id === virtueId && m.stage_number === stage);
+    
+    // If completed, show green
+    if (progressStatus === 'completed') {
+      return 'bg-green-500 hover:bg-green-600';
+    }
+    
+    // If in progress, show amber
+    if (progressStatus === 'in_progress') {
+      return 'bg-amber-500 hover:bg-amber-600';
+    }
+    
+    // If there's a memo but no progress status, show it's available
+    if (memo && memo.memo_text) {
+      return 'bg-stone-500 hover:bg-stone-600';
+    }
+    
+    // Default: not started
+    return 'bg-stone-200';
+  };
+
+  const handleSelectMemo = (virtue: VirtueType, stageNumber: number) => {
     console.log('🔍 Selecting memo:', virtue.name, stageNumber);
     console.log('📝 Available memos:', sharedMemos);
     
@@ -394,31 +417,132 @@ export default function SponsorView() {
                         <BookOpen className="h-6 w-6 text-amber-700" />
                         <div className="flex-1">
                             <CardTitle className="text-stone-800 font-medium">Virtue Progress</CardTitle>
-                            <CardDescription className="text-stone-600">Click to view shared reflections</CardDescription>
+                            <CardDescription className="text-stone-600">Click stage buttons to view practitioner reflections</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                        {virtues.map(virtue => (
-                            <div key={virtue.id} className="flex items-center p-3 bg-stone-50/60 rounded-lg border border-stone-200/60">
-                                <h3 className="font-medium flex-1 text-stone-800">{virtue.name}</h3>
-                                <div className="flex gap-2">
-                                    {[1,2,3].map(stageNum => {
-                                        const memo = sharedMemos.find(m => m.virtue_id === virtue.id && m.stage_number === stageNum);
-                                        return (
-                                            <Button 
-                                                key={stageNum} 
-                                                size="sm" 
-                                                className={getButtonStatusClass(virtue.id, stageNum)}
-                                                onClick={() => handleSelectMemo(virtue, stageNum)}
-                                                disabled={!memo}
-                                            >
-                                                {stageNum}
-                                            </Button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {virtues.map(virtue => {
+                                // Calculate virtue score based on progress
+                                const stage1Status = progress.get(`${virtue.id}-1`);
+                                const stage2Status = progress.get(`${virtue.id}-2`);
+                                const stage3Status = progress.get(`${virtue.id}-3`);
+                                const completedStages = [stage1Status, stage2Status, stage3Status].filter(s => s === 'completed').length;
+                                const virtueWithScore = { ...virtue, virtue_score: (completedStages / 3) * 10 };
+                                
+                                return (
+                                    <li key={virtue.id} className="flex flex-col gap-3 md:gap-4 p-3 md:p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">
+                                        {hasAssessment && (
+                                            <div className="flex items-center gap-3 md:gap-4">
+                                                <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
+                                                    <svg className="w-full h-full" viewBox="0 0 36 36">
+                                                        <path 
+                                                            className="text-stone-200" 
+                                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                                            fill="none" 
+                                                            stroke="currentColor" 
+                                                            strokeWidth="2" 
+                                                        />
+                                                        <path 
+                                                            className="text-amber-600" 
+                                                            strokeDasharray={`${(virtueWithScore.virtue_score || 0) * 10}, 100`} 
+                                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                                            fill="none" 
+                                                            stroke="currentColor" 
+                                                            strokeWidth="2" 
+                                                        />
+                                                    </svg>
+                                                    <span className="absolute text-lg md:text-xl font-semibold text-stone-700">
+                                                        {(virtueWithScore.virtue_score || 0).toFixed(1)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-grow min-w-0">
+                                                    <h3 className="font-semibold text-base md:text-lg text-stone-800 truncate">{virtue.name}</h3>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="flex-grow">
+                                            {!hasAssessment && (
+                                                <h3 className="font-semibold text-base md:text-lg text-stone-800 mb-2">{virtue.name}</h3>
+                                            )}
+                                            <p className="text-stone-600 text-sm mb-3 leading-relaxed">
+                                                {virtue.short_description || virtue.description}
+                                            </p>
+                                            
+                                            {/* Stage buttons for sponsor to view memos */}
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    {[
+                                                        { stage: 1, name: 'Dismantling', color: '#A0522D' },
+                                                        { stage: 2, name: 'Building', color: '#6B8E23' },
+                                                        { stage: 3, name: 'Practicing', color: '#556B2F' }
+                                                    ].map(({ stage, name, color }, index) => {
+                                                        const stageStatus = progress.get(`${virtue.id}-${stage}`);
+                                                        const memo = sharedMemos.find(m => m.virtue_id === virtue.id && m.stage_number === stage);
+                                                        const hasContent = memo && memo.memo_text;
+                                                        
+                                                        return (
+                                                            <div key={stage} className="flex items-center flex-1">
+                                                                <div className="flex flex-col items-center">
+                                                                    <button
+                                                                        onClick={() => hasContent && handleSelectMemo(virtue, stage)}
+                                                                        disabled={!hasContent}
+                                                                        className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 shadow-sm ${
+                                                                            hasContent
+                                                                                ? 'cursor-pointer hover:scale-105 hover:shadow-md active:scale-95 transform' 
+                                                                                : 'cursor-default opacity-60'
+                                                                        } ${
+                                                                            stageStatus === 'completed' 
+                                                                                ? 'bg-gradient-to-br from-white to-gray-50' 
+                                                                                : stageStatus === 'in_progress' 
+                                                                                ? 'bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200' 
+                                                                                : 'bg-gradient-to-br from-white to-gray-50 hover:from-gray-50 hover:to-gray-100'
+                                                                        }`}
+                                                                        style={{
+                                                                            borderColor: color,
+                                                                            color: stageStatus === 'completed' ? color : 
+                                                                                   stageStatus === 'in_progress' ? '#92400E' : color
+                                                                        }}
+                                                                    >
+                                                                        {stageStatus === 'completed' ? (
+                                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                            </svg>
+                                                                        ) : (
+                                                                            <span className="text-xs font-semibold">{stage}</span>
+                                                                        )}
+                                                                    </button>
+                                                                    <span 
+                                                                        className="text-xs font-medium mt-1 text-center"
+                                                                        style={{ color }}
+                                                                    >
+                                                                        {name}
+                                                                    </span>
+                                                                </div>
+                                                                
+                                                                {/* Connecting Line */}
+                                                                {index < 2 && (
+                                                                    <div className="flex-1 h-0.5 mx-2 bg-stone-300 relative">
+                                                                        <div 
+                                                                            className="h-full transition-all duration-500"
+                                                                            style={{
+                                                                                backgroundColor: stageStatus === 'completed' ? color : 'transparent',
+                                                                                width: stageStatus === 'completed' ? '100%' : '0%'
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     </CardContent>
                 </Card>
             </div>
