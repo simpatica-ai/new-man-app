@@ -76,7 +76,21 @@ export default function SponsorView() {
       const practitionerPromise = supabase.from('profiles').select('id, full_name').eq('id', practitionerId).single();
       const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
       const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
-      const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', practitionerId).order('assessment_id', { ascending: false });
+      // Query assessment data the same way as the personal dashboard (through user_assessments with join)
+      const assessmentPromise = supabase
+        .from('user_assessments')
+        .select(`
+          id,
+          user_assessment_results (
+            virtue_name,
+            priority_score,
+            defect_intensity
+          )
+        `)
+        .eq('user_id', practitionerId)
+        .eq('assessment_type', 'virtue')
+        .order('created_at', { ascending: false })
+        .limit(1);
       // Use sponsor_relationships instead of sponsor_connections since that's where the data is
       const connectionPromise = supabase.from('sponsor_relationships').select('id').eq('practitioner_id', practitionerId).eq('sponsor_id', user.id).eq('status', 'active').single();
       const activityPromise = supabase.from('user_virtue_stage_memos').select('created_at').eq('user_id', practitionerId).order('created_at', { ascending: false }).limit(1);
@@ -111,7 +125,16 @@ export default function SponsorView() {
         console.error('❌ Assessment error:', assessmentResult.error);
         throw assessmentResult.error;
       }
-      const assessmentResults = assessmentResult.data || [];
+      
+      // Extract results from the joined query (same pattern as personal dashboard)
+      let assessmentResults: {virtue_name: string; priority_score: number}[] = [];
+      if (assessmentResult.data && assessmentResult.data.length > 0) {
+        const latestAssessment = assessmentResult.data[0];
+        if (latestAssessment?.user_assessment_results && Array.isArray(latestAssessment.user_assessment_results)) {
+          assessmentResults = latestAssessment.user_assessment_results;
+        }
+      }
+      
       console.log('✅ Assessment results loaded:', assessmentResults.length, assessmentResults);
       setAssessmentData(assessmentResults);
       setHasAssessment(assessmentResults.length > 0);
