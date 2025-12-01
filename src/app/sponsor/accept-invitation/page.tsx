@@ -44,7 +44,7 @@ function AcceptInvitationContent() {
           id,
           sponsor_email,
           practitioner_id,
-          profiles!sponsor_relationships_practitioner_id_fkey(full_name, email)
+          profiles!sponsor_relationships_practitioner_id_fkey(full_name)
         `)
         .eq('invitation_token', token || '')
         .eq('status', 'email_sent')
