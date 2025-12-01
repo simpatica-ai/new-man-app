@@ -83,12 +83,17 @@ export default function SponsorView() {
         .eq('user_id', practitionerId)
         .order('created_at', { ascending: false })
         .limit(12);
+      // Query virtue stage progress to show which stages are completed
+      const progressPromise = supabase
+        .from('user_virtue_stage_progress')
+        .select('virtue_id, stage_number, status')
+        .eq('user_id', practitionerId);
       // Use sponsor_relationships instead of sponsor_connections since that's where the data is
       const connectionPromise = supabase.from('sponsor_relationships').select('id').eq('practitioner_id', practitionerId).eq('sponsor_id', user.id).eq('status', 'active').single();
       const activityPromise = supabase.from('user_virtue_stage_memos').select('created_at').eq('user_id', practitionerId).order('created_at', { ascending: false }).limit(1);
 
-      const [practitionerResult, virtuesResult, memosResult, assessmentResult, connectionResult, activityResult] = await Promise.all([
-        practitionerPromise, virtuesPromise, memosPromise, assessmentPromise, connectionPromise, activityPromise
+      const [practitionerResult, virtuesResult, memosResult, assessmentResult, progressResult, connectionResult, activityResult] = await Promise.all([
+        practitionerPromise, virtuesPromise, memosPromise, assessmentPromise, progressPromise, connectionPromise, activityPromise
       ]);
 
       if (practitionerResult.error) throw practitionerResult.error;
@@ -112,6 +117,20 @@ export default function SponsorView() {
       // Count unread memos
       const unread = memos.filter(m => !m.sponsor_read_at || new Date(m.practitioner_updated_at) > new Date(m.sponsor_read_at)).length;
       setUnreadCount(unread);
+      
+      // Process virtue stage progress
+      if (progressResult.error) {
+        console.error('❌ Progress error:', progressResult.error);
+      } else if (progressResult.data) {
+        console.log('✅ Progress loaded:', progressResult.data.length);
+        // Build progress map like the personal dashboard does
+        const progressMap = new Map();
+        progressResult.data.forEach((p: {virtue_id: number; stage_number: number; status: string}) => {
+          progressMap.set(`${p.virtue_id}-${p.stage_number}`, p.status);
+        });
+        // Store progress in state (need to add this state variable)
+        console.log('📊 Progress map:', progressMap);
+      }
       
       if (assessmentResult.error) {
         console.error('❌ Assessment error:', assessmentResult.error);
