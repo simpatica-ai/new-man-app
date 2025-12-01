@@ -19,6 +19,7 @@ import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import VirtueAssessmentPDF from '@/app/assessment/VirtueAssessmentPDF';
 import { Download } from 'lucide-react';
+import { convertChartToImage } from '@/utils/chartToImage';
 
 // --- Type Definitions ---
 type PractitionerProfile = {
@@ -604,7 +605,7 @@ export default function SponsorView() {
                     <CardContent>
                         {hasAssessment ? (
                             <div className="space-y-4">
-                                <div className="flex justify-center">
+                                <div className="flex justify-center" data-testid="virtue-chart">
                                     <VirtueRoseChart 
                                         data={virtues.map(v => {
                                             const assessment = assessmentData.find(a => a.virtue_name === v.name);
@@ -624,6 +625,11 @@ export default function SponsorView() {
                                     <Button
                                         onClick={async () => {
                                             try {
+                                                // Capture the chart image first
+                                                console.log('Capturing chart image...');
+                                                const chartImage = await convertChartToImage('sponsor-pdf');
+                                                console.log('Chart image captured:', !!chartImage);
+                                                
                                                 // Fetch all data needed for PDF
                                                 const [analysisRes, resultsRes, summaryRes] = await Promise.all([
                                                     supabase
@@ -672,7 +678,7 @@ export default function SponsorView() {
                                                         analyses={analysesMap}
                                                         summaryAnalysis={summaryRes.data?.summary_analysis || 'No summary available.'}
                                                         userName={practitioner.full_name || 'Practitioner'}
-                                                        chartImage={null}
+                                                        chartImage={chartImage}
                                                     />
                                                 );
                                                 
