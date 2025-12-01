@@ -16,10 +16,11 @@ function AcceptInvitationContent() {
   const [loading, setLoading] = useState(false)
   const [invitation, setInvitation] = useState<{
     id: string;
-    email: string;
-    role: string;
-    organization_name: string;
-    expires_at: string;
+    sponsor_email: string | null;
+    practitioner_id: string | null;
+    profiles: {
+      full_name: string | null;
+    } | null;
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -57,11 +58,11 @@ function AcceptInvitationContent() {
       }
 
       setInvitation(data)
-      setFormData(prev => ({ ...prev, email: data.sponsor_email }))
+      setFormData(prev => ({ ...prev, email: data.sponsor_email || '' }))
       
       // Check if user is already logged in
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      if (user && data.sponsor_email) {
         if (user.email === data.sponsor_email) {
           // User is logged in with correct email - they can accept directly
           setIsExistingUser(true)
@@ -264,18 +265,18 @@ function AcceptInvitationContent() {
                   Create a new password for your account
                 </p>
               </div>
-            </div>
-            {error && (
-              <p className="text-red-600 text-sm">{error}</p>
-            )}
-            <Button 
-              type="submit" 
-              className="w-full bg-amber-600 hover:bg-amber-700"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Accept Invitation'}
-            </Button>
-          </form>
+              {error && (
+                <p className="text-red-600 text-sm">{error}</p>
+              )}
+              <Button 
+                type="submit" 
+                className="w-full bg-amber-600 hover:bg-amber-700"
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Create Account & Accept Invitation'}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
