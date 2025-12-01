@@ -119,8 +119,9 @@ function AcceptInvitationContent() {
       }
 
       if (!userId) throw new Error('Failed to authenticate user')
+      if (!invitation) throw new Error('Invitation data not found')
 
-      // Update the invitation
+      // Update the invitation in sponsor_relationships
       const { error: updateError } = await supabase
         .from('sponsor_relationships')
         .update({
@@ -130,6 +131,21 @@ function AcceptInvitationContent() {
         .eq('invitation_token', token || '')
 
       if (updateError) throw updateError
+
+      // Create the active connection in sponsor_connections table
+      // This is needed for the sponsor dashboard to work properly
+      const { error: connectionError } = await supabase
+        .from('sponsor_connections')
+        .insert({
+          practitioner_user_id: invitation.practitioner_id,
+          sponsor_user_id: userId,
+          status: 'active'
+        })
+
+      if (connectionError) {
+        // If connection already exists, that's okay - just log it
+        console.log('Connection may already exist:', connectionError)
+      }
 
       setSuccess(true)
     } catch (error) {
