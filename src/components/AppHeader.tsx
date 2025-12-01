@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // <-- Import the hook
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare, Users, Target } from 'lucide-react';
 import FeedbackSurveyModal from './FeedbackSurveyModal';
 
 type Profile = {
@@ -16,14 +16,28 @@ type Profile = {
 export default function AppHeader() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [isSponsor, setIsSponsor] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-        setProfile(data);
+        const { data: profileData } = await supabase.from('profiles').select('full_name, has_completed_first_assessment').eq('id', user.id).single();
+        setProfile(profileData);
+        
+        // Only check for sponsor role if user has also completed assessment (is a practitioner)
+        // This way the switcher only shows for users with BOTH roles
+        if (profileData?.has_completed_first_assessment) {
+          const { data: sponsorData } = await supabase
+            .from('sponsor_relationships')
+            .select('id')
+            .eq('sponsor_id', user.id)
+            .eq('status', 'active')
+            .limit(1);
+          
+          setIsSponsor(!!(sponsorData && sponsorData.length > 0));
+        }
       }
     };
     fetchProfile();
@@ -80,6 +94,34 @@ export default function AppHeader() {
             
             {/* Right side: Action buttons - always in top row */}
             <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* Show sponsor dashboard link if user is a sponsor and on practitioner dashboard */}
+              {isSponsor && pathname === '/' && (
+                <Link href="/sponsor/dashboard">
+                  <Button 
+                    title="Sponsor Dashboard" 
+                    variant="outline" 
+                    size="sm"
+                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-colors h-8 px-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">Sponsor View</span>
+                  </Button>
+                </Link>
+              )}
+              {/* Show practitioner dashboard link if on sponsor pages */}
+              {pathname.startsWith('/sponsor') && (
+                <Link href="/">
+                  <Button 
+                    title="My Dashboard" 
+                    variant="outline" 
+                    size="sm"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors h-8 px-2"
+                  >
+                    <Target className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">My Practice</span>
+                  </Button>
+                </Link>
+              )}
               <Button 
                 onClick={() => setShowFeedbackModal(true)}
                 title="Feedback" 
