@@ -23,8 +23,6 @@ type SharedMemo = {
   virtue_id: number;
   stage_number: number;
   memo_text: string | null;
-  practitioner_updated_at: string;
-  sponsor_read_at: string | null;
 };
 
 type Virtue = {
@@ -76,7 +74,8 @@ export default function SponsorView() {
 
       const practitionerPromise = supabase.from('profiles').select('id, full_name').eq('id', practitionerId).single();
       const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
-      const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
+      // Query user_virtue_stage_memos to get the actual memo content
+      const memosPromise = supabase.from('user_virtue_stage_memos').select('virtue_id, stage_number, memo_text').eq('user_id', practitionerId);
       // Query assessment results directly instead of through join (RLS may be blocking the join)
       const assessmentPromise = supabase
         .from('user_assessment_results')
@@ -110,14 +109,16 @@ export default function SponsorView() {
       const baseVirtues = virtuesResult.data || [];
       console.log('✅ Virtues loaded:', baseVirtues.length);
 
-      if (memosResult.error) throw memosResult.error;
-      const memos = memosResult.data || [];
-      setSharedMemos(memos);
-      console.log('✅ Memos loaded:', memos.length);
-      
-      // Count unread memos
-      const unread = memos.filter(m => !m.sponsor_read_at || new Date(m.practitioner_updated_at) > new Date(m.sponsor_read_at)).length;
-      setUnreadCount(unread);
+      if (memosResult.error) {
+        console.error('❌ Memos error:', memosResult.error);
+      } else {
+        const memos = memosResult.data || [];
+        setSharedMemos(memos);
+        console.log('✅ Memos loaded:', memos.length, memos);
+        
+        // For now, treat all memos as unread (we can add read tracking later)
+        setUnreadCount(memos.length);
+      }
       
       // Process virtue stage progress
       if (progressResult.error) {
@@ -197,34 +198,18 @@ export default function SponsorView() {
   }, [fetchData]);
 
   const handleSelectMemo = (virtue: Virtue, stageNumber: number) => {
+    console.log('🔍 Selecting memo:', virtue.name, stageNumber);
+    console.log('📝 Available memos:', sharedMemos);
+    
     const memo = sharedMemos.find(m => m.virtue_id === virtue.id && m.stage_number === stageNumber);
-    if (memo) {
+    console.log('📄 Found memo:', memo);
+    
+    if (memo && memo.memo_text) {
+      console.log('✅ Opening memo with text:', memo.memo_text.substring(0, 50) + '...');
       setSelectedMemo({ ...memo, virtue_name: virtue.name });
-      if (!memo.sponsor_read_at) {
-        markMemoAsRead(memo);
-      }
     } else {
-        setSelectedMemo(null);
-    }
-  };
-
-  const markMemoAsRead = async (memo: SharedMemo) => {
-    const { error } = await supabase
-      .from('sponsor_visible_memos')
-      .update({ sponsor_read_at: new Date().toISOString() })
-      .eq('user_id', practitionerId)
-      .eq('virtue_id', memo.virtue_id)
-      .eq('stage_number', memo.stage_number);
-
-    if (error) {
-        console.error("Error marking memo as read:", error);
-    } else {
-        setSharedMemos(memos => memos.map(m => 
-            (m.virtue_id === memo.virtue_id && m.stage_number === memo.stage_number)
-            ? { ...m, sponsor_read_at: new Date().toISOString() } 
-            : m
-        ));
-        setUnreadCount(prev => Math.max(0, prev - 1));
+      console.log('⚠️ No memo found for this stage');
+      setSelectedMemo(null);
     }
   };
 
@@ -248,15 +233,9 @@ export default function SponsorView() {
       return 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white';
     }
     
-    // If there's a memo, check if it's unread
-    if (memo) {
-      const practitionerUpdated = new Date(memo.practitioner_updated_at);
-      const sponsorRead = memo.sponsor_read_at ? new Date(memo.sponsor_read_at) : null;
-
-      if (!sponsorRead || practitionerUpdated > sponsorRead) {
-        return 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md animate-pulse';
-      }
-      return 'bg-gradient-to-r from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white';
+    // If there's a memo, show it's available
+    if (memo && memo.memo_text) {
+      return 'bg-gradient-to-r from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white cursor-pointer';
     }
     
     // Default: not started
@@ -452,7 +431,7 @@ export default function SponsorView() {
                             {selectedMemo ? `${selectedMemo.virtue_name} - Stage ${selectedMemo.stage_number}` : 'Select a Reflection'}
                         </CardTitle>
                         <CardDescription className="text-stone-600">
-                            {selectedMemo ? `Last updated: ${new Date(selectedMemo.practitioner_updated_at).toLocaleString()}` : 'Click a stage number to view shared reflections.'}
+                            {selectedMemo ? 'Practitioner reflection' : 'Click a stage number to view shared reflections.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
