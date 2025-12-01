@@ -56,6 +56,7 @@ export default function SponsorView() {
   const [assessmentData, setAssessmentData] = useState<{virtue_name: string; priority_score: number}[]>([]);
   const [hasAssessment, setHasAssessment] = useState(false);
   const [lastActivity, setLastActivity] = useState<string | null>(null);
+  const [progress, setProgress] = useState<Map<string, string>>(new Map());
 
   const params = useParams();
   const router = useRouter();
@@ -124,11 +125,11 @@ export default function SponsorView() {
       } else if (progressResult.data) {
         console.log('✅ Progress loaded:', progressResult.data.length);
         // Build progress map like the personal dashboard does
-        const progressMap = new Map();
+        const progressMap = new Map<string, string>();
         progressResult.data.forEach((p: {virtue_id: number; stage_number: number; status: string}) => {
           progressMap.set(`${p.virtue_id}-${p.stage_number}`, p.status);
         });
-        // Store progress in state (need to add this state variable)
+        setProgress(progressMap);
         console.log('📊 Progress map:', progressMap);
       }
       
@@ -228,16 +229,38 @@ export default function SponsorView() {
   };
 
   const getButtonStatusClass = (virtueId: number, stageNumber: number) => {
+    // Check progress status first
+    const progressStatus = progress.get(`${virtueId}-${stageNumber}`);
     const memo = sharedMemos.find(m => m.virtue_id === virtueId && m.stage_number === stageNumber);
-    if (!memo) return 'bg-stone-200 hover:bg-stone-300 text-stone-500 cursor-not-allowed';
     
-    const practitionerUpdated = new Date(memo.practitioner_updated_at);
-    const sponsorRead = memo.sponsor_read_at ? new Date(memo.sponsor_read_at) : null;
-
-    if (!sponsorRead || practitionerUpdated > sponsorRead) {
-      return 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md animate-pulse';
+    // If no progress and no memo, button is disabled
+    if (!progressStatus && !memo) {
+      return 'bg-stone-200 hover:bg-stone-300 text-stone-500 cursor-not-allowed';
     }
-    return 'bg-gradient-to-r from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white';
+    
+    // If completed, show green
+    if (progressStatus === 'completed') {
+      return 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white';
+    }
+    
+    // If in progress, show amber
+    if (progressStatus === 'in_progress') {
+      return 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white';
+    }
+    
+    // If there's a memo, check if it's unread
+    if (memo) {
+      const practitionerUpdated = new Date(memo.practitioner_updated_at);
+      const sponsorRead = memo.sponsor_read_at ? new Date(memo.sponsor_read_at) : null;
+
+      if (!sponsorRead || practitionerUpdated > sponsorRead) {
+        return 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md animate-pulse';
+      }
+      return 'bg-gradient-to-r from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white';
+    }
+    
+    // Default: not started
+    return 'bg-stone-200 hover:bg-stone-300 text-stone-500 cursor-not-allowed';
   };
 
   const handleSendChatMessage = async () => {
