@@ -15,6 +15,10 @@ import VirtueRoseChart from '@/components/VirtueRoseChart';
 import VirtueRow from '@/components/dashboard/VirtueRow';
 import { Virtue as VirtueType } from '@/lib/constants';
 import DOMPurify from 'dompurify';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
+import VirtueAssessmentPDF from '@/app/assessment/VirtueAssessmentPDF';
+import { Download } from 'lucide-react';
 
 // --- Type Definitions ---
 type PractitionerProfile = {
@@ -620,64 +624,69 @@ export default function SponsorView() {
                                     <Button
                                         onClick={async () => {
                                             try {
-                                                // Fetch practitioner's virtue analysis with virtue names
-                                                const { data: analysisData, error } = await supabase
-                                                    .from('virtue_analysis')
-                                                    .select('analysis_text, virtues(name)')
-                                                    .eq('user_id', practitionerId)
-                                                    .order('created_at', { ascending: false });
+                                                // Fetch all data needed for PDF
+                                                const [analysisRes, resultsRes, summaryRes] = await Promise.all([
+                                                    supabase
+                                                        .from('virtue_analysis')
+                                                        .select('analysis_text, virtue_id, virtues(name)')
+                                                        .eq('user_id', practitionerId),
+                                                    supabase
+                                                        .from('user_assessment_results')
+                                                        .select('virtue_name, priority_score, defect_intensity')
+                                                        .eq('user_id', practitionerId),
+                                                    supabase
+                                                        .from('user_assessments')
+                                                        .select('summary_analysis')
+                                                        .eq('user_id', practitionerId)
+                                                        .order('created_at', { ascending: false })
+                                                        .limit(1)
+                                                        .single()
+                                                ]);
                                                 
-                                                if (error) throw error;
-                                                
-                                                if (!analysisData || analysisData.length === 0) {
+                                                if (analysisRes.error) throw analysisRes.error;
+                                                if (!analysisRes.data || analysisRes.data.length === 0) {
                                                     alert('No virtue plan available for this practitioner yet.');
                                                     return;
                                                 }
                                                 
-                                                // Create a simple view of the analyses
-                                                const analysesText = analysisData
-                                                    .map(a => `${a.virtues?.name || 'Unknown Virtue'}:\n${a.analysis_text}`)
-                                                    .join('\n\n---\n\n');
+                                                // Build analyses map
+                                                const analysesMap = new Map();
+                                                analysisRes.data.forEach(a => {
+                                                    if (a.virtues?.name) {
+                                                        analysesMap.set(a.virtues.name, a.analysis_text);
+                                                    }
+                                                });
                                                 
-                                                // Open in new window
-                                                const newWindow = window.open('', '_blank');
-                                                if (newWindow) {
-                                                    newWindow.document.write(`
-                                                        <html>
-                                                            <head>
-                                                                <title>Virtue Plan - ${practitioner.full_name}</title>
-                                                                <style>
-                                                                    body { font-family: system-ui; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-                                                                    h1 { color: #78350f; border-bottom: 2px solid #d97706; padding-bottom: 10px; }
-                                                                    h2 { color: #92400e; margin-top: 30px; }
-                                                                    pre { white-space: pre-wrap; background: #fef3c7; padding: 15px; border-radius: 8px; }
-                                                                    @media print { body { padding: 20px; } }
-                                                                </style>
-                                                            </head>
-                                                            <body>
-                                                                <h1>Virtue Development Plan</h1>
-                                                                <p><strong>Practitioner:</strong> ${practitioner.full_name || 'Unknown'}</p>
-                                                                <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
-                                                                <hr>
-                                                                <pre>${analysesText}</pre>
-                                                                <script>
-                                                                    // Auto-print dialog
-                                                                    window.onload = () => setTimeout(() => window.print(), 500);
-                                                                </script>
-                                                            </body>
-                                                        </html>
-                                                    `);
-                                                    newWindow.document.close();
-                                                }
+                                                // Build results array for PDF
+                                                const results = resultsRes.data?.map(r => ({
+                                                    virtue: r.virtue_name,
+                                                    priority: r.priority_score,
+                                                    defectIntensity: r.defect_intensity || 0,
+                                                    score: Math.max(0, 10 - (r.priority_score / 125) * 10)
+                                                })) || [];
+                                                
+                                                // Generate PDF
+                                                const pdfDoc = (
+                                                    <VirtueAssessmentPDF
+                                                        results={results}
+                                                        analyses={analysesMap}
+                                                        summaryAnalysis={summaryRes.data?.summary_analysis || 'No summary available.'}
+                                                        userName={practitioner.full_name || 'Practitioner'}
+                                                        chartImage={null}
+                                                    />
+                                                );
+                                                
+                                                const blob = await pdf(pdfDoc).toBlob();
+                                                saveAs(blob, `Virtue_Plan_${practitioner.full_name}_${new Date().toISOString().split('T')[0]}.pdf`);
                                             } catch (error) {
-                                                console.error('Error loading virtue plan:', error);
-                                                alert('Failed to load virtue plan. Please try again.');
+                                                console.error('Error generating PDF:', error);
+                                                alert('Failed to generate PDF. Please try again.');
                                             }
                                         }}
                                         className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white shadow-md hover:shadow-lg"
                                     >
-                                        <BarChart3 className="h-4 w-4" />
-                                        View & Print Virtue Plan
+                                        <Download className="h-4 w-4" />
+                                        Download Virtue Plan PDF
                                     </Button>
                                 </div>
                             </div>
