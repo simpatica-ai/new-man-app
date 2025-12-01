@@ -27,24 +27,34 @@ const HomePage = () => {
         // Check user role and redirect appropriately
         supabase
           .from('profiles')
-          .select('has_completed_first_assessment, role')
+          .select('has_completed_first_assessment')
           .eq('id', session.user.id)
           .single()
-          .then(({ data: profile }) => {
-            // Redirect sponsors to sponsor dashboard - keep loading state
-            if (profile?.role === 'sponsor' || profile?.role === 'ind-sponsor') {
-              // Keep loading state true during redirect
+          .then(async ({ data: profile }) => {
+            // Check if user is a sponsor (has active sponsor relationships)
+            const { data: sponsorData } = await supabase
+              .from('sponsor_relationships')
+              .select('id')
+              .eq('sponsor_id', session.user.id)
+              .eq('status', 'active')
+              .limit(1);
+            
+            const isSponsor = sponsorData && sponsorData.length > 0;
+            const isPractitioner = profile?.has_completed_first_assessment;
+            
+            // If user is ONLY a sponsor (not a practitioner), redirect to sponsor dashboard
+            if (isSponsor && !isPractitioner) {
               window.location.href = '/sponsor/dashboard';
               return;
             }
             
             // Redirect practitioners who haven't completed assessment to welcome
-            if (!profile?.has_completed_first_assessment) {
+            if (!isPractitioner) {
               window.location.href = '/welcome';
               return;
             }
             
-            // Only set session after checks are complete
+            // User is a practitioner (or both) - show practitioner dashboard
             setSession(session);
             setIsLoading(false);
           });
@@ -60,19 +70,30 @@ const HomePage = () => {
           setNeedsEmailConfirmation(true);
           setSession(null);
         } else if (session?.user) {
-          // Check role before setting session
+          // Check if user is sponsor-only before setting session
           supabase
             .from('profiles')
-            .select('role')
+            .select('has_completed_first_assessment')
             .eq('id', session.user.id)
             .single()
-            .then(({ data: profile }) => {
-              // Redirect sponsors - don't set session
-              if (profile?.role === 'sponsor' || profile?.role === 'ind-sponsor') {
+            .then(async ({ data: profile }) => {
+              // Check if user is a sponsor
+              const { data: sponsorData } = await supabase
+                .from('sponsor_relationships')
+                .select('id')
+                .eq('sponsor_id', session.user.id)
+                .eq('status', 'active')
+                .limit(1);
+              
+              const isSponsor = sponsorData && sponsorData.length > 0;
+              const isPractitioner = profile?.has_completed_first_assessment;
+              
+              // Redirect sponsor-only users
+              if (isSponsor && !isPractitioner) {
                 window.location.href = '/sponsor/dashboard';
                 return;
               }
-              // For practitioners, set session normally
+              // For practitioners (or both), set session normally
               setSession(session);
               setNeedsEmailConfirmation(false);
             });
