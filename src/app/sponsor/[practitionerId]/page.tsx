@@ -366,51 +366,8 @@ export default function SponsorView() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Panel: Assessment & Virtue List */}
+            {/* Left Panel: Virtue List */}
             <div className="space-y-6">
-                {/* Assessment Results */}
-                <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <BarChart3 className="h-6 w-6 text-amber-700" />
-                        <div className="flex-1">
-                            <CardTitle className="text-stone-800 font-medium">Assessment Results</CardTitle>
-                            <CardDescription className="text-stone-600">Virtue priority analysis</CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {hasAssessment ? (
-                            <div className="space-y-4">
-                                <div className="flex justify-center">
-                                    <VirtueRoseChart 
-                                        data={virtues.map(v => {
-                                            const assessment = assessmentData.find(a => a.virtue_name === v.name);
-                                            const defectCount = 5; // Placeholder - would need actual defect mapping
-                                            const maxScore = defectCount * 25;
-                                            const score = assessment ? Math.max(0, 10 - (assessment.priority_score / maxScore) * 10) : 5;
-                                            return { virtue: v.name, score };
-                                        })}
-                                        size="medium"
-                                        showLabels={true}
-                                    />
-                                </div>
-                                <p className="text-sm text-stone-600 text-center bg-stone-50/60 p-3 rounded-lg">
-                                    Lower scores indicate higher priority for virtue development.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <div className="bg-amber-50/60 p-4 rounded-lg border border-amber-200/60">
-                                    <AlertCircle className="h-8 w-8 text-amber-600 mx-auto mb-2" />
-                                    <p className="text-amber-800 font-medium">Assessment Not Completed</p>
-                                    <p className="text-sm text-amber-700 mt-1">
-                                        {practitioner.full_name || 'This practitioner'} has not yet completed their character defect assessment.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                
                 {/* Virtue Progress */}
                 <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
                     <CardHeader className="flex flex-row items-center gap-4">
@@ -552,21 +509,21 @@ export default function SponsorView() {
                 </Card>
             </div>
 
-            {/* Right Panel: Content Viewer and Chat */}
+            {/* Right Panel: Content Viewer, Chat, and Assessment */}
             <div className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle min-h-[400px]">
+                <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
                     <CardHeader>
                         <CardTitle className="text-stone-800 font-medium">
                             {selectedMemo ? `${selectedMemo.virtue_name} - Stage ${selectedMemo.stage_number}` : 'Select a Reflection'}
                         </CardTitle>
                         <CardDescription className="text-stone-600">
-                            {selectedMemo ? 'Practitioner reflection' : 'Click a stage number to view shared reflections.'}
+                            {selectedMemo ? 'Practitioner reflection' : 'Click a stage button to view practitioner reflections.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {selectedMemo ? (
                             <div 
-                              className="prose max-w-none p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-stone-200/60" 
+                              className="prose max-w-none p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-stone-200/60 max-h-[500px] overflow-y-auto" 
                               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedMemo.memo_text || '<em>No content shared.</em>') }} 
                             />
                         ) : (
@@ -627,6 +584,49 @@ export default function SponsorView() {
                                 <Send size={20} />
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Assessment Results */}
+                <Card className="bg-white/80 backdrop-blur-sm border-stone-200/60 shadow-gentle">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        <BarChart3 className="h-6 w-6 text-amber-700" />
+                        <div className="flex-1">
+                            <CardTitle className="text-stone-800 font-medium">Assessment Results</CardTitle>
+                            <CardDescription className="text-stone-600">Virtue priority analysis</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {hasAssessment ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-center">
+                                    <VirtueRoseChart 
+                                        data={virtues.map(v => {
+                                            const assessment = assessmentData.find(a => a.virtue_name === v.name);
+                                            const defectCount = 5;
+                                            const maxScore = defectCount * 25;
+                                            const score = assessment ? Math.max(0, 10 - (assessment.priority_score / maxScore) * 10) : 5;
+                                            return { virtue: v.name, score };
+                                        })}
+                                        size="medium"
+                                        showLabels={true}
+                                    />
+                                </div>
+                                <p className="text-sm text-stone-600 text-center bg-stone-50/60 p-3 rounded-lg">
+                                    Lower scores indicate higher priority for virtue development.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <div className="bg-amber-50/60 p-4 rounded-lg border border-amber-200/60">
+                                    <AlertCircle className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                                    <p className="text-amber-800 font-medium">Assessment Not Completed</p>
+                                    <p className="text-sm text-amber-700 mt-1">
+                                        {practitioner.full_name || 'This practitioner'} has not yet completed their character defect assessment.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
