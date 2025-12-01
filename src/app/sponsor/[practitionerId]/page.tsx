@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -615,6 +616,15 @@ export default function SponsorView() {
                                 <p className="text-sm text-stone-600 text-center bg-stone-50/60 p-3 rounded-lg">
                                     Lower scores indicate higher priority for virtue development.
                                 </p>
+                                <div className="flex justify-center">
+                                    <Link 
+                                        href={`/assessment?userId=${practitionerId}`}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                                    >
+                                        <BarChart3 className="h-4 w-4" />
+                                        View Full Assessment Report
+                                    </Link>
+                                </div>
                             </div>
                         ) : (
                             <div className="text-center py-8">
