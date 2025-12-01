@@ -23,6 +23,7 @@ function AcceptInvitationContent() {
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [isExistingUser, setIsExistingUser] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -57,6 +58,12 @@ function AcceptInvitationContent() {
 
       setInvitation(data)
       setFormData(prev => ({ ...prev, email: data.sponsor_email }))
+      
+      // Check if user is already logged in
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && user.email === data.sponsor_email) {
+        setIsExistingUser(true)
+      }
     }
 
     fetchInvitation()
@@ -183,6 +190,12 @@ function AcceptInvitationContent() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAccept} className="space-y-4">
+            <p className="text-stone-600 text-sm bg-blue-50 p-3 rounded">
+              {isExistingUser ? 
+                `You're already logged in. Enter your password to confirm and accept the invitation.` :
+                `If you already have an account with ${formData.email}, enter your existing password. Otherwise, create a new password to sign up.`
+              }
+            </p>
             <div>
               <Label htmlFor="fullName">Full Name</Label>
               <Input
@@ -191,7 +204,7 @@ function AcceptInvitationContent() {
                 value={formData.fullName}
                 onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                 placeholder="Your full name"
-                required
+                required={!isExistingUser}
               />
             </div>
             <div>
@@ -213,9 +226,14 @@ function AcceptInvitationContent() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="Create a password"
+                placeholder={isExistingUser ? "Enter your password" : "Enter your password (existing or new)"}
                 required
               />
+              {!isExistingUser && (
+                <p className="text-xs text-stone-500 mt-1">
+                  Use your existing password if you have an account, or create a new one
+                </p>
+              )}
             </div>
             {error && (
               <p className="text-red-600 text-sm">{error}</p>
