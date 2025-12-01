@@ -50,7 +50,7 @@ export default function SponsorView() {
   const [selectedMemo, setSelectedMemo] = useState<SelectedMemo | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newChatMessage, setNewChatMessage] = useState('');
-  const [connectionId, setConnectionId] = useState<number | null>(null);
+  const [connectionId, setConnectionId] = useState<number | string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [unreadCount, setUnreadCount] = useState(0);
   const [assessmentData, setAssessmentData] = useState<{virtue_name: string; priority_score: number}[]>([]);
@@ -87,6 +87,7 @@ export default function SponsorView() {
 
       if (practitionerResult.error) throw practitionerResult.error;
       setPractitioner(practitionerResult.data);
+      console.log('✅ Practitioner loaded:', practitionerResult.data);
       
       // Set last activity from memo updates
       if (activityResult.data && activityResult.data.length > 0) {
@@ -95,17 +96,23 @@ export default function SponsorView() {
 
       if (virtuesResult.error) throw virtuesResult.error;
       const baseVirtues = virtuesResult.data || [];
+      console.log('✅ Virtues loaded:', baseVirtues.length);
 
       if (memosResult.error) throw memosResult.error;
       const memos = memosResult.data || [];
       setSharedMemos(memos);
+      console.log('✅ Memos loaded:', memos.length);
       
       // Count unread memos
       const unread = memos.filter(m => !m.sponsor_read_at || new Date(m.practitioner_updated_at) > new Date(m.sponsor_read_at)).length;
       setUnreadCount(unread);
       
-      if (assessmentResult.error) throw assessmentResult.error;
+      if (assessmentResult.error) {
+        console.error('❌ Assessment error:', assessmentResult.error);
+        throw assessmentResult.error;
+      }
       const assessmentResults = assessmentResult.data || [];
+      console.log('✅ Assessment results loaded:', assessmentResults.length, assessmentResults);
       setAssessmentData(assessmentResults);
       setHasAssessment(assessmentResults.length > 0);
 
@@ -122,17 +129,25 @@ export default function SponsorView() {
         const connId = connectionResult.data.id;
         setConnectionId(connId);
 
-        const { data: rawMessages, error: messagesError } = await supabase.from('sponsor_chat_messages').select('id, sender_id, message_text, created_at, read_at').eq('connection_id', connId).order('created_at', { ascending: true });
-        if (messagesError) throw messagesError;
-
-        if (rawMessages && rawMessages.length > 0) {
-          const senderIds = [...new Set(rawMessages.map(msg => msg.sender_id))];
-          const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, full_name').in('id', senderIds);
-          if (profilesError) throw profilesError;
-
-          const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
-          const combinedMessages = rawMessages.map(msg => ({ ...msg, sender_name: profileMap.get(msg.sender_id) || 'Unknown User' }));
-          setChatMessages(combinedMessages);
+        // Only try to load chat messages if we have a numeric connection ID
+        // (sponsor_chat_messages requires sponsor_connections.id which is numeric)
+        if (typeof connId === 'number') {
+          const { data: rawMessages, error: messagesError } = await supabase.from('sponsor_chat_messages').select('id, sender_id, message_text, created_at, read_at').eq('connection_id', connId).order('created_at', { ascending: true });
+          
+          if (!messagesError && rawMessages && rawMessages.length > 0) {
+            const senderIds = [...new Set(rawMessages.map(msg => msg.sender_id))];
+            const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, full_name').in('id', senderIds);
+            
+            if (!profilesError && profiles) {
+              const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
+              const combinedMessages = rawMessages.map(msg => ({ ...msg, sender_name: profileMap.get(msg.sender_id) || 'Unknown User' }));
+              setChatMessages(combinedMessages);
+            }
+          } else if (messagesError) {
+            console.log('Chat messages not available:', messagesError.message);
+          }
+        } else {
+          console.log('Chat not available: connection ID is not numeric (using sponsor_relationships instead of sponsor_connections)');
         }
       }
 
@@ -197,6 +212,12 @@ export default function SponsorView() {
 
   const handleSendChatMessage = async () => {
     if (!newChatMessage.trim() || !currentUserId || !connectionId || !practitioner) return;
+    
+    // Chat only works with numeric connection IDs from sponsor_connections table
+    if (typeof connectionId !== 'number') {
+      alert("Chat is not available. Please contact support to enable this feature.");
+      return;
+    }
 
     const { data: newMessage, error } = await supabase
       .from('sponsor_chat_messages')
