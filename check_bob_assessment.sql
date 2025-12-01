@@ -17,8 +17,7 @@ SELECT
   id as assessment_id,
   user_id,
   assessment_type,
-  created_at,
-  completed_at
+  created_at
 FROM public.user_assessments
 WHERE user_id = '0dba2cfa-1a91-4c4e-a363-7dfb22ba67eb'
 ORDER BY created_at DESC;
