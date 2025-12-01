@@ -423,12 +423,15 @@ export default function SponsorView() {
                     <CardContent>
                         <ul className="space-y-3">
                             {virtues.map(virtue => {
-                                // Calculate virtue score based on progress
-                                const stage1Status = progress.get(`${virtue.id}-1`);
-                                const stage2Status = progress.get(`${virtue.id}-2`);
-                                const stage3Status = progress.get(`${virtue.id}-3`);
-                                const completedStages = [stage1Status, stage2Status, stage3Status].filter(s => s === 'completed').length;
-                                const virtueWithScore = { ...virtue, virtue_score: (completedStages / 3) * 10 };
+                                // Get virtue score from assessment data
+                                const assessment = assessmentData.find(a => a.virtue_name === virtue.name);
+                                // Convert priority_score to 0-10 scale (lower priority_score = higher virtue score)
+                                // Assuming priority_score ranges from 0-125 (5 defects * 25 max each)
+                                const maxPriorityScore = 125;
+                                const virtueScore = assessment 
+                                    ? Math.max(0, 10 - ((assessment.priority_score / maxPriorityScore) * 10))
+                                    : 5; // Default to middle if no assessment
+                                const virtueWithScore = { ...virtue, virtue_score: virtueScore };
                                 
                                 return (
                                     <li key={virtue.id} className="flex flex-col gap-3 md:gap-4 p-3 md:p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">
@@ -481,15 +484,17 @@ export default function SponsorView() {
                                                         const stageStatus = progress.get(`${virtue.id}-${stage}`);
                                                         const memo = sharedMemos.find(m => m.virtue_id === virtue.id && m.stage_number === stage);
                                                         const hasContent = memo && memo.memo_text;
+                                                        // Allow clicking if stage is completed OR in_progress (both should have content)
+                                                        const isClickable = stageStatus === 'completed' || stageStatus === 'in_progress';
                                                         
                                                         return (
                                                             <div key={stage} className="flex items-center flex-1">
                                                                 <div className="flex flex-col items-center">
                                                                     <button
-                                                                        onClick={() => hasContent && handleSelectMemo(virtue, stage)}
-                                                                        disabled={!hasContent}
+                                                                        onClick={() => isClickable && handleSelectMemo(virtue, stage)}
+                                                                        disabled={!isClickable}
                                                                         className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 shadow-sm ${
-                                                                            hasContent
+                                                                            isClickable
                                                                                 ? 'cursor-pointer hover:scale-105 hover:shadow-md active:scale-95 transform' 
                                                                                 : 'cursor-default opacity-60'
                                                                         } ${
