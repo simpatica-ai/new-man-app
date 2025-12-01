@@ -126,13 +126,20 @@ export default function SponsorView() {
         throw assessmentResult.error;
       }
       
+      console.log('📋 Raw assessment query result:', assessmentResult.data);
+      
       // Extract results from the joined query (same pattern as personal dashboard)
       let assessmentResults: {virtue_name: string; priority_score: number}[] = [];
       if (assessmentResult.data && assessmentResult.data.length > 0) {
         const latestAssessment = assessmentResult.data[0];
+        console.log('📊 Latest assessment object:', latestAssessment);
+        console.log('📊 user_assessment_results field:', latestAssessment?.user_assessment_results);
+        
         if (latestAssessment?.user_assessment_results && Array.isArray(latestAssessment.user_assessment_results)) {
           assessmentResults = latestAssessment.user_assessment_results;
         }
+      } else {
+        console.log('⚠️ No assessment data found in query result');
       }
       
       console.log('✅ Assessment results loaded:', assessmentResults.length, assessmentResults);
