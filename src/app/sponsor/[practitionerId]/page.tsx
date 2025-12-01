@@ -76,21 +76,13 @@ export default function SponsorView() {
       const practitionerPromise = supabase.from('profiles').select('id, full_name').eq('id', practitionerId).single();
       const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
       const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
-      // Query assessment data - try without assessment_type filter first
+      // Query assessment results directly instead of through join (RLS may be blocking the join)
       const assessmentPromise = supabase
-        .from('user_assessments')
-        .select(`
-          id,
-          assessment_type,
-          user_assessment_results (
-            virtue_name,
-            priority_score,
-            defect_intensity
-          )
-        `)
+        .from('user_assessment_results')
+        .select('virtue_name, priority_score, defect_intensity')
         .eq('user_id', practitionerId)
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(12);
       // Use sponsor_relationships instead of sponsor_connections since that's where the data is
       const connectionPromise = supabase.from('sponsor_relationships').select('id').eq('practitioner_id', practitionerId).eq('sponsor_id', user.id).eq('status', 'active').single();
       const activityPromise = supabase.from('user_virtue_stage_memos').select('created_at').eq('user_id', practitionerId).order('created_at', { ascending: false }).limit(1);
@@ -128,19 +120,8 @@ export default function SponsorView() {
       
       console.log('📋 Raw assessment query result:', assessmentResult.data);
       
-      // Extract results from the joined query (same pattern as personal dashboard)
-      let assessmentResults: {virtue_name: string; priority_score: number}[] = [];
-      if (assessmentResult.data && assessmentResult.data.length > 0) {
-        const latestAssessment = assessmentResult.data[0];
-        console.log('📊 Latest assessment object:', latestAssessment);
-        console.log('📊 user_assessment_results field:', latestAssessment?.user_assessment_results);
-        
-        if (latestAssessment?.user_assessment_results && Array.isArray(latestAssessment.user_assessment_results)) {
-          assessmentResults = latestAssessment.user_assessment_results;
-        }
-      } else {
-        console.log('⚠️ No assessment data found in query result');
-      }
+      // Direct query returns array of results (no join)
+      const assessmentResults = assessmentResult.data || [];
       
       console.log('✅ Assessment results loaded:', assessmentResults.length, assessmentResults);
       setAssessmentData(assessmentResults);
