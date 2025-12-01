@@ -617,13 +617,68 @@ export default function SponsorView() {
                                     Lower scores indicate higher priority for virtue development.
                                 </p>
                                 <div className="flex justify-center">
-                                    <Link 
-                                        href={`/assessment?userId=${practitionerId}`}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                                    <Button
+                                        onClick={async () => {
+                                            try {
+                                                // Fetch practitioner's virtue analysis with virtue names
+                                                const { data: analysisData, error } = await supabase
+                                                    .from('virtue_analysis')
+                                                    .select('analysis_text, virtues(name)')
+                                                    .eq('user_id', practitionerId)
+                                                    .order('created_at', { ascending: false });
+                                                
+                                                if (error) throw error;
+                                                
+                                                if (!analysisData || analysisData.length === 0) {
+                                                    alert('No virtue plan available for this practitioner yet.');
+                                                    return;
+                                                }
+                                                
+                                                // Create a simple view of the analyses
+                                                const analysesText = analysisData
+                                                    .map(a => `${a.virtues?.name || 'Unknown Virtue'}:\n${a.analysis_text}`)
+                                                    .join('\n\n---\n\n');
+                                                
+                                                // Open in new window
+                                                const newWindow = window.open('', '_blank');
+                                                if (newWindow) {
+                                                    newWindow.document.write(`
+                                                        <html>
+                                                            <head>
+                                                                <title>Virtue Plan - ${practitioner.full_name}</title>
+                                                                <style>
+                                                                    body { font-family: system-ui; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+                                                                    h1 { color: #78350f; border-bottom: 2px solid #d97706; padding-bottom: 10px; }
+                                                                    h2 { color: #92400e; margin-top: 30px; }
+                                                                    pre { white-space: pre-wrap; background: #fef3c7; padding: 15px; border-radius: 8px; }
+                                                                    @media print { body { padding: 20px; } }
+                                                                </style>
+                                                            </head>
+                                                            <body>
+                                                                <h1>Virtue Development Plan</h1>
+                                                                <p><strong>Practitioner:</strong> ${practitioner.full_name || 'Unknown'}</p>
+                                                                <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+                                                                <hr>
+                                                                <pre>${analysesText}</pre>
+                                                                <script>
+                                                                    // Auto-print dialog
+                                                                    window.onload = () => setTimeout(() => window.print(), 500);
+                                                                </script>
+                                                            </body>
+                                                        </html>
+                                                    `);
+                                                    newWindow.document.close();
+                                                }
+                                            } catch (error) {
+                                                console.error('Error loading virtue plan:', error);
+                                                alert('Failed to load virtue plan. Please try again.');
+                                            }
+                                        }}
+                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-stone-600 hover:from-amber-700 hover:to-stone-700 text-white shadow-md hover:shadow-lg"
                                     >
                                         <BarChart3 className="h-4 w-4" />
-                                        View Full Assessment Report
-                                    </Link>
+                                        View & Print Virtue Plan
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
