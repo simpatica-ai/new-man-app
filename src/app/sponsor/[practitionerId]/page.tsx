@@ -77,7 +77,8 @@ export default function SponsorView() {
       const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
       const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
       const assessmentPromise = supabase.from('user_assessment_results').select('virtue_name, priority_score').eq('user_id', practitionerId).order('assessment_id', { ascending: false });
-      const connectionPromise = supabase.from('sponsor_connections').select('id').eq('practitioner_user_id', practitionerId).eq('sponsor_user_id', user.id).eq('status', 'active').single();
+      // Use sponsor_relationships instead of sponsor_connections since that's where the data is
+      const connectionPromise = supabase.from('sponsor_relationships').select('id').eq('practitioner_id', practitionerId).eq('sponsor_id', user.id).eq('status', 'active').single();
       const activityPromise = supabase.from('user_virtue_stage_memos').select('created_at').eq('user_id', practitionerId).order('created_at', { ascending: false }).limit(1);
 
       const [practitionerResult, virtuesResult, memosResult, assessmentResult, connectionResult, activityResult] = await Promise.all([
@@ -116,8 +117,8 @@ export default function SponsorView() {
         setVirtues(baseVirtues);
       }
 
-      if (connectionResult.error) throw connectionResult.error;
-      if (connectionResult.data) {
+      // Connection is optional - if it doesn't exist, chat won't work but other features will
+      if (!connectionResult.error && connectionResult.data) {
         const connId = connectionResult.data.id;
         setConnectionId(connId);
 
