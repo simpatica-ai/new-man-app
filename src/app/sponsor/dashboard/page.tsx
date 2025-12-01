@@ -1,20 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, CheckCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Users, CheckCircle, ArrowRight } from 'lucide-react'
 import AppHeader from '@/components/AppHeader'
 
-export default function SponsorDashboard() {
-  const [relationships, setRelationships] = useState<{
+type RelationshipData = {
+  id: string;
+  status: string | null;
+  created_at: string | null;
+  practitioner_id: string | null;
+  profiles?: {
     id: string;
-    practitioner_name: string;
-    practitioner_email: string;
-    created_at: string;
-    last_activity?: string;
-  }[]>([])
+    full_name: string | null;
+  };
+}
+
+export default function SponsorDashboard() {
+  const router = useRouter()
+  const [relationships, setRelationships] = useState<RelationshipData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -41,7 +49,7 @@ export default function SponsorDashboard() {
 
       // Fetch practitioner profiles
       if (relationshipsData && relationshipsData.length > 0) {
-        const practitionerIds = relationshipsData.map(r => r.practitioner_id)
+        const practitionerIds = relationshipsData.map(r => r.practitioner_id).filter((id): id is string => id !== null)
         console.log('👥 Practitioner IDs:', practitionerIds)
         
         const { data: profilesData, error: profileError } = await supabase
@@ -103,31 +111,49 @@ export default function SponsorDashboard() {
                 </CardHeader>
               </Card>
             ) : (
-              relationships.map((relationship: { id: string; profiles?: { full_name?: string }; status?: string; created_at?: string }) => {
+              relationships.map((relationship) => {
                 console.log('🎨 Rendering relationship:', relationship)
                 return (
-                  <Card key={relationship.id} className="bg-white/80 backdrop-blur-sm">
+                  <Card 
+                    key={relationship.id} 
+                    className="bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-amber-300"
+                    onClick={() => relationship.practitioner_id && router.push(`/sponsor/${relationship.practitioner_id}`)}
+                  >
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-stone-800">
+                        <div className="flex-1">
+                          <CardTitle className="text-stone-800 flex items-center gap-2">
                             {relationship.profiles?.full_name || 'Unknown Practitioner'}
+                            <ArrowRight className="h-5 w-5 text-amber-600" />
                           </CardTitle>
-                        <CardDescription>
-                          Connected since {new Date(relationship.created_at).toLocaleDateString()}
-                        </CardDescription>
+                          <CardDescription>
+                            Connected since {new Date(relationship.created_at || '').toLocaleDateString()}
+                          </CardDescription>
+                        </div>
+                        <Badge className={
+                          relationship.status === 'active' 
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                            : 'bg-amber-100 text-amber-800 border-amber-200'
+                        }>
+                          {relationship.status === 'active' && <CheckCircle className="h-3 w-3 mr-1" />}
+                          {relationship.status}
+                        </Badge>
                       </div>
-                      <Badge className={
-                        relationship.status === 'active' 
-                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                          : 'bg-amber-100 text-amber-800 border-amber-200'
-                      }>
-                        {relationship.status === 'active' && <CheckCircle className="h-3 w-3 mr-1" />}
-                        {relationship.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        variant="outline" 
+                        className="w-full bg-gradient-to-r from-amber-50 to-stone-50 hover:from-amber-100 hover:to-stone-100 border-amber-200"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          relationship.practitioner_id && router.push(`/sponsor/${relationship.practitioner_id}`)
+                        }}
+                      >
+                        View Dashboard
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
                 )
               })
             )}
