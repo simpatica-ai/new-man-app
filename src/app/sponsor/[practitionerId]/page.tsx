@@ -76,11 +76,12 @@ export default function SponsorView() {
       const practitionerPromise = supabase.from('profiles').select('id, full_name').eq('id', practitionerId).single();
       const virtuesPromise = supabase.from('virtues').select('id, name').order('id');
       const memosPromise = supabase.from('sponsor_visible_memos').select('*').eq('user_id', practitionerId);
-      // Query assessment data the same way as the personal dashboard (through user_assessments with join)
+      // Query assessment data - try without assessment_type filter first
       const assessmentPromise = supabase
         .from('user_assessments')
         .select(`
           id,
+          assessment_type,
           user_assessment_results (
             virtue_name,
             priority_score,
@@ -88,7 +89,6 @@ export default function SponsorView() {
           )
         `)
         .eq('user_id', practitionerId)
-        .eq('assessment_type', 'virtue')
         .order('created_at', { ascending: false })
         .limit(1);
       // Use sponsor_relationships instead of sponsor_connections since that's where the data is
