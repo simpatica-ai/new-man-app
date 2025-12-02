@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, ChevronRight, ChevronLeft, GripHorizontal, HelpCircle } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle, Edit, Lightbulb, ChevronRight, ChevronLeft, GripHorizontal, HelpCircle, Printer, FileText, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TiptapEditor from '@/components/Editor'
 import JournalComponent from '@/components/JournalComponent'
@@ -20,6 +20,8 @@ import VirtueGuideModal from '@/components/VirtueGuideModal'
 import VirtueProgressBar from '@/components/VirtueProgressBar'
 import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
 import { memoSchema, validateInput } from '@/lib/validation'
+import { pdf } from '@react-pdf/renderer'
+import VirtueMemosPDF, { type VirtueMemoStage } from '../VirtueMemosPDF'
 
 // --- Helper Functions ---
 const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
@@ -64,7 +66,7 @@ type ChatMessage = { id: number; sender_id: string; message_text: string; create
 type StageStatus = 'not_started' | 'in_progress' | 'completed';
 
 // --- Standalone StageContent Component for Performance ---
-const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, writingPanelHeight, setWritingPanelHeight, savingMemo, completingStage, buttonStates }: { 
+const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, onCompleteStage, onEditStage, onPrintStage, writingPanelHeight, setWritingPanelHeight, savingMemo, completingStage, generatingPDF, buttonStates }: { 
   stage: Stage, 
   memoContent: string, 
   status: StageStatus,
@@ -72,10 +74,12 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
   onSaveMemo: () => Promise<void>,
   onCompleteStage: () => Promise<void>,
   onEditStage: () => Promise<void>,
+  onPrintStage: () => Promise<void>,
   writingPanelHeight: number,
   setWritingPanelHeight: (height: number) => void,
   savingMemo: boolean,
   completingStage: boolean,
+  generatingPDF: boolean,
   buttonStates: {[key: string]: boolean}
 }) => {
     const empatheticTitles: { [key: number]: string } = {
@@ -164,6 +168,21 @@ const StageContent = ({ stage, memoContent, status, onMemoChange, onSaveMemo, on
             </div>
           </div>
           <div className="flex justify-end items-center gap-3 pt-2">
+            {memoContent && memoContent.trim() && (
+              <Button 
+                variant="outline" 
+                onClick={onPrintStage}
+                disabled={generatingPDF}
+                className="border-stone-300 text-stone-700 hover:bg-stone-50 transition-mindful disabled:opacity-50"
+              >
+                {generatingPDF ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Printer className="h-4 w-4 mr-2" />
+                )}
+                Print Stage
+              </Button>
+            )}
             {status === 'completed' ? (
               <Button 
                 variant="outline" 
@@ -204,6 +223,7 @@ export default function VirtueDetailPage() {
   const [savingMemo, setSavingMemo] = useState(false)
   const [completingStage, setCompletingStage] = useState(false)
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [generatingPDF, setGeneratingPDF] = useState(false)
   const [virtue, setVirtue] = useState<Virtue | null>(null)
   const [memos, setMemos] = useState<Map<number, string>>(new Map())
   const [progress, setProgress] = useState<Map<string, StageStatus>>(new Map())
@@ -733,6 +753,126 @@ export default function VirtueDetailPage() {
       setButtonStates(prev => ({...prev, [buttonKey]: false}));
     }
   };
+
+  // PDF Generation Functions
+  const generateFilename = (virtueName: string, stageName: string) => {
+    const date = new Date().toISOString().split('T')[0];
+    const cleanName = virtueName.replace(/\s+/g, '_');
+    return `Virtue_${cleanName}_${stageName}_${date}.pdf`;
+  };
+
+  const downloadPDF = async (component: React.ReactElement, filename: string) => {
+    try {
+      const blob = await pdf(component).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF download failed:', error);
+      throw error;
+    }
+  };
+
+  const prepareStageData = (stageNumber: number): VirtueMemoStage => {
+    const stageDescriptions: { [key: number]: string } = {
+      1: "Use this space to recognize the adverse impact of character defects, allowing the prompt at the right to inspire your writing.",
+      2: "Use the writing space to reflect on the attributes of the virtue. One must find the virtue to be able to practice the virtue.",
+      3: "Virtue practice is often associated with compromise. Use this writing space to expand on lessons learned as you practice virtue."
+    };
+
+    const stageTitles: { [key: number]: string } = {
+      1: "Dismantling",
+      2: "Building",
+      3: "Practicing"
+    };
+
+    return {
+      stageNumber,
+      stageTitle: stageTitles[stageNumber] || `Stage ${stageNumber}`,
+      stageDescription: stageDescriptions[stageNumber] || "",
+      memoContent: memos.get(stageNumber) || "",
+      status: progress.get(`${virtueId}-${stageNumber}`) || 'not_started'
+    };
+  };
+
+  const handlePrintStage = async (stageNumber: number) => {
+    if (!virtue || !currentUserId) return;
+
+    try {
+      setGeneratingPDF(true);
+      
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', currentUserId)
+        .single();
+
+      const userName = profile?.full_name || 'User';
+      const stageData = prepareStageData(stageNumber);
+      const filename = generateFilename(virtue.name, `Stage${stageNumber}`);
+      
+      const pdfComponent = (
+        <VirtueMemosPDF
+          virtueName={virtue.name}
+          userName={userName}
+          stages={[stageData]}
+        />
+      );
+
+      await downloadPDF(pdfComponent, filename);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+
+  const canPrintCompleteJourney = () => {
+    return [1, 2, 3].every(stageNum => {
+      const status = progress.get(`${virtueId}-${stageNum}`);
+      const hasMemo = memos.get(stageNum)?.trim();
+      return (status === 'in_progress' || status === 'completed') && hasMemo;
+    });
+  };
+
+  const handlePrintCompleteJourney = async () => {
+    if (!virtue || !currentUserId) return;
+
+    try {
+      setGeneratingPDF(true);
+      
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', currentUserId)
+        .single();
+
+      const userName = profile?.full_name || 'User';
+      const allStages = [1, 2, 3].map(stageNum => prepareStageData(stageNum));
+      const filename = generateFilename(virtue.name, 'Complete_Journey');
+      
+      const pdfComponent = (
+        <VirtueMemosPDF
+          virtueName={virtue.name}
+          userName={userName}
+          stages={allStages}
+        />
+      );
+
+      await downloadPDF(pdfComponent, filename);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
   
   const handleSendChatMessage = async () => {
     if (!newChatMessage.trim() || !currentUserId || !connectionId) return;
@@ -810,15 +950,33 @@ export default function VirtueDetailPage() {
                 </h1>
                 <div className="w-24 h-0.5 bg-gradient-to-r from-amber-600 to-stone-600 mt-3"></div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowGuideModal(true)}
-                className="border-amber-200 text-amber-700 hover:bg-amber-50"
-              >
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Guide
-              </Button>
+              <div className="flex gap-2">
+                {canPrintCompleteJourney() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrintCompleteJourney}
+                    disabled={generatingPDF}
+                    className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                  >
+                    {generatingPDF ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <FileText className="h-4 w-4 mr-2" />
+                    )}
+                    Print Complete Journey
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGuideModal(true)}
+                  className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                >
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Guide
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -968,10 +1126,12 @@ export default function VirtueDetailPage() {
                             onSaveMemo={() => handleSaveMemo(stageNum)}
                             onCompleteStage={() => handleCompleteStage(stageNum)}
                             onEditStage={() => handleEditStage(stageNum)}
+                            onPrintStage={() => handlePrintStage(stageNum)}
                             writingPanelHeight={writingPanelHeight}
                             setWritingPanelHeight={setWritingPanelHeight}
                             savingMemo={savingMemo}
                             completingStage={completingStage}
+                            generatingPDF={generatingPDF}
                             buttonStates={buttonStates}
                           />
                         }
