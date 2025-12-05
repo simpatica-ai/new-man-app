@@ -38,7 +38,7 @@ async function checkUserPermissions(userId: string, organizationId: string, test
     };
   }
 
-  const { data: profile, error } = await (supabase as any)
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('organization_id, roles')
     .eq('id', userId)
@@ -68,8 +68,8 @@ export async function GET(
     const user = await getAuthenticatedUser(request);
     const invitationId = params.id;
 
-    // Get invitation details (using any to bypass type issues until types are regenerated)
-    const { data: invitation, error } = await (supabase as any)
+    // Get invitation details
+    const { data: invitation, error } = await supabase
       .from('organization_invitations')
       .select('organization_id, token, email, expires_at, accepted_at')
       .eq('id', invitationId)

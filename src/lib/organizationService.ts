@@ -141,7 +141,7 @@ const hasOrganizationalSchema = async (): Promise<boolean> => {
     
     // For other databases, try to query the organizations table
     const { error } = await supabase
-      .from('organizations' as any)
+      .from('organizations')
       .select('id')
       .limit(1);
     
@@ -199,7 +199,7 @@ export const getOrganizationMembers = async (organizationId: string): Promise<Or
     }
 
     const { data, error } = await supabase
-      .rpc('get_organization_activity_overview' as any, { org_id: organizationId });
+      .rpc('get_organization_activity_overview', { org_id: organizationId });
 
     if (error) throw error;
     return data || [];
@@ -267,7 +267,7 @@ export const updateOrganizationInfo = async (
     }
 
     const { data: result, error } = await supabase
-      .rpc('update_organization_info' as any, { 
+      .rpc('update_organization_info', { 
         org_id: organizationId,
         website_url: updates.website_url || null,
         phone_number: updates.phone_number || null,
@@ -313,7 +313,7 @@ export const updateOrganizationLogo = async (organizationId: string, logoFile: F
 
     // Update organization with logo URL using the database function
     const { data: updateResult, error: updateError } = await supabase
-      .rpc('update_organization_info' as any, { 
+      .rpc('update_organization_info', { 
         org_id: organizationId,
         logo_url: publicUrl
       });
@@ -343,7 +343,7 @@ export const archiveUser = async (userId: string): Promise<boolean> => {
     if (!user) return false;
 
     const { data: result, error } = await supabase
-      .rpc('archive_organization_user' as any, { 
+      .rpc('archive_organization_user', { 
         user_id: userId,
         archive: true
       });
@@ -369,7 +369,7 @@ export const reactivateUser = async (userId: string): Promise<boolean> => {
     }
 
     const { data: result, error } = await supabase
-      .rpc('archive_organization_user' as any, { 
+      .rpc('archive_organization_user', { 
         user_id: userId,
         archive: false
       });
@@ -395,7 +395,7 @@ export const updateUserRoles = async (userId: string, roles: string[]): Promise<
     }
 
     const { data: result, error } = await supabase
-      .rpc('update_user_roles' as any, { 
+      .rpc('update_user_roles', { 
         user_id: userId,
         new_roles: roles
       });

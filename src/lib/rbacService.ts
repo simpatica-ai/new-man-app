@@ -486,9 +486,9 @@ export async function validateOrganizationAccess(
 export function createRBACMiddleware(
   resource: string,
   action: string,
-  getResourceId?: (req: any) => string
+  getResourceId?: (req: Request) => string
 ) {
-  return async (req: any, res: any, next: any) => {
+  return async (req: Request, res: Response, next: () => void) => {
     try {
       // Get user ID from request (assuming it's set by auth middleware)
       const userId = req.user?.id;

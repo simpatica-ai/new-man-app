@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Invalid input data',
-          details: validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`)
+          details: validation.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`)
         },
         { status: 400 }
       );
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         primary_color: '#5F4339'
       };
     } else {
-      const { data: orgData, error: orgError } = await (supabase as any)
+      const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('id, name, logo_url, primary_color')
         .eq('id', organizationId)
@@ -137,8 +137,8 @@ export async function POST(request: NextRequest) {
       organization = orgData;
     }
 
-    // Get inviter details (using any to bypass type issues until types are regenerated)
-    const { data: inviterProfile } = await (supabase as any)
+    // Get inviter details
+    const { data: inviterProfile } = await supabase
       .from('profiles')
       .select('full_name, organization_id, roles')
       .eq('id', user.id)
@@ -231,8 +231,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check user permissions (using any to bypass type issues until types are regenerated)
-    const { data: userProfile } = await (supabase as any)
+    // Check user permissions
+    const { data: userProfile } = await supabase
       .from('profiles')
       .select('organization_id, roles')
       .eq('id', user.id)
@@ -309,7 +309,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Invalid input data',
-          details: validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`)
+          details: validation.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`)
         },
         { status: 400 }
       );
@@ -317,8 +317,8 @@ export async function PUT(request: NextRequest) {
 
     const { invitationId } = validation.data;
 
-    // Check user permissions and get invitation details (using any to bypass type issues)
-    const { data: invitation } = await (supabase as any)
+    // Check user permissions and get invitation details
+    const { data: invitation } = await supabase
       .from('organization_invitations')
       .select(`
         *,
@@ -335,8 +335,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if user has permission to resend this invitation (using any to bypass type issues)
-    const { data: userProfile } = await (supabase as any)
+    // Check if user has permission to resend this invitation
+    const { data: userProfile } = await supabase
       .from('profiles')
       .select('organization_id, roles, full_name')
       .eq('id', user.id)
@@ -404,8 +404,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check user permissions and get invitation details (using any to bypass type issues)
-    const { data: invitation } = await (supabase as any)
+    // Check user permissions and get invitation details
+    const { data: invitation } = await supabase
       .from('organization_invitations')
       .select('organization_id')
       .eq('id', invitationId)
@@ -419,21 +419,21 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check if user has permission to cancel this invitation (using any to bypass type issues)
-    const { data: userProfile } = await (supabase as any)
+    // Check if user has permission to cancel this invitation
+    const { data: userProfile } = await supabase
       .from('profiles')
       .select('organization_id, roles')
       .eq('id', user.id)
       .single();
 
-    if (!userProfile || (userProfile as any).organization_id !== (invitation as any).organization_id) {
+    if (!userProfile || userProfile.organization_id !== invitation.organization_id) {
       return NextResponse.json(
         { error: 'You do not have permission to cancel this invitation' },
         { status: 403 }
       );
     }
 
-    if (!(userProfile as any).roles?.includes('admin')) {
+    if (!userProfile.roles?.includes('admin')) {
       return NextResponse.json(
         { error: 'Only admins can cancel invitations' },
         { status: 403 }

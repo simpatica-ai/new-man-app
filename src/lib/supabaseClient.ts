@@ -6,13 +6,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 // Mock Supabase client for test mode or connection failures
-const createMockSupabaseClient = (): any => {
+const createMockSupabaseClient = (): SupabaseClient<Database> => {
   console.log('🧪 Using mock Supabase client (test mode or connection issues)')
   
   const mockAuth = {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
     getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-    onAuthStateChange: (callback: any) => {
+    onAuthStateChange: (callback: (event: string, session: unknown) => void) => {
       // Call callback immediately with no session
       setTimeout(() => callback('SIGNED_OUT', null), 0)
       return { data: { subscription: { unsubscribe: () => {} } } }
@@ -63,7 +63,7 @@ const shouldUseMockClient = (): boolean => {
 }
 
 // Create client with connection error handling
-let _supabaseClient: SupabaseClient<Database> | any = null
+let _supabaseClient: SupabaseClient<Database> | null = null
 let _connectionTested = false
 
 const createRealSupabaseClient = (): SupabaseClient<Database> => {

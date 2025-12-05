@@ -118,9 +118,10 @@ export default function OrgAdminDashboard() {
         const invitationsData = await getOrganizationInvitations(orgData.id);
         setInvitations(invitationsData);
         setInvitationSystemAvailable(true);
-      } catch (invitationError: any) {
+      } catch (invitationError: unknown) {
         // If invitation table doesn't exist, just log and continue
-        if (invitationError?.code === 'PGRST205') {
+        const error = invitationError as { code?: string };
+        if (error?.code === 'PGRST205') {
           console.log('Invitation system not yet available - table does not exist');
           setInvitations([]);
           setInvitationSystemAvailable(false);
@@ -208,9 +209,10 @@ export default function OrgAdminDashboard() {
         try {
           const updatedInvitations = await getOrganizationInvitations(organization.id);
           setInvitations(updatedInvitations);
-        } catch (refreshError: any) {
+        } catch (refreshError: unknown) {
           // If table doesn't exist, just continue
-          if (refreshError?.code !== 'PGRST205') {
+          const err = refreshError as { code?: string };
+          if (err?.code !== 'PGRST205') {
             console.error('Error refreshing invitations:', refreshError);
           }
         }
@@ -220,10 +222,11 @@ export default function OrgAdminDashboard() {
         setShowInviteForm(false);
         console.log('Invitation sent successfully');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error sending invitation:', error);
       // Show user-friendly error message
-      if (error?.code === 'PGRST205') {
+      const err = error as { code?: string };
+      if (err?.code === 'PGRST205') {
         alert('Invitation system is not yet available. Please run the database migrations first.');
       } else {
         alert('Failed to send invitation. Please try again.');
@@ -269,7 +272,7 @@ export default function OrgAdminDashboard() {
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-12 w-12 text-amber-600 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-stone-800 mb-2">No Organization Found</h2>
-              <p className="text-stone-600">You don't appear to be part of an organization yet.</p>
+              <p className="text-stone-600">You don&apos;t appear to be part of an organization yet.</p>
             </CardContent>
           </Card>
         </div>
@@ -378,7 +381,7 @@ export default function OrgAdminDashboard() {
                 <div>
                   <CardTitle>Organization Members</CardTitle>
                   <CardDescription>
-                    Manage your organization's members and their roles
+                    Manage your organization&apos;s members and their roles
                   </CardDescription>
                 </div>
                 {invitationSystemAvailable && (
@@ -523,7 +526,7 @@ export default function OrgAdminDashboard() {
               <CardHeader>
                 <CardTitle>Organization Branding</CardTitle>
                 <CardDescription>
-                  Upload your organization's logo for use in reports and branding
+                  Upload your organization&apos;s logo for use in reports and branding
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -774,7 +777,7 @@ export default function OrgAdminDashboard() {
                   <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h4 className="font-medium text-blue-800 mb-2">Report Branding</h4>
                     <p className="text-sm text-blue-700">
-                      All generated reports will include your organization's logo and branding. 
+                      All generated reports will include your organization&apos;s logo and branding. 
                       {organization.logo_url 
                         ? " Your current logo will be used automatically." 
                         : " Upload a logo in the Settings tab to brand your reports."
