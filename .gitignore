@@ -51,5 +51,5 @@ backup_env.sh
 # Q CLI TODO lists (optional - remove this line if you want to commit them)
 .amazonq/
 
-# Kiro specs and settings (keep local only)
+# Kiro IDE configuration and specs
 .kiro/

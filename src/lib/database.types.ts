@@ -43,6 +43,54 @@ export type Database = {
           },
         ]
       }
+      ai_prompt_feedback: {
+        Row: {
+          created_at: string | null
+          feedback_text: string | null
+          feedback_type: string
+          id: number
+          prompt_content: string
+          prompt_name: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_text?: string | null
+          feedback_type: string
+          id?: number
+          prompt_content: string
+          prompt_name: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feedback_text?: string | null
+          feedback_type?: string
+          id?: number
+          prompt_content?: string
+          prompt_name?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       defects: {
         Row: {
           category: string | null
@@ -543,6 +591,30 @@ export type Database = {
           },
         ]
       }
+      user_activity_sessions: {
+        Row: {
+          created_at: string | null
+          current_page: string | null
+          last_seen: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_page?: string | null
+          last_seen?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_page?: string | null
+          last_seen?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_assessment_defects: {
         Row: {
           assessment_id: number
@@ -802,6 +874,44 @@ export type Database = {
           },
         ]
       }
+      virtue_prompts: {
+        Row: {
+          created_at: string | null
+          id: number
+          prompt_text: string
+          stage_number: number
+          user_id: string | null
+          user_response: string | null
+          virtue_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          prompt_text: string
+          stage_number: number
+          user_id?: string | null
+          user_response?: string | null
+          virtue_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          prompt_text?: string
+          stage_number?: number
+          user_id?: string | null
+          user_response?: string | null
+          virtue_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtue_prompts_virtue_id_fkey"
+            columns: ["virtue_id"]
+            isOneToOne: false
+            referencedRelation: "virtues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       virtue_stages: {
         Row: {
           id: number
@@ -841,6 +951,7 @@ export type Database = {
           notes: string | null
           output_text: string
           philosophical_tradition: string | null
+          prompt_name: string | null
           prompt_used: string | null
           updated_at: string | null
         }
@@ -853,6 +964,7 @@ export type Database = {
           notes?: string | null
           output_text: string
           philosophical_tradition?: string | null
+          prompt_name?: string | null
           prompt_used?: string | null
           updated_at?: string | null
         }
@@ -865,6 +977,7 @@ export type Database = {
           notes?: string | null
           output_text?: string
           philosophical_tradition?: string | null
+          prompt_name?: string | null
           prompt_used?: string | null
           updated_at?: string | null
         }
