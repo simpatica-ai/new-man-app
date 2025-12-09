@@ -212,16 +212,16 @@ export default function AccountSettingsPage() {
       if (insertError) throw insertError;
 
       // Send email using our API
-      const inviteUrl = `${window.location.origin}/sponsor/accept-invitation?token=${relationship.invitation_token}`;
+      const inviteUrl = `${window.location.origin}/coach/accept-invitation?token=${relationship.invitation_token}`;
       
-      const emailResponse = await fetch('/api/send-sponsor-email', {
+      const emailResponse = await fetch('/api/send-coach-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sponsorEmail: sponsorEmail,
+          coachEmail: sponsorEmail,
           practitionerName: fullName || user!.email || 'User',
           invitationLink: inviteUrl,
-          isExistingSponsor: !!existingSponsor
+          isExistingCoach: !!existingSponsor
         })
       });
 

@@ -3,14 +3,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; // <-- Import the hook
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare, Users, Target } from 'lucide-react';
+import { Settings, LogOut, LifeBuoy, ArrowLeft, MessageSquare, Users, Target, Shield, Stethoscope } from 'lucide-react';
 import FeedbackSurveyModal from './FeedbackSurveyModal';
 
 type Profile = {
   full_name: string | null;
+  role: string | null;
+  roles: string[] | null;
+  has_completed_first_assessment: boolean | null;
 }
 
 export default function AppHeader() {
@@ -23,11 +26,17 @@ export default function AppHeader() {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profileData } = await supabase.from('profiles').select('full_name, has_completed_first_assessment').eq('id', user.id).single();
+        // Fetch profile with both old and new fields for compatibility
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, role, roles, has_completed_first_assessment')
+          .eq('id', user.id)
+          .single();
+        
         setProfile(profileData);
         
-        // Only check for sponsor role if user has also completed assessment (is a practitioner)
-        // This way the switcher only shows for users with BOTH roles
+        // Check for sponsor role (legacy system)
+        // Only check if user has completed assessment (is a practitioner)
         if (profileData?.has_completed_first_assessment) {
           const { data: sponsorData } = await supabase
             .from('sponsor_relationships')
@@ -55,9 +64,24 @@ export default function AppHeader() {
     if (pathname.startsWith('/virtue/')) return 'Virtue Workspace';
     if (pathname.startsWith('/account-settings')) return 'Account Settings';
     if (pathname.startsWith('/get-support')) return 'Get Support';
+    if (pathname.startsWith('/coach')) return 'Coach Dashboard';
+    if (pathname.startsWith('/therapist')) return 'Therapist Dashboard';
+    if (pathname.startsWith('/orgadmin')) return 'Organization Admin';
     if (pathname.startsWith('/sponsor')) return 'Sponsor Dashboard';
     return 'Dashboard';
   }
+
+  // Check roles array (new organizational model) or fallback to old role field
+  const hasRole = (role: string) => {
+    if (profile?.roles && Array.isArray(profile.roles)) {
+      return profile.roles.includes(role);
+    }
+    return profile?.role === role;
+  };
+
+  const isAdmin = hasRole('admin');
+  const isTherapist = hasRole('therapist');
+  const isCoach = hasRole('coach');
 
   const isDashboard = pathname === '/';
 
@@ -94,7 +118,7 @@ export default function AppHeader() {
             
             {/* Right side: Action buttons - always in top row */}
             <div className="flex items-center space-x-1 flex-shrink-0">
-              {/* Show sponsor dashboard link if user is a sponsor and on practitioner dashboard */}
+              {/* Show sponsor dashboard link if user is a sponsor (legacy system) */}
               {isSponsor && pathname === '/' && (
                 <Link href="/sponsor/dashboard">
                   <Button 
@@ -132,6 +156,32 @@ export default function AppHeader() {
                 <MessageSquare className="h-4 w-4" />
                 <span className="hidden md:inline ml-1">Feedback</span>
               </Button>
+              {isAdmin && (
+                <Link href="/orgadmin">
+                  <Button 
+                    title="Organization Admin" 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-colors h-8 px-2"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">Org Admin</span>
+                  </Button>
+                </Link>
+              )}
+              {isTherapist && (
+                <Link href="/therapist">
+                  <Button 
+                    title="Therapist Dashboard" 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors h-8 px-2"
+                  >
+                    <Stethoscope className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">Therapist</span>
+                  </Button>
+                </Link>
+              )}
               <Link href="/get-support">
                 <Button 
                   title="Get Support" 
@@ -176,4 +226,3 @@ export default function AppHeader() {
     </>
   );
 }
-

@@ -175,7 +175,7 @@ export default function ActionCards({
         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
           <UserCheck className="h-8 w-8 text-amber-700" />
           <div className="flex-1">
-            <CardTitle className="text-stone-800 font-medium">Sponsor Connection</CardTitle>
+            <CardTitle className="text-stone-800 font-medium">Coach Connection</CardTitle>
           </div>
           {connection?.unread_messages && (
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
@@ -186,11 +186,11 @@ export default function ActionCards({
             <div>
               {connection.status === 'pending' ? (
                 <p className="text-sm text-stone-600 mb-2">
-                  Your sponsor connection is still pending.
+                  Your coach connection is still pending.
                 </p>
               ) : (
                 <p className="text-sm text-stone-600 mb-2">
-                  Your sponsor is {connection.sponsor_name || 'Your Sponsor'}.
+                  Your coach is {connection.coach_name || 'Your Coach'}.
                 </p>
               )}
               <p className={`text-sm font-medium capitalize ${

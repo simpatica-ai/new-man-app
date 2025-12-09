@@ -28,7 +28,7 @@ export type Virtue = {
 export type Connection = { 
   id: number; 
   status: string; 
-  sponsor_name: string | null; 
+  coach_name: string | null; 
 };
 
 // Core virtues list for reference

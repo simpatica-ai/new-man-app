@@ -28,7 +28,7 @@ export default function GetInvitationLink() {
         const baseUrl = process.env.NODE_ENV === 'production' 
           ? 'https://new-man-app.simpatica.ai' 
           : window.location.origin
-        const link = `${baseUrl}/sponsor/accept-invitation?token=${data.invitation_token}`
+        const link = `${baseUrl}/coach/accept-invitation?token=${data.invitation_token}`
         setInvitationLink(link)
       }
       setLoading(false)
