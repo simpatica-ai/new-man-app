@@ -740,9 +740,9 @@ export default function VirtueDetailPage() {
         setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'completed'));
         
         // Refresh prompts for subsequent stages when a stage is completed (force refresh)
-        if (stageNumber === 1 && displayedStageNumber === 2) {
+        if (stageNumber === 1) {
           fetchStage2Prompt(true);
-        } else if (stageNumber === 2 && displayedStageNumber === 3) {
+        } else if (stageNumber === 2) {
           fetchStage3Prompt(true);
         }
       }
