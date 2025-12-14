@@ -486,15 +486,7 @@ export default function VirtueDetailPage() {
       const currentStage1Memo = memos.get(1) || '';
       const currentStage2Memo = memos.get(2) || '';
       
-      // Debug logging
-      console.log('fetchStage2Prompt - Debug Info:', {
-        stage1Status,
-        overrideStage1Status,
-        stage1Complete: stage1Status === 'completed',
-        forceRefresh,
-        hasStage1Memo: !!currentStage1Memo,
-        stage1MemoLength: currentStage1Memo.length
-      });
+
       
       // Check for cached prompt first (unless forcing refresh)
       if (!forceRefresh) {
@@ -531,7 +523,7 @@ export default function VirtueDetailPage() {
         stage1Complete: stage1Status === 'completed'
       };
       
-      console.log('fetchStage2Prompt - AI Service Request:', requestPayload);
+
       
       const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
         method: 'POST',
@@ -542,7 +534,7 @@ export default function VirtueDetailPage() {
       if (!response.ok) throw new Error('Failed to fetch Stage 2 prompt');
       const data = await response.json();
       
-      console.log('fetchStage2Prompt - AI Service Response:', data);
+
       
       // Save the new prompt to database
       await supabase
@@ -758,17 +750,25 @@ export default function VirtueDetailPage() {
         
         // Refresh prompts for subsequent stages when a stage is completed (force refresh)
         console.log(`Stage ${stageNumber} completed, refreshing next stage prompt...`);
-        console.log('Progress state before AI prompt refresh:', {
-          stage1Status: updatedProgress.get(`${virtueId}-1`),
-          stage2Status: updatedProgress.get(`${virtueId}-2`),
-          stage3Status: updatedProgress.get(`${virtueId}-3`)
-        });
+
         
         if (stageNumber === 1) {
-          console.log('Refreshing Stage 2 prompt after Stage 1 completion');
+          // Clear cached Stage 2 prompts to ensure fresh generation
+          await supabase
+            .from('virtue_prompts')
+            .delete()
+            .eq('user_id', currentUserId)
+            .eq('virtue_id', virtue.id)
+            .eq('stage_number', 2);
           fetchStage2Prompt(true, 'completed');
         } else if (stageNumber === 2) {
-          console.log('Refreshing Stage 3 prompt after Stage 2 completion');
+          // Clear cached Stage 3 prompts to ensure fresh generation
+          await supabase
+            .from('virtue_prompts')
+            .delete()
+            .eq('user_id', currentUserId)
+            .eq('virtue_id', virtue.id)
+            .eq('stage_number', 3);
           fetchStage3Prompt(true);
         }
       }
@@ -931,7 +931,13 @@ export default function VirtueDetailPage() {
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
     if (tabValue.startsWith('stage-')) {
-      setDisplayedStageNumber(parseInt(tabValue.split('-')[1]));
+      const stageNum = parseInt(tabValue.split('-')[1]);
+      setDisplayedStageNumber(stageNum);
+      
+      // Force refresh AI prompt when switching to Stage 2
+      if (stageNum === 2 && !stage2AiPrompt) {
+        fetchStage2Prompt(false);
+      }
     }
   };
 
@@ -1273,6 +1279,7 @@ export default function VirtueDetailPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
+
                         {displayedStageNumber === 1 && stage1AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
                             <div className="flex justify-end items-start mb-1">
@@ -1297,6 +1304,10 @@ export default function VirtueDetailPage() {
                         )}
                         {displayedStageNumber === 2 && stage2AiPrompt && (
                           <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60 shadow-inner">
+
+                            
+
+                            
                             <div className="flex justify-end items-start mb-1">
                               <AIFeedbackButtons 
                                 promptName={`${virtue?.name}-Stage2`}
@@ -1339,6 +1350,7 @@ export default function VirtueDetailPage() {
                             </div>
                           </div>
                         )}
+
                       </div>
                     )}
                   </CardContent>
