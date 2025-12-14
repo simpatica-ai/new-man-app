@@ -477,14 +477,24 @@ export default function VirtueDetailPage() {
     }
   }, [virtue, defectAnalysis, currentUserId]);
 
-  const fetchStage2Prompt = useCallback(async (forceRefresh = false) => {
+  const fetchStage2Prompt = useCallback(async (forceRefresh = false, overrideStage1Status?: string) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
-      const stage1Status = progress.get(`${virtueId}-1`);
+      const stage1Status = overrideStage1Status || progress.get(`${virtueId}-1`);
       const currentStage1Memo = memos.get(1) || '';
       const currentStage2Memo = memos.get(2) || '';
+      
+      // Debug logging
+      console.log('fetchStage2Prompt - Debug Info:', {
+        stage1Status,
+        overrideStage1Status,
+        stage1Complete: stage1Status === 'completed',
+        forceRefresh,
+        hasStage1Memo: !!currentStage1Memo,
+        stage1MemoLength: currentStage1Memo.length
+      });
       
       // Check for cached prompt first (unless forcing refresh)
       if (!forceRefresh) {
@@ -512,21 +522,27 @@ export default function VirtueDetailPage() {
       }
       
       // Generate new prompt if no cache, cache is old, or forcing refresh
+      const requestPayload = {
+        virtueName: virtue.name,
+        virtueDef: virtue.description,
+        characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
+        stage1MemoContent: currentStage1Memo,
+        stage2MemoContent: currentStage2Memo,
+        stage1Complete: stage1Status === 'completed'
+      };
+      
+      console.log('fetchStage2Prompt - AI Service Request:', requestPayload);
+      
       const response = await fetch('https://getstage2-917009769018.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          virtueName: virtue.name,
-          virtueDef: virtue.description,
-          characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
-          stage1MemoContent: currentStage1Memo,
-          stage2MemoContent: currentStage2Memo,
-          stage1Complete: stage1Status === 'completed'
-        }),
+        body: JSON.stringify(requestPayload),
       });
 
       if (!response.ok) throw new Error('Failed to fetch Stage 2 prompt');
       const data = await response.json();
+      
+      console.log('fetchStage2Prompt - AI Service Response:', data);
       
       // Save the new prompt to database
       await supabase
@@ -546,7 +562,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, virtueId, currentUserId]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId, progress, memos]);
 
   const fetchStage3Prompt = useCallback(async (forceRefresh = false) => {
     if (!virtue || !currentUserId) return;
@@ -737,12 +753,22 @@ export default function VirtueDetailPage() {
         console.error("Error completing stage:", error.message);
       } else {
         // Update local state instead of full refetch
-        setProgress(prev => new Map(prev).set(`${virtueId}-${stageNumber}`, 'completed'));
+        const updatedProgress = new Map(progress).set(`${virtueId}-${stageNumber}`, 'completed');
+        setProgress(updatedProgress);
         
         // Refresh prompts for subsequent stages when a stage is completed (force refresh)
+        console.log(`Stage ${stageNumber} completed, refreshing next stage prompt...`);
+        console.log('Progress state before AI prompt refresh:', {
+          stage1Status: updatedProgress.get(`${virtueId}-1`),
+          stage2Status: updatedProgress.get(`${virtueId}-2`),
+          stage3Status: updatedProgress.get(`${virtueId}-3`)
+        });
+        
         if (stageNumber === 1) {
-          fetchStage2Prompt(true);
+          console.log('Refreshing Stage 2 prompt after Stage 1 completion');
+          fetchStage2Prompt(true, 'completed');
         } else if (stageNumber === 2) {
+          console.log('Refreshing Stage 3 prompt after Stage 2 completion');
           fetchStage3Prompt(true);
         }
       }
