@@ -38,9 +38,18 @@ export default function VirtueProgressBar({
   const getStageStatus = (stage: number) => {
     if (!virtueId || !getStatusClasses) return 'not_started';
     const statusClasses = getStatusClasses(virtueId, stage);
-    if (statusClasses.includes('bg-green-100')) return 'completed';
-    if (statusClasses.includes('bg-amber-100')) return 'in_progress';
-    return 'not_started';
+    const status = statusClasses.includes('bg-green-100') ? 'completed' : 
+                   statusClasses.includes('bg-amber-100') ? 'in_progress' : 'not_started';
+    
+    // Debug logging for virtue 5 (Mindfulness)
+    if (virtueId === 5) {
+      console.log(`Virtue ${virtueId} Stage ${stage} Status:`, {
+        statusClasses,
+        detectedStatus: status
+      });
+    }
+    
+    return status;
   };
   
   const phases = [
@@ -79,6 +88,14 @@ export default function VirtueProgressBar({
     if (showClickableButtons) {
       const buttonKey = `phase-${virtueId}-${phase.name}`;
       
+      // Debug logging
+      console.log('Phase clicked:', {
+        phaseName: phase.name,
+        route: phase.route,
+        virtueId,
+        status: phase.status
+      });
+      
       // Prevent double-clicks
       if (buttonStates?.[buttonKey]) return;
       
@@ -94,6 +111,7 @@ export default function VirtueProgressBar({
           }, 1000);
         }
         
+        console.log('Navigating to:', phase.route);
         router.push(phase.route);
       }
     }
