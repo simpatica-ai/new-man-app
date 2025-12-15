@@ -22,11 +22,11 @@ export const metadata: Metadata = {
   description: "A virtue development platform for personal growth and character building",
   icons: {
     icon: [
-      { url: '/favicon-16x16.png?v=3', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png?v=3', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=4', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png?v=4', sizes: '32x32', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico?v=3',
-    apple: '/apple-touch-icon.png?v=3',
+    shortcut: '/favicon.ico?v=4',
+    apple: '/apple-touch-icon.png?v=4',
   },
   manifest: '/site.webmanifest',
 };
@@ -40,10 +40,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* The RGraph script tags have been removed from here */}
-        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=4" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
