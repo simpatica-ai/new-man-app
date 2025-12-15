@@ -80,6 +80,13 @@ export default function VirtueProgressBar({
       stage2: getStageStatus(2), 
       stage3: getStageStatus(3)
     });
+    console.log('VirtueProgressBar Phases Array:', phases.map((p, i) => ({
+      name: p.name,
+      status: p.status,
+      index: i,
+      shouldShowCheckmark: p.status === 'completed',
+      shouldShowNumber: p.status !== 'completed'
+    })));
   }
 
   const handlePhaseClick = (phase: typeof phases[0]) => {
