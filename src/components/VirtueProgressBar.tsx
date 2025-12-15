@@ -73,17 +73,21 @@ export default function VirtueProgressBar({
     }
   ];
 
-  // Debug logging (simplified)
+  // Debug logging (detailed)
   if (virtueId === 5) {
     console.log('VirtueProgressBar Status Check:', {
       stage1: getStageStatus(1),
       stage2: getStageStatus(2), 
-      stage3: getStageStatus(3)
+      stage3: getStageStatus(3),
+      stage1Classes: getStatusClasses ? getStatusClasses(5, 1) : 'no getStatusClasses',
+      stage2Classes: getStatusClasses ? getStatusClasses(5, 2) : 'no getStatusClasses',
+      stage3Classes: getStatusClasses ? getStatusClasses(5, 3) : 'no getStatusClasses'
     });
     console.log('VirtueProgressBar Phases Array:', phases.map((p, i) => ({
       name: p.name,
       status: p.status,
       index: i,
+      displayNumber: i + 1,
       shouldShowCheckmark: p.status === 'completed',
       shouldShowNumber: p.status !== 'completed'
     })));
