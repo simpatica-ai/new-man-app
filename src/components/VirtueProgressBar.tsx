@@ -38,10 +38,11 @@ export default function VirtueProgressBar({
   const getStageStatus = (stage: number) => {
     if (!virtueId || !getStatusClasses) return 'not_started';
     const statusClasses = getStatusClasses(virtueId, stage);
-    const status = statusClasses.includes('bg-green-100') ? 'completed' : 
-                   statusClasses.includes('bg-amber-100') ? 'in_progress' : 'not_started';
     
-    return status;
+    // Extract status from CSS classes
+    if (statusClasses.includes('bg-green-100')) return 'completed';
+    if (statusClasses.includes('bg-amber-100')) return 'in_progress';
+    return 'not_started';
   };
   
   const phases = [
@@ -76,34 +77,23 @@ export default function VirtueProgressBar({
     }
   ];
 
-  // Debug logging for virtue 5
+  // Debug logging (simplified)
   if (virtueId === 5) {
-    console.log('Virtue 5 Debug Values:', {
-      completedDismantlingCount,
-      completedBuildingCount,
-      completedPracticingCount,
-      totalVirtues,
-      hasCompletedAssessment
+    console.log('VirtueProgressBar Status Check:', {
+      stage1: getStageStatus(1),
+      stage2: getStageStatus(2), 
+      stage3: getStageStatus(3)
     });
-    console.log('Virtue 5 Phases Array:', phases.map(p => ({
-      name: p.name,
-      status: p.status,
-      completed: p.completed,
-      route: p.route
-    })));
   }
 
   const handlePhaseClick = (phase: typeof phases[0]) => {
     if (showClickableButtons) {
       const buttonKey = `phase-${virtueId}-${phase.name}`;
       
-      // Debug logging
-      console.log('Phase clicked:', {
-        phaseName: phase.name,
-        route: phase.route,
-        virtueId,
-        status: phase.status
-      });
+      // Debug logging (simplified)
+      if (virtueId === 5) {
+        console.log(`Phase clicked: ${phase.name} -> ${phase.route}`);
+      }
       
       // Prevent double-clicks
       if (buttonStates?.[buttonKey]) return;
@@ -120,7 +110,7 @@ export default function VirtueProgressBar({
           }, 1000);
         }
         
-        console.log('Navigating to:', phase.route);
+
         router.push(phase.route);
       }
     }
