@@ -945,9 +945,21 @@ export default function VirtueDetailPage() {
       const stageNum = parseInt(tabValue.split('-')[1]);
       setDisplayedStageNumber(stageNum);
       
-      // Force refresh AI prompt when switching to Stage 2
-      if (stageNum === 2 && !stage2AiPrompt) {
-        fetchStage2Prompt(false);
+      // Force refresh AI prompt when switching to stages after completion of previous stages
+      if (stageNum === 2) {
+        const stage1Status = progress.get(`${virtueId}-1`);
+        // Force refresh if Stage 1 is completed to get personalized Stage 2 prompt
+        const shouldForceRefresh = stage1Status === 'completed';
+        if (!stage2AiPrompt || shouldForceRefresh) {
+          fetchStage2Prompt(shouldForceRefresh);
+        }
+      } else if (stageNum === 3) {
+        const stage2Status = progress.get(`${virtueId}-2`);
+        // Force refresh if Stage 2 is completed to get personalized Stage 3 prompt
+        const shouldForceRefresh = stage2Status === 'completed';
+        if (!stage3AiPrompt || shouldForceRefresh) {
+          fetchStage3Prompt(shouldForceRefresh);
+        }
       }
     }
   };

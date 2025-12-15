@@ -41,14 +41,6 @@ export default function VirtueProgressBar({
     const status = statusClasses.includes('bg-green-100') ? 'completed' : 
                    statusClasses.includes('bg-amber-100') ? 'in_progress' : 'not_started';
     
-    // Debug logging for virtue 5 (Mindfulness)
-    if (virtueId === 5) {
-      console.log(`Virtue ${virtueId} Stage ${stage} Status:`, {
-        statusClasses,
-        detectedStatus: status
-      });
-    }
-    
     return status;
   };
   
