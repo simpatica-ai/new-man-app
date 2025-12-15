@@ -84,6 +84,16 @@ export default function VirtueProgressBar({
     }
   ];
 
+  // Debug logging for virtue 5
+  if (virtueId === 5) {
+    console.log('Virtue 5 Phases Array:', phases.map(p => ({
+      name: p.name,
+      status: p.status,
+      completed: p.completed,
+      route: p.route
+    })));
+  }
+
   const handlePhaseClick = (phase: typeof phases[0]) => {
     if (showClickableButtons) {
       const buttonKey = `phase-${virtueId}-${phase.name}`;
