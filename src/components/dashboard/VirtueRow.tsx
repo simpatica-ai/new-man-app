@@ -19,18 +19,7 @@ export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses, b
   const buildingComplete = getStatusClasses(virtue.id, 2).includes('bg-green-100');
   const practicingComplete = getStatusClasses(virtue.id, 3).includes('bg-green-100');
   
-  // Debug logging for virtue 5
-  if (virtue.id === 5) {
-    console.log('VirtueRow Status Check:', {
-      virtue: virtue.name,
-      stage1Classes: getStatusClasses(virtue.id, 1),
-      stage2Classes: getStatusClasses(virtue.id, 2),
-      stage3Classes: getStatusClasses(virtue.id, 3),
-      dismantlingComplete,
-      buildingComplete,
-      practicingComplete
-    });
-  }
+  // Status detection working correctly
 
   return (
     <li className="flex flex-col gap-3 md:gap-4 p-3 md:p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">

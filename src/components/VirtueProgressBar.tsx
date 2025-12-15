@@ -73,34 +73,13 @@ export default function VirtueProgressBar({
     }
   ];
 
-  // Debug logging (detailed)
-  if (virtueId === 5) {
-    console.log('VirtueProgressBar Status Check:', {
-      stage1: getStageStatus(1),
-      stage2: getStageStatus(2), 
-      stage3: getStageStatus(3),
-      stage1Classes: getStatusClasses ? getStatusClasses(5, 1) : 'no getStatusClasses',
-      stage2Classes: getStatusClasses ? getStatusClasses(5, 2) : 'no getStatusClasses',
-      stage3Classes: getStatusClasses ? getStatusClasses(5, 3) : 'no getStatusClasses'
-    });
-    console.log('VirtueProgressBar Phases Array:', phases.map((p, i) => ({
-      name: p.name,
-      status: p.status,
-      index: i,
-      displayNumber: i + 1,
-      shouldShowCheckmark: p.status === 'completed',
-      shouldShowNumber: p.status !== 'completed'
-    })));
-  }
+  // Clean implementation - debug logging removed
 
   const handlePhaseClick = (phase: typeof phases[0]) => {
     if (showClickableButtons) {
       const buttonKey = `phase-${virtueId}-${phase.name}`;
       
-      // Debug logging (simplified)
-      if (virtueId === 5) {
-        console.log(`Phase clicked: ${phase.name} -> ${phase.route}`);
-      }
+      // Phase click logging removed
       
       // Prevent double-clicks
       if (buttonStates?.[buttonKey]) return;
@@ -127,7 +106,7 @@ export default function VirtueProgressBar({
     <div className={`w-full ${className}`}>
       <div className="flex items-center justify-between">
         {phases.map((phase, index) => (
-          <div key={phase.name} className="flex items-center flex-1">
+          <div key={`${phase.name}-${phase.status}-${virtueId}`} className="flex items-center flex-1">
             {/* Phase Circle */}
             <div className="flex flex-col items-center">
               <button
