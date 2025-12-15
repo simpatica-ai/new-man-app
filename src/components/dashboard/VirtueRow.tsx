@@ -15,9 +15,9 @@ interface VirtueRowProps {
 
 export default function VirtueRow({ virtue, assessmentTaken, getStatusClasses, buttonStates, setButtonStates }: VirtueRowProps) {
   // Determine completion status for this virtue
-  const dismantlingComplete = getStatusClasses(virtue.id, 1).includes('bg-green');
-  const buildingComplete = getStatusClasses(virtue.id, 2).includes('bg-green');
-  const practicingComplete = getStatusClasses(virtue.id, 3).includes('bg-green');
+  const dismantlingComplete = getStatusClasses(virtue.id, 1).includes('bg-green-100');
+  const buildingComplete = getStatusClasses(virtue.id, 2).includes('bg-green-100');
+  const practicingComplete = getStatusClasses(virtue.id, 3).includes('bg-green-100');
 
   return (
     <li className="flex flex-col gap-3 md:gap-4 p-3 md:p-4 border border-stone-200/60 rounded-lg bg-white/80 backdrop-blur-sm shadow-gentle transition-mindful hover:shadow-lg">

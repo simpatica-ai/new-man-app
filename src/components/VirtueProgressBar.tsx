@@ -38,8 +38,8 @@ export default function VirtueProgressBar({
   const getStageStatus = (stage: number) => {
     if (!virtueId || !getStatusClasses) return 'not_started';
     const statusClasses = getStatusClasses(virtueId, stage);
-    if (statusClasses.includes('bg-green')) return 'completed';
-    if (statusClasses.includes('bg-amber')) return 'in_progress';
+    if (statusClasses.includes('bg-green-100')) return 'completed';
+    if (statusClasses.includes('bg-amber-100')) return 'in_progress';
     return 'not_started';
   };
   

@@ -263,6 +263,17 @@ export default function VirtueDetailPage() {
   const virtueId = params.id || params.virtueId;
   const stageQuery = searchParams.get('stage');
 
+  // Set initial tab based on stage query parameter
+  useEffect(() => {
+    if (stageQuery) {
+      const stageNumber = parseInt(stageQuery);
+      if (stageNumber >= 1 && stageNumber <= 3) {
+        setActiveTab(`stage-${stageNumber}`);
+        setDisplayedStageNumber(stageNumber);
+      }
+    }
+  }, [stageQuery]);
+
   useEffect(() => {
     if (virtue) {
       document.title = `New Man: Virtue - ${virtue.name}`;
