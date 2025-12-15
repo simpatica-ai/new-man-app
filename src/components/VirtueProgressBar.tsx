@@ -49,7 +49,6 @@ export default function VirtueProgressBar({
     { 
       name: 'Discovering', 
       color: '#8B4513',
-      completed: hasCompletedAssessment,
       status: hasCompletedAssessment ? 'completed' : 
               assessmentInProgress ? 'in_progress' : 'not_started',
       route: virtueId ? `/virtue/${virtueId}` : '/assessment'
@@ -57,21 +56,18 @@ export default function VirtueProgressBar({
     { 
       name: 'Dismantling', 
       color: '#A0522D',
-      completed: completedDismantlingCount >= totalVirtues,
       status: virtueId ? getStageStatus(1) : (completedDismantlingCount >= totalVirtues ? 'completed' : 'not_started'),
       route: virtueId ? `/virtue/${virtueId}?stage=1` : '/'
     },
     { 
       name: 'Building', 
       color: '#6B8E23',
-      completed: completedBuildingCount >= totalVirtues,
       status: virtueId ? getStageStatus(2) : (completedBuildingCount >= totalVirtues ? 'completed' : 'not_started'),
       route: virtueId ? `/virtue/${virtueId}?stage=2` : '/'
     },
     { 
       name: 'Practicing', 
       color: '#556B2F',
-      completed: completedPracticingCount >= totalVirtues,
       status: virtueId ? getStageStatus(3) : (completedPracticingCount >= totalVirtues ? 'completed' : 'not_started'),
       route: virtueId ? `/virtue/${virtueId}?stage=3` : '/'
     }
@@ -165,8 +161,8 @@ export default function VirtueProgressBar({
                 <div 
                   className="h-full transition-all duration-500"
                   style={{
-                    backgroundColor: phase.completed ? phase.color : 'transparent',
-                    width: phase.completed ? '100%' : '0%'
+                    backgroundColor: phase.status === 'completed' ? phase.color : 'transparent',
+                    width: phase.status === 'completed' ? '100%' : '0%'
                   }}
                 />
               </div>
