@@ -86,6 +86,13 @@ export default function VirtueProgressBar({
 
   // Debug logging for virtue 5
   if (virtueId === 5) {
+    console.log('Virtue 5 Debug Values:', {
+      completedDismantlingCount,
+      completedBuildingCount,
+      completedPracticingCount,
+      totalVirtues,
+      hasCompletedAssessment
+    });
     console.log('Virtue 5 Phases Array:', phases.map(p => ({
       name: p.name,
       status: p.status,
