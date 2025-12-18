@@ -16,6 +16,7 @@ import SupabaseUsageMonitor from '@/components/SupabaseUsageMonitor';
 import VirtueAIPanel from '@/components/admin/VirtueAIPanel';
 import UserActivityMonitor from '@/components/admin/UserActivityMonitor';
 import { AIFeedbackViewer } from '@/components/admin/AIFeedbackViewer';
+import SubscriptionDashboard from '@/components/SubscriptionDashboard';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -244,11 +245,12 @@ export default function AdminPage() {
 
 
       <Tabs defaultValue="practitioners">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="practitioners">Users</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="virtue-ai">Virtue AI</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="usage">Usage</TabsTrigger>
@@ -497,6 +499,110 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
         
         <TabsContent value="ai-feedback">
           <AIFeedbackViewer />
+        </TabsContent>
+        
+        <TabsContent value="payments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment System Administration</CardTitle>
+              <CardDescription>Monitor and manage generosity payments, subscriptions, and Stripe integration.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Admin-specific payment overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                          <p className="text-2xl font-bold">$0.00</p>
+                        </div>
+                        <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-green-600 text-sm">💰</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Recurring Contributors</p>
+                          <p className="text-2xl font-bold">0</p>
+                        </div>
+                        <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 text-sm">🔄</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Payment Success Rate</p>
+                          <p className="text-2xl font-bold">100%</p>
+                        </div>
+                        <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <span className="text-purple-600 text-sm">📊</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recurring Contributions Dashboard for admin view */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Recurring Contributions Management</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Monitor and manage recurring monthly contributions from users and organizations. 
+                    Note: These are voluntary donations to support the platform - stopping a contribution does not affect user access.
+                  </p>
+                  <SubscriptionDashboard 
+                    userId="admin-demo" 
+                    userType="individual"
+                  />
+                </div>
+
+                {/* Stripe Integration Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Stripe Integration Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">Stripe Connection</div>
+                          <div className="text-sm text-gray-600">Test mode active</div>
+                        </div>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">Connected</Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">Webhook Endpoint</div>
+                          <div className="text-sm text-gray-600">/api/webhooks/stripe</div>
+                        </div>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">Active</Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">Environment</div>
+                          <div className="text-sm text-gray-600">Development/Test Mode</div>
+                        </div>
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Test</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="virtue-ai">

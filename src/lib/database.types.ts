@@ -202,6 +202,266 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          roles: string[]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          roles: string[]
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          roles?: string[]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          active_user_count: number | null
+          billing_email: string | null
+          created_at: string | null
+          custom_domain: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          max_users: number | null
+          name: string
+          next_billing_date: string | null
+          payment_method_id: string | null
+          phone_number: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          settings: Json | null
+          slug: string
+          subscription_status: string | null
+          subscription_tier: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          active_user_count?: number | null
+          billing_email?: string | null
+          created_at?: string | null
+          custom_domain?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          max_users?: number | null
+          name: string
+          next_billing_date?: string | null
+          payment_method_id?: string | null
+          phone_number?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          settings?: Json | null
+          slug: string
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          active_user_count?: number | null
+          billing_email?: string | null
+          created_at?: string | null
+          custom_domain?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          max_users?: number | null
+          name?: string
+          next_billing_date?: string | null
+          payment_method_id?: string | null
+          phone_number?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          settings?: Json | null
+          slug?: string
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          payment_type: string
+          status: string
+          stripe_payment_intent_id: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_type: string
+          status: string
+          stripe_payment_intent_id: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_type?: string
+          status?: string
+          stripe_payment_intent_id?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practitioner_assignments: {
+        Row: {
+          active: boolean | null
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          organization_id: string
+          practitioner_id: string
+          supervisor_id: string
+          supervisor_role: string
+        }
+        Insert: {
+          active?: boolean | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          organization_id: string
+          practitioner_id: string
+          supervisor_id: string
+          supervisor_role: string
+        }
+        Update: {
+          active?: boolean | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          organization_id?: string
+          practitioner_id?: string
+          supervisor_id?: string
+          supervisor_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_assignments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_assignments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_assignments_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_assignments_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practitioner_freeform_entries: {
         Row: {
           created_at: string
@@ -266,30 +526,86 @@ export type Database = {
       }
       profiles: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           created_at: string | null
+          current_stage: number | null
+          current_virtue_id: number | null
           full_name: string | null
           has_completed_first_assessment: boolean | null
           id: string
+          is_active: boolean | null
+          last_activity: string | null
+          organization_id: string | null
           phone_number: string | null
           role: string | null
+          roles: string[] | null
+          updated_at: string | null
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
+          current_stage?: number | null
+          current_virtue_id?: number | null
           full_name?: string | null
           has_completed_first_assessment?: boolean | null
           id: string
+          is_active?: boolean | null
+          last_activity?: string | null
+          organization_id?: string | null
           phone_number?: string | null
           role?: string | null
+          roles?: string[] | null
+          updated_at?: string | null
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
+          current_stage?: number | null
+          current_virtue_id?: number | null
           full_name?: string | null
           has_completed_first_assessment?: boolean | null
           id?: string
+          is_active?: boolean | null
+          last_activity?: string | null
+          organization_id?: string | null
           phone_number?: string | null
           role?: string | null
+          roles?: string[] | null
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profile_with_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_current_virtue_id_fkey"
+            columns: ["current_virtue_id"]
+            isOneToOne: false
+            referencedRelation: "virtues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sponsor_chat_messages: {
         Row: {
@@ -297,7 +613,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: number
-          message_search: unknown | null
+          message_search: unknown
           message_text: string
           read_at: string | null
           receiver_id: string
@@ -309,7 +625,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: never
-          message_search?: unknown | null
+          message_search?: unknown
           message_text: string
           read_at?: string | null
           receiver_id: string
@@ -321,7 +637,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: never
-          message_search?: unknown | null
+          message_search?: unknown
           message_text?: string
           read_at?: string | null
           receiver_id?: string
@@ -538,6 +854,48 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          status: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          status: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          status?: string
+          stripe_price_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           created_at: string
@@ -714,6 +1072,27 @@ export type Database = {
           id?: never
           status?: string
           summary_analysis?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stripe_customers: {
+        Row: {
+          created_at: string
+          id: string
+          stripe_customer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stripe_customer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string
           user_id?: string
         }
         Relationships: []
@@ -1026,6 +1405,26 @@ export type Database = {
       }
     }
     Functions: {
+      accept_organization_invitation: {
+        Args: { invitation_token: string; user_id: string }
+        Returns: Json
+      }
+      archive_organization_user: {
+        Args: { archive?: boolean; user_id: string }
+        Returns: boolean
+      }
+      archive_user: {
+        Args: { archived_by_id: string; user_id: string }
+        Returns: boolean
+      }
+      create_coach_connection: {
+        Args: { coach_id?: string; practitioner_id: string }
+        Returns: {
+          connection_id: number
+          message: string
+          success: boolean
+        }[]
+      }
       get_active_sponsorships_for_sponsor: {
         Args: { sponsor_id_param: string }
         Returns: {
@@ -1036,7 +1435,7 @@ export type Database = {
         }[]
       }
       get_all_practitioner_details: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           connection_id: number
           email: string
@@ -1046,7 +1445,7 @@ export type Database = {
         }[]
       }
       get_all_support_tickets: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           id: number
@@ -1057,13 +1456,32 @@ export type Database = {
           user_full_name: string
         }[]
       }
-      get_database_size: {
-        Args: Record<PropertyKey, never>
-        Returns: number
+      get_database_size: { Args: never; Returns: number }
+      get_my_role: { Args: never; Returns: string }
+      get_organization_activity_overview: {
+        Args: { org_id: string }
+        Returns: {
+          created_at: string
+          current_stage: number
+          current_virtue_id: number
+          days_since_activity: number
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          last_activity: string
+          roles: string[]
+        }[]
       }
-      get_my_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      get_organization_stats: {
+        Args: { org_id: string }
+        Returns: {
+          active_members: number
+          archived_members: number
+          engagement_rate: number
+          recently_active: number
+          total_members: number
+        }[]
       }
       get_pending_invitations_for_sponsor: {
         Args: { sponsor_id_param: string }
@@ -1100,6 +1518,35 @@ export type Database = {
           virtue_id: number
           virtue_name: string
         }[]
+      }
+      get_user_organization_id: { Args: never; Returns: string }
+      increment_active_user_count: { Args: { org_id: string }; Returns: number }
+      reactivate_user: { Args: { user_id: string }; Returns: boolean }
+      update_organization_active_user_count: {
+        Args: { org_id: string }
+        Returns: number
+      }
+      update_organization_info: {
+        Args: {
+          description?: string
+          logo_url?: string
+          org_id: string
+          phone_number?: string
+          website_url?: string
+        }
+        Returns: boolean
+      }
+      update_organization_logo: {
+        Args: { logo_url: string; org_id: string }
+        Returns: boolean
+      }
+      update_user_roles: {
+        Args: { new_roles: string[]; user_id: string }
+        Returns: boolean
+      }
+      validate_organization_user_limit: {
+        Args: { org_id: string }
+        Returns: boolean
       }
     }
     Enums: {

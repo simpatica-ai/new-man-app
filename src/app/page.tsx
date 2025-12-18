@@ -28,10 +28,18 @@ const HomePage = () => {
         // Check user role and redirect appropriately
         supabase
           .from('profiles')
-          .select('has_completed_first_assessment')
+          .select('has_completed_first_assessment, roles, organization_id')
           .eq('id', session.user.id)
           .single()
           .then(async ({ data: profile }) => {
+            // Check if user is an organization admin
+            const isOrgAdmin = profile?.roles?.includes('admin') && profile?.organization_id;
+            
+            if (isOrgAdmin) {
+              window.location.href = '/orgadmin';
+              return;
+            }
+            
             // Check if user is a sponsor (has active sponsor relationships)
             const { data: sponsorData } = await supabase
               .from('sponsor_relationships')
@@ -71,13 +79,21 @@ const HomePage = () => {
           setNeedsEmailConfirmation(true);
           setSession(null);
         } else if (session?.user) {
-          // Check if user is sponsor-only before setting session
+          // Check if user is sponsor-only or org admin before setting session
           supabase
             .from('profiles')
-            .select('has_completed_first_assessment')
+            .select('has_completed_first_assessment, roles, organization_id')
             .eq('id', session.user.id)
             .single()
             .then(async ({ data: profile }) => {
+              // Check if user is an organization admin
+              const isOrgAdmin = profile?.roles?.includes('admin') && profile?.organization_id;
+              
+              if (isOrgAdmin) {
+                window.location.href = '/orgadmin';
+                return;
+              }
+              
               // Check if user is a sponsor
               const { data: sponsorData } = await supabase
                 .from('sponsor_relationships')

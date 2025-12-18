@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown'
 import { Virtue, Connection, getChartDisplayVirtueName } from '@/lib/constants'
 import { supabase } from '@/lib/supabaseClient'
 import { AIFeedbackButtons } from '@/components/AIFeedbackButtons'
+import PaymentActionCard from './PaymentActionCard'
 
 interface ActionCardsProps {
   assessmentTaken: boolean;
@@ -236,6 +237,9 @@ export default function ActionCards({
           </Link>
         </CardContent>
       </Card>
+
+      {/* Payment Interface for Individual Practitioners */}
+      <PaymentActionCard />
     </div>
   );
 }
