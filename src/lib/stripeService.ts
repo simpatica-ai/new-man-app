@@ -15,7 +15,7 @@ const getStripeInstance = (): Stripe => {
       throw new Error('Stripe secret key not configured');
     }
     stripe = new Stripe(secretKey, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2025-12-15.clover',
     });
   }
   return stripe;
@@ -26,6 +26,7 @@ export interface PaymentIntentData {
   currency: string;
   customerId?: string;
   metadata?: Record<string, string>;
+  paymentMethodTypes?: string[];
 }
 
 export interface SubscriptionData {
@@ -52,15 +53,24 @@ export class StripeService {
         throw new Error(currencyValidation.error);
       }
 
-      const paymentIntent = await getStripeInstance().paymentIntents.create({
+      // Create payment intent configuration
+      const paymentIntentConfig: Stripe.PaymentIntentCreateParams = {
         amount: amountToCents(data.amount),
         currency: data.currency.toLowerCase(),
         customer: data.customerId,
         metadata: data.metadata || {},
-        automatic_payment_methods: {
+      };
+
+      // Use either specific payment method types OR automatic payment methods, not both
+      if (data.paymentMethodTypes && data.paymentMethodTypes.length > 0) {
+        paymentIntentConfig.payment_method_types = data.paymentMethodTypes;
+      } else {
+        paymentIntentConfig.automatic_payment_methods = {
           enabled: true,
-        },
-      });
+        };
+      }
+
+      const paymentIntent = await getStripeInstance().paymentIntents.create(paymentIntentConfig);
 
       return paymentIntent;
     } catch (error) {

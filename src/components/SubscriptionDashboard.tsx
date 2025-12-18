@@ -116,8 +116,50 @@ export function SubscriptionDashboard({ userId, userType, organizationId }: Subs
   };
 
   const handleUpdateContribution = async (subscriptionId: string) => {
-    // TODO: Implement contribution update modal/flow
-    console.log('Update recurring contribution:', subscriptionId);
+    const currentSubscription = subscriptions.find(s => s.id === subscriptionId);
+    if (!currentSubscription) return;
+
+    const newAmountStr = prompt(
+      `Update monthly contribution amount:\n\nCurrent: $${currentSubscription.amount.toFixed(2)}/month\n\nEnter new amount (minimum $1.00, maximum $10,000.00):`,
+      currentSubscription.amount.toString()
+    );
+
+    if (!newAmountStr) return; // User canceled
+
+    const newAmount = parseFloat(newAmountStr);
+    if (isNaN(newAmount) || newAmount < 1 || newAmount > 10000) {
+      alert('Please enter a valid amount between $1.00 and $10,000.00');
+      return;
+    }
+
+    if (newAmount === currentSubscription.amount) {
+      return; // No change
+    }
+
+    try {
+      setActionLoading(subscriptionId);
+      
+      const response = await fetch(`/api/subscriptions/${subscriptionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: newAmount }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update contribution');
+      }
+
+      // Reload data to reflect changes
+      await loadSubscriptionData();
+      alert(`Contribution updated successfully! Your new monthly contribution is $${newAmount.toFixed(2)}.`);
+
+    } catch (error) {
+      console.error('Error updating contribution:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update contribution. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const getStatusIcon = (status: string) => {

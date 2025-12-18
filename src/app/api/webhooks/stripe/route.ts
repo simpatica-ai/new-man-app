@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripeService } from '@/lib/stripeService';
+import { auditLogger } from '@/lib/auditLogger';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🔔 Received Stripe webhook: ${event.type}`);
+
+    // Log webhook receipt
+    await auditLogger.logWebhookReceived(event.type, event.id, { event_data: event.data });
 
     // Handle different event types
     switch (event.type) {
@@ -117,6 +121,14 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   console.log(`✅ Payment succeeded: ${paymentIntent.id} for ${paymentIntent.amount / 100} ${paymentIntent.currency}`);
   
   try {
+    // Log successful payment
+    await auditLogger.logPaymentSucceeded(
+      paymentIntent.id,
+      paymentIntent.amount / 100,
+      paymentIntent.currency,
+      paymentIntent.metadata
+    );
+
     // Update payment record in database
     await updatePaymentRecord(paymentIntent.id, {
       status: 'succeeded',
@@ -132,6 +144,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   } catch (error) {
     console.error('Error handling payment success:', error);
+    await auditLogger.logError(`Payment success handling failed: ${error instanceof Error ? error.message : 'Unknown error'}`, undefined, paymentIntent.id);
     throw error;
   }
 }
@@ -143,6 +156,13 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   console.log(`❌ Payment failed: ${paymentIntent.id} - ${paymentIntent.last_payment_error?.message}`);
   
   try {
+    // Log failed payment
+    await auditLogger.logPaymentFailed(
+      paymentIntent.id,
+      paymentIntent.last_payment_error?.message || 'Payment failed',
+      paymentIntent.metadata
+    );
+
     // Update payment record in database
     await updatePaymentRecord(paymentIntent.id, {
       status: 'failed',
@@ -156,6 +176,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 
   } catch (error) {
     console.error('Error handling payment failure:', error);
+    await auditLogger.logError(`Payment failure handling failed: ${error instanceof Error ? error.message : 'Unknown error'}`, undefined, paymentIntent.id);
     throw error;
   }
 }

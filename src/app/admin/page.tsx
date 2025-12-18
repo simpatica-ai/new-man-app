@@ -17,6 +17,7 @@ import VirtueAIPanel from '@/components/admin/VirtueAIPanel';
 import UserActivityMonitor from '@/components/admin/UserActivityMonitor';
 import { AIFeedbackViewer } from '@/components/admin/AIFeedbackViewer';
 import SubscriptionDashboard from '@/components/SubscriptionDashboard';
+import PaymentStatsOverview from '@/components/admin/PaymentStatsOverview';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -510,49 +511,7 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
             <CardContent>
               <div className="space-y-6">
                 {/* Admin-specific payment overview */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                          <p className="text-2xl font-bold">$0.00</p>
-                        </div>
-                        <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <span className="text-green-600 text-sm">💰</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Recurring Contributors</p>
-                          <p className="text-2xl font-bold">0</p>
-                        </div>
-                        <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 text-sm">🔄</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Payment Success Rate</p>
-                          <p className="text-2xl font-bold">100%</p>
-                        </div>
-                        <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <span className="text-purple-600 text-sm">📊</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                <PaymentStatsOverview />
 
                 {/* Recurring Contributions Dashboard for admin view */}
                 <div>
@@ -596,6 +555,14 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
                           <div className="text-sm text-gray-600">Development/Test Mode</div>
                         </div>
                         <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Test</Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">Payment Methods</div>
+                          <div className="text-sm text-gray-600">Cards + Venmo (mobile)</div>
+                        </div>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">Enhanced</Badge>
                       </div>
                     </div>
                   </CardContent>

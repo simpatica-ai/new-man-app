@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   Heart, 
   CreditCard, 
@@ -12,7 +19,8 @@ import {
   AlertCircle, 
   Loader2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  X
 } from 'lucide-react';
 import PaymentContainer, { PaymentResult } from '@/components/PaymentContainer';
 import PaymentHistory from '@/components/PaymentHistory';
@@ -39,6 +47,7 @@ export default function PaymentActionCard({ className }: PaymentActionCardProps)
   const [error, setError] = useState<string>('');
   const [lastPayment, setLastPayment] = useState<PaymentResult | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     loadUserContext();
@@ -74,15 +83,14 @@ export default function PaymentActionCard({ className }: PaymentActionCardProps)
       if (profile.organization_id) {
         organizationId = profile.organization_id;
         
-        // Check if user is organization admin
-        const { data: orgMember } = await supabase
-          .from('organization_members')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('organization_id', profile.organization_id)
+        // Check if user is organization admin using roles array
+        const { data: fullProfile } = await supabase
+          .from('profiles')
+          .select('roles')
+          .eq('id', user.id)
           .single();
 
-        if (orgMember?.role === 'admin') {
+        if (fullProfile?.roles && Array.isArray(fullProfile.roles) && fullProfile.roles.includes('admin')) {
           userType = 'organization_admin';
         } else {
           // Any organization member who is not admin should not see payment interface
@@ -118,6 +126,7 @@ export default function PaymentActionCard({ className }: PaymentActionCardProps)
 
   const handlePaymentSuccess = (result: PaymentResult) => {
     setLastPayment(result);
+    setShowPaymentModal(false); // Close modal on success
     // Optionally show success message or refresh history
     if (showHistory) {
       // Trigger history refresh by toggling
@@ -204,20 +213,15 @@ export default function PaymentActionCard({ className }: PaymentActionCardProps)
           {/* Action Buttons */}
           <div className="space-y-2">
             <Button
-              onClick={() => setExpanded(!expanded)}
+              onClick={() => setShowPaymentModal(true)}
               variant="outline"
               size="sm"
-              className="w-full justify-between"
+              className="w-full justify-center"
             >
               <div className="flex items-center space-x-2">
                 <CreditCard className="h-4 w-4" />
                 <span>Make Contribution</span>
               </div>
-              {expanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
             </Button>
 
             <Button
@@ -231,18 +235,32 @@ export default function PaymentActionCard({ className }: PaymentActionCardProps)
             </Button>
           </div>
 
-          {/* Expanded Payment Interface */}
-          {expanded && userContext && (
-            <div className="pt-2 border-t border-stone-200">
-              <PaymentContainer
-                userId={userContext.userId}
-                userType={userContext.userType as 'individual' | 'organization_admin'}
-                organizationId={userContext.organizationId}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentError={handlePaymentError}
-              />
-            </div>
-          )}
+          {/* Payment Modal */}
+          <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center space-x-2">
+                  <Heart className="h-5 w-5 text-amber-600" />
+                  <span>Make a Contribution</span>
+                </DialogTitle>
+                <DialogDescription>
+                  Support the platform with a voluntary contribution. Your generosity helps us continue improving the experience for everyone.
+                </DialogDescription>
+              </DialogHeader>
+              
+              {userContext && (
+                <div className="mt-4">
+                  <PaymentContainer
+                    userId={userContext.userId}
+                    userType={userContext.userType as 'individual' | 'organization_admin'}
+                    organizationId={userContext.organizationId}
+                    onPaymentSuccess={handlePaymentSuccess}
+                    onPaymentError={handlePaymentError}
+                  />
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Payment History */}
           {showHistory && userContext && (

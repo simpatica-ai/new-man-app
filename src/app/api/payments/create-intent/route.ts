@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripeService } from '@/lib/stripeService';
 import { validatePaymentAmount, STRIPE_CONFIG } from '@/lib/stripeConfig';
 import { supabaseAdmin } from '@/lib/supabaseClient';
+import { auditLogger } from '@/lib/auditLogger';
 
 export async function POST(request: NextRequest) {
+  let userId: string | undefined;
+  
   try {
-    const { amount, currency = 'usd', userId, organizationId, metadata } = await request.json();
+    const { amount, currency = 'usd', userId: requestUserId, organizationId, metadata, paymentMethodTypes } = await request.json();
+    userId = requestUserId;
 
     // Validate required fields
     if (!amount || !userId) {
@@ -42,7 +46,42 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingCustomer?.stripe_customer_id) {
-      customerId = existingCustomer.stripe_customer_id;
+      // Verify the customer still exists in Stripe
+      try {
+        await stripeService.retrieveCustomer(existingCustomer.stripe_customer_id);
+        customerId = existingCustomer.stripe_customer_id;
+      } catch {
+        console.log('Stored Stripe customer no longer exists, creating new one');
+        // Customer doesn't exist in Stripe anymore, create a new one
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        
+        if (authError || !authUser.user?.email) {
+          return NextResponse.json(
+            { error: 'User email not found' },
+            { status: 400 }
+          );
+        }
+
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .single();
+
+        const stripeCustomer = await stripeService.createCustomer(
+          authUser.user.email,
+          profile?.full_name || undefined,
+          { userId, organizationId: organizationId || '' }
+        );
+
+        customerId = stripeCustomer.id;
+
+        // Update the stored customer ID
+        await supabaseAdmin
+          .from('user_stripe_customers')
+          .update({ stripe_customer_id: customerId })
+          .eq('user_id', userId);
+      }
     } else {
       // Get user email and profile info
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -85,6 +124,7 @@ export async function POST(request: NextRequest) {
       amount,
       currency,
       customerId,
+      paymentMethodTypes,
       metadata: {
         userId,
         organizationId: organizationId || '',
@@ -93,7 +133,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Store payment record in database
-    const { data: insertedPayment, error: paymentError } = await supabaseAdmin
+    const { error: paymentError } = await supabaseAdmin
       .from('payments')
       .insert({
         user_id: userId,
@@ -109,8 +149,12 @@ export async function POST(request: NextRequest) {
 
     if (paymentError) {
       console.error('Error storing payment record:', paymentError.message);
+      await auditLogger.logError('Failed to store payment record', userId, paymentIntent.id, { error: paymentError.message });
       // Continue anyway - the payment intent was created successfully
     }
+
+    // Log successful payment intent creation
+    await auditLogger.logPaymentCreated(userId, organizationId, paymentIntent.id, amount, currency, metadata);
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
@@ -119,6 +163,8 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating payment intent:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await auditLogger.logError(`Payment intent creation failed: ${errorMessage}`, userId);
     return NextResponse.json(
       { error: 'Failed to create payment intent' },
       { status: 500 }

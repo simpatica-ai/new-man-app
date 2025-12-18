@@ -5,6 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   CardElement,
+  PaymentElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -15,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Heart, CreditCard, Calendar, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Heart, CreditCard, Calendar, CheckCircle, AlertCircle, Loader2, Smartphone } from 'lucide-react';
 import { validatePaymentAmount } from '@/lib/stripeConfig';
 
 // Initialize Stripe
@@ -50,10 +51,26 @@ function PaymentForm({
   
   const [amount, setAmount] = useState<string>('');
   const [paymentType, setPaymentType] = useState<'one-time' | 'recurring'>('one-time');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'venmo'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errorType, setErrorType] = useState<'validation' | 'payment' | 'network' | 'unknown'>('unknown');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor;
+      const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+  }, []);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -63,31 +80,136 @@ function PaymentForm({
     }
   };
 
-  const validateForm = (): string | null => {
+  const validateForm = (): { isValid: boolean; error?: string; type?: 'validation' | 'payment' | 'network' | 'unknown' } => {
     const numAmount = parseFloat(amount);
     
     if (!amount || isNaN(numAmount)) {
-      return 'Please enter a valid amount';
+      return { isValid: false, error: 'Please enter a valid amount', type: 'validation' };
     }
 
     const validation = validatePaymentAmount(numAmount);
     if (!validation.isValid) {
-      return validation.error || 'Invalid amount';
+      return { isValid: false, error: validation.error || 'Invalid amount', type: 'validation' };
     }
 
     if (!stripe || !elements) {
-      return 'Payment system not ready. Please try again.';
+      return { isValid: false, error: 'Payment system not ready. Please try again in a moment.', type: 'network' };
     }
 
-    return null;
+    return { isValid: true };
+  };
+
+  const getErrorMessage = (error: any): { message: string; type: 'validation' | 'payment' | 'network' | 'unknown'; canRetry: boolean } => {
+    const errorMessage = error?.message || error || 'An unexpected error occurred';
+    
+    // Stripe-specific error handling
+    if (error?.type) {
+      switch (error.type) {
+        case 'card_error':
+          switch (error.code) {
+            case 'card_declined':
+              return {
+                message: 'Your card was declined. Please try a different payment method or contact your bank.',
+                type: 'payment',
+                canRetry: true
+              };
+            case 'insufficient_funds':
+              return {
+                message: 'Insufficient funds. Please try a different payment method.',
+                type: 'payment',
+                canRetry: true
+              };
+            case 'expired_card':
+              return {
+                message: 'Your card has expired. Please use a different payment method.',
+                type: 'payment',
+                canRetry: true
+              };
+            case 'incorrect_cvc':
+              return {
+                message: 'Your card\'s security code is incorrect. Please check and try again.',
+                type: 'payment',
+                canRetry: true
+              };
+            case 'processing_error':
+              return {
+                message: 'An error occurred while processing your card. Please try again.',
+                type: 'payment',
+                canRetry: true
+              };
+            default:
+              return {
+                message: `Card error: ${error.message}`,
+                type: 'payment',
+                canRetry: true
+              };
+          }
+        case 'rate_limit_error':
+          return {
+            message: 'Too many requests. Please wait a moment and try again.',
+            type: 'network',
+            canRetry: true
+          };
+        case 'api_connection_error':
+          return {
+            message: 'Network connection error. Please check your internet connection and try again.',
+            type: 'network',
+            canRetry: true
+          };
+        case 'api_error':
+          return {
+            message: 'A temporary error occurred. Please try again in a few moments.',
+            type: 'network',
+            canRetry: true
+          };
+        case 'authentication_error':
+          return {
+            message: 'Payment system configuration error. Please contact support.',
+            type: 'unknown',
+            canRetry: false
+          };
+        case 'validation_error':
+          return {
+            message: error.message || 'Please check your payment information and try again.',
+            type: 'validation',
+            canRetry: true
+          };
+      }
+    }
+
+    // Network/API errors
+    if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('connection')) {
+      return {
+        message: 'Network error. Please check your connection and try again.',
+        type: 'network',
+        canRetry: true
+      };
+    }
+
+    // Venmo-specific errors
+    if (errorMessage.includes('venmo') || errorMessage.includes('Venmo')) {
+      return {
+        message: 'Venmo payment failed. Please try again or use a card instead.',
+        type: 'payment',
+        canRetry: true
+      };
+    }
+
+    // Default error
+    return {
+      message: errorMessage,
+      type: 'unknown',
+      canRetry: retryCount < 2
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationError = validateForm();
-    if (validationError) {
-      setErrorMessage(validationError);
+    const validation = validateForm();
+    if (!validation.isValid) {
+      setErrorMessage(validation.error!);
+      setErrorType(validation.type!);
       setPaymentStatus('error');
       return;
     }
@@ -95,6 +217,7 @@ function PaymentForm({
     setIsProcessing(true);
     setPaymentStatus('processing');
     setErrorMessage('');
+    setErrorType('unknown');
 
     try {
       const numAmount = parseFloat(amount);
@@ -106,16 +229,27 @@ function PaymentForm({
       }
     } catch (error) {
       console.error('Payment error:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Payment failed. Please try again.';
-      setErrorMessage(errorMsg);
+      const errorInfo = getErrorMessage(error);
+      setErrorMessage(errorInfo.message);
+      setErrorType(errorInfo.type);
       setPaymentStatus('error');
-      onPaymentError?.(errorMsg);
+      onPaymentError?.(errorInfo.message);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setPaymentStatus('idle');
+    setErrorMessage('');
+    setErrorType('unknown');
+  };
+
   const handleOneTimePayment = async (numAmount: number) => {
+    // Determine payment method types based on selection
+    const paymentMethodTypes = paymentMethod === 'venmo' ? ['venmo'] : ['card'];
+    
     // Create payment intent
     const response = await fetch('/api/payments/create-intent', {
       method: 'POST',
@@ -125,9 +259,11 @@ function PaymentForm({
         currency: 'usd',
         userId,
         organizationId,
+        paymentMethodTypes,
         metadata: {
           userType,
           paymentType: 'one-time',
+          paymentMethod,
         },
       }),
     });
@@ -143,16 +279,61 @@ function PaymentForm({
       throw new Error('Failed to create payment intent');
     }
 
-    // Confirm payment with Stripe
-    const cardElement = elements!.getElement(CardElement);
-    const { error: stripeError, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement!,
-      },
-    });
+    let stripeError: any;
+    let paymentIntent: any;
+
+    if (paymentMethod === 'venmo') {
+      // For Venmo, we need to use confirmPayment with redirect
+      const { error, paymentIntent: pi } = await stripe!.confirmPayment({
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}?payment_success=true`,
+        },
+      });
+      stripeError = error;
+      paymentIntent = pi;
+    } else {
+      // For cards, use the existing CardElement approach
+      const cardElement = elements!.getElement(CardElement);
+      const { error, paymentIntent: pi } = await stripe!.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement!,
+        },
+      });
+      stripeError = error;
+      paymentIntent = pi;
+    }
 
     if (stripeError) {
-      throw new Error(stripeError.message || 'Payment confirmation failed');
+      // Enhanced error handling with specific messages
+      let userFriendlyMessage = 'Payment failed. Please try again.';
+      
+      if (stripeError.code) {
+        switch (stripeError.code) {
+          case 'card_declined':
+            userFriendlyMessage = 'Your card was declined. Please try a different payment method or contact your bank.';
+            break;
+          case 'insufficient_funds':
+            userFriendlyMessage = 'Insufficient funds. Please check your account balance or try a different card.';
+            break;
+          case 'expired_card':
+            userFriendlyMessage = 'Your card has expired. Please use a different card.';
+            break;
+          case 'incorrect_cvc':
+            userFriendlyMessage = 'The security code (CVC) is incorrect. Please check and try again.';
+            break;
+          case 'processing_error':
+            userFriendlyMessage = 'A processing error occurred. Please try again in a few moments.';
+            break;
+          case 'rate_limit':
+            userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
+            break;
+          default:
+            userFriendlyMessage = stripeError.message || 'Payment failed. Please try again.';
+        }
+      }
+      
+      throw new Error(userFriendlyMessage);
     }
 
     if (paymentIntent?.status === 'succeeded') {
@@ -170,7 +351,8 @@ function PaymentForm({
       }
 
       setPaymentStatus('success');
-      setSuccessMessage('Thank you for your generous contribution! Your payment has been processed successfully.');
+      const methodText = paymentMethod === 'venmo' ? 'Venmo' : 'card';
+      setSuccessMessage(`Thank you for your generous contribution! Your ${methodText} payment has been processed successfully.`);
       
       const result: PaymentResult = {
         paymentIntentId: paymentIntent.id,
@@ -183,7 +365,7 @@ function PaymentForm({
       
       // Reset form
       setAmount('');
-      elements!.getElement(CardElement)?.clear();
+      setClientSecret('');
     }
   };
 
@@ -367,7 +549,13 @@ function PaymentForm({
             <Label className="text-stone-700 font-medium">Payment Frequency</Label>
             <RadioGroup
               value={paymentType}
-              onValueChange={(value) => setPaymentType(value as 'one-time' | 'recurring')}
+              onValueChange={(value) => {
+                setPaymentType(value as 'one-time' | 'recurring');
+                // Reset payment method when switching to recurring (Venmo doesn't support recurring)
+                if (value === 'recurring') {
+                  setPaymentMethod('card');
+                }
+              }}
               disabled={isProcessing}
             >
               <div className="flex items-center space-x-2">
@@ -375,6 +563,11 @@ function PaymentForm({
                 <Label htmlFor="one-time" className="flex items-center space-x-2 cursor-pointer">
                   <CreditCard className="h-4 w-4 text-stone-600" />
                   <span>One-time contribution</span>
+                  {isMobile && (
+                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                      Card or Venmo
+                    </Badge>
+                  )}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -383,18 +576,73 @@ function PaymentForm({
                   <Calendar className="h-4 w-4 text-stone-600" />
                   <span>Monthly recurring</span>
                   <Badge variant="secondary" className="text-xs">
-                    Cancel anytime
+                    Card only
                   </Badge>
                 </Label>
               </div>
             </RadioGroup>
           </div>
 
-          {/* Card Element */}
+          {/* Payment Method Selection (only for one-time payments) */}
+          {paymentType === 'one-time' && (
+            <div className="space-y-3">
+              <Label className="text-stone-700 font-medium">Payment Method</Label>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as 'card' | 'venmo')}
+                disabled={isProcessing}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="flex items-center space-x-2 cursor-pointer">
+                    <CreditCard className="h-4 w-4 text-stone-600" />
+                    <span>Credit/Debit Card</span>
+                  </Label>
+                </div>
+                {isMobile && (
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="venmo" id="venmo" />
+                    <Label htmlFor="venmo" className="flex items-center space-x-2 cursor-pointer">
+                      <Smartphone className="h-4 w-4 text-blue-600" />
+                      <span className="text-blue-600 font-medium">Venmo</span>
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                        Mobile only
+                      </Badge>
+                    </Label>
+                  </div>
+                )}
+              </RadioGroup>
+              
+              {paymentMethod === 'venmo' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Venmo payments:</strong> You'll be redirected to the Venmo app to complete your contribution. 
+                    For recurring monthly contributions, please use a card instead.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Payment Element */}
           <div className="space-y-2">
-            <Label className="text-stone-700 font-medium">Payment Information</Label>
+            <Label className="text-stone-700 font-medium">
+              {paymentMethod === 'venmo' ? 'Venmo Payment' : 'Payment Information'}
+            </Label>
             <div className="border border-stone-300 rounded-md p-3 bg-white">
-              <CardElement options={cardElementOptions} />
+              {paymentType === 'one-time' && paymentMethod === 'venmo' ? (
+                <div className="text-center py-4">
+                  <Smartphone className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                  <p className="text-sm text-stone-600">
+                    Click "Pay with Venmo" below to complete your contribution
+                  </p>
+                  <p className="text-xs text-stone-500 mt-1">
+                    You'll be redirected to the Venmo app
+                  </p>
+                </div>
+              ) : (
+                <CardElement options={cardElementOptions} />
+              )}
             </div>
           </div>
 
@@ -402,8 +650,48 @@ function PaymentForm({
           {paymentStatus === 'error' && errorMessage && (
             <Alert className="border-red-200 bg-red-50">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-700">
-                {errorMessage}
+              <AlertDescription className="text-red-700 space-y-2">
+                <div>{errorMessage}</div>
+                
+                {/* Helpful suggestions based on error type */}
+                {errorType === 'payment' && (
+                  <div className="text-sm text-red-600">
+                    💡 Try using a different payment method or contact your bank for assistance.
+                  </div>
+                )}
+                
+                {errorType === 'network' && (
+                  <div className="text-sm text-red-600">
+                    💡 Check your internet connection and try again in a moment.
+                  </div>
+                )}
+                
+                {errorType === 'validation' && (
+                  <div className="text-sm text-red-600">
+                    💡 Please double-check your payment information and amount.
+                  </div>
+                )}
+
+                {/* Retry button for retryable errors */}
+                {retryCount < 2 && errorType !== 'validation' && (
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRetry}
+                      className="text-red-700 border-red-300 hover:bg-red-100"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                )}
+
+                {retryCount >= 2 && (
+                  <div className="text-sm text-red-600">
+                    💬 Still having trouble? Please contact support for assistance.
+                  </div>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -412,7 +700,11 @@ function PaymentForm({
           <Button
             type="submit"
             disabled={!stripe || isProcessing}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+            className={`w-full text-white ${
+              paymentMethod === 'venmo' 
+                ? 'bg-blue-600 hover:bg-blue-700' 
+                : 'bg-amber-600 hover:bg-amber-700'
+            }`}
           >
             {isProcessing ? (
               <>
@@ -421,9 +713,13 @@ function PaymentForm({
               </>
             ) : (
               <>
-                <Heart className="h-4 w-4 mr-2" />
+                {paymentMethod === 'venmo' ? (
+                  <Smartphone className="h-4 w-4 mr-2" />
+                ) : (
+                  <Heart className="h-4 w-4 mr-2" />
+                )}
                 {paymentType === 'one-time' 
-                  ? `Contribute $${amount || '0.00'}` 
+                  ? `${paymentMethod === 'venmo' ? 'Pay with Venmo' : 'Contribute'} $${amount || '0.00'}` 
                   : `Start $${amount || '0.00'}/month`
                 }
               </>
@@ -436,6 +732,11 @@ function PaymentForm({
           <p className="text-xs text-stone-500">
             🔒 Payments are securely processed by Stripe. We never store your payment information.
           </p>
+          {isMobile && (
+            <p className="text-xs text-blue-600 mt-1">
+              📱 Venmo available on mobile devices
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

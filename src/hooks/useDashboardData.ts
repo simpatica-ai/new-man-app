@@ -36,13 +36,20 @@ export function useDashboardData() {
       }
       
       const profilePromise = supabase.from('profiles').select('full_name, has_completed_first_assessment').eq('id', user.id).single();
-      const connectionPromise = supabase.rpc('get_practitioner_connection_details', { practitioner_id_param: user.id });
       const virtuesPromise = supabase.from('virtues').select('id, name, description, short_description').order('id');
       const journalPromise = supabase.from('journal_entries').select('created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1);
       const progressPromise = supabase.from('user_virtue_stage_progress').select('virtue_id, stage_number, status').eq('user_id', user.id);
 
-      const [profileResult, connectionResult, virtuesResult, journalResult, progressResult] = await Promise.all([
-        profilePromise, connectionPromise, virtuesPromise, journalPromise, progressPromise
+      // Handle connection RPC separately with error handling
+      let connectionResult = { data: null, error: null };
+      try {
+        connectionResult = await supabase.rpc('get_practitioner_connection_details', { practitioner_id_param: user.id });
+      } catch (err) {
+        console.warn('Connection RPC failed, continuing without connection data:', err);
+      }
+
+      const [profileResult, virtuesResult, journalResult, progressResult] = await Promise.all([
+        profilePromise, virtuesPromise, journalPromise, progressPromise
       ]);
 
       console.log('Profile result:', profileResult);
@@ -141,6 +148,11 @@ export function useDashboardData() {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        errorObject: error
+      });
     } finally {
       setLoading(false);
     }
