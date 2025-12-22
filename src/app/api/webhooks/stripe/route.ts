@@ -389,25 +389,37 @@ async function handlePaymentMethodDetached(paymentMethod: Stripe.PaymentMethod) 
 // Database operations - implemented with Supabase
 async function updatePaymentRecord(paymentIntentId: string, data: Record<string, unknown>) {
   try {
-    const { data: supabaseAdmin } = await import('@/lib/supabaseClient');
+    const { supabaseAdmin } = await import('@/lib/supabaseClient');
     
-    const { error } = await supabaseAdmin
+    if (!supabaseAdmin) {
+      console.error('❌ Supabase admin client not available');
+      return;
+    }
+    
+    console.log(`🔄 Attempting to update payment record for ${paymentIntentId}`, data);
+    
+    const { data: result, error } = await supabaseAdmin
       .from('payments')
       .update({
         status: data.status as string,
         updated_at: new Date().toISOString(),
         metadata: data.metadata || {},
       })
-      .eq('stripe_payment_intent_id', paymentIntentId);
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .select();
 
     if (error) {
-      console.error('Error updating payment record:', error);
+      console.error('❌ Error updating payment record:', error);
       throw error;
     }
     
-    console.log(`✅ Updated payment record for ${paymentIntentId}`);
+    if (!result || result.length === 0) {
+      console.warn(`⚠️  No payment record found for ${paymentIntentId}`);
+    } else {
+      console.log(`✅ Successfully updated payment record for ${paymentIntentId}`, result);
+    }
   } catch (error) {
-    console.error('Failed to update payment record:', error);
+    console.error('❌ Failed to update payment record:', error);
     // Log but don't throw - webhook should still succeed
   }
 }
@@ -430,6 +442,11 @@ async function updateSubscriptionRecord(subscriptionId: string, data: Record<str
 async function createCustomerRecord(data: Record<string, unknown>) {
   try {
     const { supabaseAdmin } = await import('@/lib/supabaseClient');
+    
+    if (!supabaseAdmin) {
+      console.error('Supabase admin client not available');
+      return;
+    }
     
     const { error } = await supabaseAdmin
       .from('user_stripe_customers')
