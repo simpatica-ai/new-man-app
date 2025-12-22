@@ -387,37 +387,37 @@ async function handlePaymentMethodDetached(paymentMethod: Stripe.PaymentMethod) 
 }
 
 // Database operation stubs - these would be implemented with your actual database layer
-async function updatePaymentRecord(paymentIntentId: string, data: any) {
+async function updatePaymentRecord(paymentIntentId: string, data: Record<string, unknown>) {
   // TODO: Implement database update for payment records
   console.log(`📝 Would update payment record for ${paymentIntentId}:`, data);
 }
 
-async function updateSubscriptionPayment(subscriptionId: string, data: any) {
+async function updateSubscriptionPayment(subscriptionId: string, data: Record<string, unknown>) {
   // TODO: Implement database update for subscription payments
   console.log(`📝 Would update subscription payment for ${subscriptionId}:`, data);
 }
 
-async function createSubscriptionRecord(data: any) {
+async function createSubscriptionRecord(data: Record<string, unknown>) {
   // TODO: Implement database creation for subscription records
   console.log(`📝 Would create subscription record:`, data);
 }
 
-async function updateSubscriptionRecord(subscriptionId: string, data: any) {
+async function updateSubscriptionRecord(subscriptionId: string, data: Record<string, unknown>) {
   // TODO: Implement database update for subscription records
   console.log(`📝 Would update subscription record for ${subscriptionId}:`, data);
 }
 
-async function createCustomerRecord(data: any) {
+async function createCustomerRecord(data: Record<string, unknown>) {
   // TODO: Implement database creation for customer records
   console.log(`📝 Would create customer record:`, data);
 }
 
-async function updateCustomerRecord(customerId: string, data: any) {
+async function updateCustomerRecord(customerId: string, data: Record<string, unknown>) {
   // TODO: Implement database update for customer records
   console.log(`📝 Would update customer record for ${customerId}:`, data);
 }
 
-async function logPaymentMethodEvent(paymentMethodId: string, event: string, data: any) {
+async function logPaymentMethodEvent(paymentMethodId: string, event: string, data: Record<string, unknown>) {
   // TODO: Implement logging for payment method events
   console.log(`📝 Would log payment method event ${event} for ${paymentMethodId}:`, data);
 }

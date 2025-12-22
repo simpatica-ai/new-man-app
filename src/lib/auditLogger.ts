@@ -12,7 +12,7 @@ export interface AuditLogEntry {
   stripe_id?: string;
   amount?: number;
   currency?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   error_message?: string;
   ip_address?: string;
   user_agent?: string;

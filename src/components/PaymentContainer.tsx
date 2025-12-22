@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   CardElement,
-  PaymentElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -16,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Heart, CreditCard, Calendar, CheckCircle, AlertCircle, Loader2, Smartphone } from 'lucide-react';
+import { Heart, CreditCard, Calendar, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { validatePaymentAmount } from '@/lib/stripeConfig';
 
 // Initialize Stripe
@@ -37,7 +36,9 @@ interface PaymentResult {
   paymentType: 'one-time' | 'recurring';
 }
 
-interface PaymentFormProps extends PaymentContainerProps {}
+interface PaymentFormProps extends PaymentContainerProps {
+  // Inherits all props from PaymentContainerProps
+}
 
 function PaymentForm({ 
   userId, 
@@ -51,26 +52,12 @@ function PaymentForm({
   
   const [amount, setAmount] = useState<string>('');
   const [paymentType, setPaymentType] = useState<'one-time' | 'recurring'>('one-time');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'venmo'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [errorType, setErrorType] = useState<'validation' | 'payment' | 'network' | 'unknown'>('unknown');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [isMobile, setIsMobile] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string>('');
   const [retryCount, setRetryCount] = useState(0);
-
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent || navigator.vendor;
-      const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-      setIsMobile(isMobileDevice);
-    };
-    
-    checkMobile();
-  }, []);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -99,7 +86,7 @@ function PaymentForm({
     return { isValid: true };
   };
 
-  const getErrorMessage = (error: any): { message: string; type: 'validation' | 'payment' | 'network' | 'unknown'; canRetry: boolean } => {
+  const getErrorMessage = (error: unknown): { message: string; type: 'validation' | 'payment' | 'network' | 'unknown'; canRetry: boolean } => {
     const errorMessage = error?.message || error || 'An unexpected error occurred';
     
     // Stripe-specific error handling
@@ -247,62 +234,46 @@ function PaymentForm({
   };
 
   const handleOneTimePayment = async (numAmount: number) => {
-    // Determine payment method types based on selection
-    const paymentMethodTypes = paymentMethod === 'venmo' ? ['venmo'] : ['card'];
+    // Always use card payment method types
+    const paymentMethodTypes = ['card'];
     
-    // Create payment intent
-    const response = await fetch('/api/payments/create-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: numAmount,
-        currency: 'usd',
-        userId,
-        organizationId,
-        paymentMethodTypes,
-        metadata: {
-          userType,
-          paymentType: 'one-time',
-          paymentMethod,
-        },
-      }),
-    });
-
-    const responseData = await response.json();
-    const { clientSecret, paymentIntentId, error } = responseData;
-    
-    if (error) {
-      throw new Error(error);
-    }
-    
-    if (!clientSecret) {
-      throw new Error('Failed to create payment intent');
-    }
-
-    let stripeError: any;
-    let paymentIntent: any;
-
-    if (paymentMethod === 'venmo') {
-      // For Venmo, we need to use confirmPayment with redirect
-      const { error, paymentIntent: pi } = await stripe!.confirmPayment({
-        clientSecret,
-        confirmParams: {
-          return_url: `${window.location.origin}?payment_success=true`,
-        },
+    try {
+      // Create payment intent
+      const response = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: numAmount,
+          currency: 'usd',
+          userId,
+          organizationId,
+          paymentMethodTypes,
+          metadata: {
+            userType,
+            paymentType: 'one-time',
+            paymentMethod: 'card',
+          },
+        }),
       });
-      stripeError = error;
-      paymentIntent = pi;
-    } else {
-      // For cards, use the existing CardElement approach
+
+      const responseData = await response.json();
+      const { clientSecret, paymentIntentId, error } = responseData;
+      
+      if (error) {
+        throw new Error(error);
+      }
+    
+      if (!clientSecret) {
+        throw new Error('Failed to create payment intent');
+      }
+
+      // Use CardElement for payment processing
       const cardElement = elements!.getElement(CardElement);
-      const { error, paymentIntent: pi } = await stripe!.confirmCardPayment(clientSecret, {
+      const { error: stripeError, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement!,
         },
       });
-      stripeError = error;
-      paymentIntent = pi;
-    }
 
     if (stripeError) {
       // Enhanced error handling with specific messages
@@ -351,8 +322,7 @@ function PaymentForm({
       }
 
       setPaymentStatus('success');
-      const methodText = paymentMethod === 'venmo' ? 'Venmo' : 'card';
-      setSuccessMessage(`Thank you for your generous contribution! Your ${methodText} payment has been processed successfully.`);
+      setSuccessMessage(`Thank you for your generous contribution! Your payment has been processed successfully.`);
       
       const result: PaymentResult = {
         paymentIntentId: paymentIntent.id,
@@ -366,6 +336,10 @@ function PaymentForm({
       // Reset form
       setAmount('');
       setClientSecret('');
+    }
+    } catch (error) {
+      console.error('Payment error:', error);
+      throw error;
     }
   };
 
@@ -551,10 +525,6 @@ function PaymentForm({
               value={paymentType}
               onValueChange={(value) => {
                 setPaymentType(value as 'one-time' | 'recurring');
-                // Reset payment method when switching to recurring (Venmo doesn't support recurring)
-                if (value === 'recurring') {
-                  setPaymentMethod('card');
-                }
               }}
               disabled={isProcessing}
             >
@@ -563,11 +533,6 @@ function PaymentForm({
                 <Label htmlFor="one-time" className="flex items-center space-x-2 cursor-pointer">
                   <CreditCard className="h-4 w-4 text-stone-600" />
                   <span>One-time contribution</span>
-                  {isMobile && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                      Card or Venmo
-                    </Badge>
-                  )}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -575,74 +540,18 @@ function PaymentForm({
                 <Label htmlFor="recurring" className="flex items-center space-x-2 cursor-pointer">
                   <Calendar className="h-4 w-4 text-stone-600" />
                   <span>Monthly recurring</span>
-                  <Badge variant="secondary" className="text-xs">
-                    Card only
-                  </Badge>
                 </Label>
               </div>
             </RadioGroup>
           </div>
 
-          {/* Payment Method Selection (only for one-time payments) */}
-          {paymentType === 'one-time' && (
-            <div className="space-y-3">
-              <Label className="text-stone-700 font-medium">Payment Method</Label>
-              <RadioGroup
-                value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as 'card' | 'venmo')}
-                disabled={isProcessing}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="card" id="card" />
-                  <Label htmlFor="card" className="flex items-center space-x-2 cursor-pointer">
-                    <CreditCard className="h-4 w-4 text-stone-600" />
-                    <span>Credit/Debit Card</span>
-                  </Label>
-                </div>
-                {isMobile && (
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="venmo" id="venmo" />
-                    <Label htmlFor="venmo" className="flex items-center space-x-2 cursor-pointer">
-                      <Smartphone className="h-4 w-4 text-blue-600" />
-                      <span className="text-blue-600 font-medium">Venmo</span>
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                        Mobile only
-                      </Badge>
-                    </Label>
-                  </div>
-                )}
-              </RadioGroup>
-              
-              {paymentMethod === 'venmo' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>Venmo payments:</strong> You'll be redirected to the Venmo app to complete your contribution. 
-                    For recurring monthly contributions, please use a card instead.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Payment Element */}
           <div className="space-y-2">
             <Label className="text-stone-700 font-medium">
-              {paymentMethod === 'venmo' ? 'Venmo Payment' : 'Payment Information'}
+              Payment Information
             </Label>
             <div className="border border-stone-300 rounded-md p-3 bg-white">
-              {paymentType === 'one-time' && paymentMethod === 'venmo' ? (
-                <div className="text-center py-4">
-                  <Smartphone className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                  <p className="text-sm text-stone-600">
-                    Click "Pay with Venmo" below to complete your contribution
-                  </p>
-                  <p className="text-xs text-stone-500 mt-1">
-                    You'll be redirected to the Venmo app
-                  </p>
-                </div>
-              ) : (
-                <CardElement options={cardElementOptions} />
-              )}
+              <CardElement options={cardElementOptions} />
             </div>
           </div>
 
@@ -700,11 +609,7 @@ function PaymentForm({
           <Button
             type="submit"
             disabled={!stripe || isProcessing}
-            className={`w-full text-white ${
-              paymentMethod === 'venmo' 
-                ? 'bg-blue-600 hover:bg-blue-700' 
-                : 'bg-amber-600 hover:bg-amber-700'
-            }`}
+            className="w-full text-white bg-amber-600 hover:bg-amber-700"
           >
             {isProcessing ? (
               <>
@@ -713,13 +618,9 @@ function PaymentForm({
               </>
             ) : (
               <>
-                {paymentMethod === 'venmo' ? (
-                  <Smartphone className="h-4 w-4 mr-2" />
-                ) : (
-                  <Heart className="h-4 w-4 mr-2" />
-                )}
+                <Heart className="h-4 w-4 mr-2" />
                 {paymentType === 'one-time' 
-                  ? `${paymentMethod === 'venmo' ? 'Pay with Venmo' : 'Contribute'} $${amount || '0.00'}` 
+                  ? `Contribute $${amount || '0.00'}` 
                   : `Start $${amount || '0.00'}/month`
                 }
               </>
@@ -732,11 +633,6 @@ function PaymentForm({
           <p className="text-xs text-stone-500">
             🔒 Payments are securely processed by Stripe. We never store your payment information.
           </p>
-          {isMobile && (
-            <p className="text-xs text-blue-600 mt-1">
-              📱 Venmo available on mobile devices
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>
