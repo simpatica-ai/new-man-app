@@ -386,10 +386,30 @@ async function handlePaymentMethodDetached(paymentMethod: Stripe.PaymentMethod) 
   }
 }
 
-// Database operation stubs - these would be implemented with your actual database layer
+// Database operations - implemented with Supabase
 async function updatePaymentRecord(paymentIntentId: string, data: Record<string, unknown>) {
-  // TODO: Implement database update for payment records
-  console.log(`📝 Would update payment record for ${paymentIntentId}:`, data);
+  try {
+    const { data: supabaseAdmin } = await import('@/lib/supabaseClient');
+    
+    const { error } = await supabaseAdmin
+      .from('payments')
+      .update({
+        status: data.status as string,
+        updated_at: new Date().toISOString(),
+        metadata: data.metadata || {},
+      })
+      .eq('stripe_payment_intent_id', paymentIntentId);
+
+    if (error) {
+      console.error('Error updating payment record:', error);
+      throw error;
+    }
+    
+    console.log(`✅ Updated payment record for ${paymentIntentId}`);
+  } catch (error) {
+    console.error('Failed to update payment record:', error);
+    // Log but don't throw - webhook should still succeed
+  }
 }
 
 async function updateSubscriptionPayment(subscriptionId: string, data: Record<string, unknown>) {
@@ -408,8 +428,27 @@ async function updateSubscriptionRecord(subscriptionId: string, data: Record<str
 }
 
 async function createCustomerRecord(data: Record<string, unknown>) {
-  // TODO: Implement database creation for customer records
-  console.log(`📝 Would create customer record:`, data);
+  try {
+    const { supabaseAdmin } = await import('@/lib/supabaseClient');
+    
+    const { error } = await supabaseAdmin
+      .from('user_stripe_customers')
+      .upsert({
+        stripe_customer_id: data.stripeCustomerId as string,
+        user_id: data.metadata?.userId as string,
+        created_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Error creating customer record:', error);
+      throw error;
+    }
+    
+    console.log(`✅ Created customer record for ${data.stripeCustomerId}`);
+  } catch (error) {
+    console.error('Failed to create customer record:', error);
+    // Log but don't throw - webhook should still succeed
+  }
 }
 
 async function updateCustomerRecord(customerId: string, data: Record<string, unknown>) {
