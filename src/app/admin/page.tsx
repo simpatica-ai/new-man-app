@@ -270,6 +270,8 @@ export default function AdminPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Payments</TableHead>
                     <TableHead>Sponsor</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Last Login</TableHead>
@@ -300,6 +302,20 @@ export default function AdminPage() {
                               Online
                             </Badge>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`text-xs ${
+                          p.user_type === 'org_user' 
+                            ? 'text-purple-700 border-purple-300 bg-purple-50' 
+                            : 'text-blue-700 border-blue-300 bg-blue-50'
+                        }`}>
+                          {p.user_type === 'org_user' ? 'Org User' : 'Individual'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {p.payment_total > 0 ? `$${p.payment_total.toFixed(2)}` : '$0.00'}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -536,7 +552,7 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <div>
                           <div className="font-medium">Stripe Connection</div>
-                          <div className="text-sm text-gray-600">Test mode active</div>
+                          <div className="text-sm text-gray-600">Live mode active</div>
                         </div>
                         <Badge variant="secondary" className="bg-green-100 text-green-800">Connected</Badge>
                       </div>
@@ -549,18 +565,18 @@ Submitted: ${new Date(feedback.created_at).toLocaleString()}
                         <Badge variant="secondary" className="bg-blue-100 text-blue-800">Active</Badge>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <div>
                           <div className="font-medium">Environment</div>
-                          <div className="text-sm text-gray-600">Development/Test Mode</div>
+                          <div className="text-sm text-gray-600">Production Mode</div>
                         </div>
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Test</Badge>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">Live</Badge>
                       </div>
                       
                       <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                         <div>
                           <div className="font-medium">Payment Methods</div>
-                          <div className="text-sm text-gray-600">Cards + Venmo (mobile)</div>
+                          <div className="text-sm text-gray-600">Credit & Debit Cards</div>
                         </div>
                         <Badge variant="secondary" className="bg-blue-100 text-blue-800">Enhanced</Badge>
                       </div>

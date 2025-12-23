@@ -81,6 +81,25 @@ export async function GET(request: NextRequest) {
       .select('*')
       .order('created_at', { ascending: false })
 
+    // Get payment totals for each user
+    const { data: paymentTotals, error: paymentError } = await supabase
+      .from('payments')
+      .select('user_id, amount, status')
+      .eq('status', 'succeeded')
+    
+    if (paymentError) {
+      console.error('Payment totals error:', paymentError)
+    }
+
+    // Calculate payment totals by user
+    const userPaymentTotals = (paymentTotals || []).reduce((acc, payment) => {
+      if (!acc[payment.user_id]) {
+        acc[payment.user_id] = 0;
+      }
+      acc[payment.user_id] += parseFloat(payment.amount || '0');
+      return acc;
+    }, {} as Record<string, number>);
+
     // Merge user data
     const userData = (profiles || []).map(p => {
       const authUser = users?.find(u => u.id === p.id)
@@ -100,6 +119,12 @@ export async function GET(request: NextRequest) {
       if (pendingInvite) {
         sponsorStatus = pendingInvite.status === 'pending' ? 'invite_pending' : 'sponsor_pending_confirmation'
       }
+
+      // Get payment total for this user
+      const paymentTotal = userPaymentTotals[p.id] || 0;
+
+      // Determine user type (individual vs organization member)
+      const userType = p.organization_id ? 'org_user' : 'individual';
       
       return {
         ...p,
@@ -107,6 +132,8 @@ export async function GET(request: NextRequest) {
         last_sign_in_at: authUser?.last_sign_in_at || null,
         email_confirmed_at: authUser?.email_confirmed_at || null,
         user_status: userStatus,
+        user_type: userType,
+        payment_total: paymentTotal,
         connection_id: connection ? connection.sponsor_user_id : null,
         sponsor_name: sponsorProfile?.full_name || null,
         sponsor_email: sponsorAuthUser?.email || null,
