@@ -57,6 +57,7 @@ function PaymentForm({
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [errorType, setErrorType] = useState<'validation' | 'payment' | 'network' | 'unknown'>('unknown');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [clientSecret, setClientSecret] = useState<string>('');
   const [retryCount, setRetryCount] = useState(0);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -412,6 +413,7 @@ function PaymentForm({
         
         // Reset form
         setAmount('');
+        setClientSecret('');
         elements!.getElement(CardElement)?.clear();
       }
     } else {
@@ -430,6 +432,7 @@ function PaymentForm({
       
       // Reset form
       setAmount('');
+      setClientSecret('');
       elements!.getElement(CardElement)?.clear();
     }
   };

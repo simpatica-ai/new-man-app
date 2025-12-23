@@ -1,25 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auditLogger } from '@/lib/auditLogger';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseClient';
+import { cookies } from 'next/headers';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Check if user is admin
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
+    // Get the session from cookies (Next.js 13+ approach)
+    const cookieStore = cookies();
+    const authToken = cookieStore.get('sb-access-token')?.value || 
+                     cookieStore.get('supabase-auth-token')?.value;
+
+    if (!authToken) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const { data: profile, error: profileError } = await supabase
+    // Verify the user with the token
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(authToken);
+    
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin - check both role field and roles array
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
+      .select('role, roles')
+      .eq('id', user.id)
       .single();
 
-    if (profileError || profile?.role !== 'admin') {
+    const isAdmin = profile?.role === 'admin' || 
+                   (profile?.roles && Array.isArray(profile.roles) && profile.roles.includes('admin'));
+
+    if (profileError || !isAdmin) {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
