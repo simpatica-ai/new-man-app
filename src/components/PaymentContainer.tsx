@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import React, { useState, useEffect } from 'react';
 import {
   Elements,
   CardElement,
@@ -14,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Heart, CreditCard, Calendar, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { validatePaymentAmount } from '@/lib/stripeConfig';
+import { getStripe } from '@/lib/stripeClient';
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Initialize Stripe with proper error handling
+const stripePromise = getStripe();
 
 interface PaymentContainerProps {
   userId: string;
@@ -36,9 +35,7 @@ interface PaymentResult {
   paymentType: 'one-time' | 'recurring';
 }
 
-interface PaymentFormProps extends PaymentContainerProps {
-  // Inherits all props from PaymentContainerProps
-}
+type PaymentFormProps = PaymentContainerProps;
 
 function PaymentForm({ 
   userId, 
@@ -57,7 +54,7 @@ function PaymentForm({
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [errorType, setErrorType] = useState<'validation' | 'payment' | 'network' | 'unknown'>('unknown');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [clientSecret, setClientSecret] = useState<string>('');
+
   const [retryCount, setRetryCount] = useState(0);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -258,7 +255,7 @@ function PaymentForm({
       });
 
       const responseData = await response.json();
-      const { clientSecret, paymentIntentId, error } = responseData;
+      const { clientSecret, error } = responseData;
       
       if (error) {
         throw new Error(error);
@@ -336,7 +333,6 @@ function PaymentForm({
       
       // Reset form
       setAmount('');
-      setClientSecret('');
     }
     } catch (error) {
       console.error('Payment error:', error);
@@ -413,7 +409,6 @@ function PaymentForm({
         
         // Reset form
         setAmount('');
-        setClientSecret('');
         elements!.getElement(CardElement)?.clear();
       }
     } else {
@@ -432,7 +427,6 @@ function PaymentForm({
       
       // Reset form
       setAmount('');
-      setClientSecret('');
       elements!.getElement(CardElement)?.clear();
     }
   };
@@ -643,6 +637,35 @@ function PaymentForm({
 }
 
 export default function PaymentContainer(props: PaymentContainerProps) {
+  const [stripeError, setStripeError] = useState<string>('');
+
+  // Check if Stripe is properly configured
+  useEffect(() => {
+    stripePromise.then((stripe) => {
+      if (!stripe) {
+        setStripeError('Payment system is not properly configured. Please contact support.');
+      }
+    }).catch((error) => {
+      console.error('Stripe initialization error:', error);
+      setStripeError('Failed to initialize payment system. Please refresh the page and try again.');
+    });
+  }, []);
+
+  if (stripeError) {
+    return (
+      <Card className="border-stone-200 bg-gradient-to-br from-card via-amber-50/30 to-stone-50 shadow-gentle">
+        <CardContent className="pt-6">
+          <Alert className="border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-700">
+              {stripeError}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <PaymentForm {...props} />

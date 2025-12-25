@@ -25,48 +25,9 @@ const HomePage = () => {
         setNeedsEmailConfirmation(true);
         setIsLoading(false);
       } else if (session?.user) {
-        // Check user role and redirect appropriately
-        supabase
-          .from('profiles')
-          .select('has_completed_first_assessment, roles, organization_id')
-          .eq('id', session.user.id)
-          .single()
-          .then(async ({ data: profile }) => {
-            // Check if user is an organization admin
-            const isOrgAdmin = profile?.roles?.includes('admin') && profile?.organization_id;
-            
-            if (isOrgAdmin) {
-              window.location.href = '/orgadmin';
-              return;
-            }
-            
-            // Check if user is a sponsor (has active sponsor relationships)
-            const { data: sponsorData } = await supabase
-              .from('sponsor_relationships')
-              .select('id')
-              .eq('sponsor_id', session.user.id)
-              .eq('status', 'active')
-              .limit(1);
-            
-            const isSponsor = sponsorData && sponsorData.length > 0;
-            const isPractitioner = profile?.has_completed_first_assessment;
-            
-            // If user is ONLY a sponsor (not a practitioner), redirect to sponsor dashboard
-            if (isSponsor && !isPractitioner) {
-              window.location.href = '/sponsor/dashboard';
-              return;
-            }
-            
-            // Redirect practitioners who haven't completed assessment to welcome
-            if (!isPractitioner) {
-              window.location.href = '/welcome';
-              return;
-            }
-            
-            // User is a practitioner (or both) - show practitioner dashboard
-            setSession(session);
-            setIsLoading(false);
-          });
+        // Just set the session, let Dashboard handle routing
+        setSession(session);
+        setIsLoading(false);
       } else {
         setSession(session);
         setIsLoading(false);
