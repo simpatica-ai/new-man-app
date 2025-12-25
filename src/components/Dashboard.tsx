@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabaseClient'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { HelpCircle, ChevronDown, ChevronUp, BookOpen, Target, Users, MessageCircle, Sparkles } from 'lucide-react'
@@ -17,6 +18,90 @@ import { useDashboardData } from '@/hooks/useDashboardData'
 
 export default function Dashboard() {
   const [showOverview, setShowOverview] = useState(false)
+  const [isCheckingRouting, setIsCheckingRouting] = useState(true)
+  
+  // Add routing check for coaches/therapists
+  useEffect(() => {
+    const checkUserRouting = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('has_completed_first_assessment, roles, organization_id')
+          .eq('id', user.id)
+          .single()
+        
+        if (!profile) {
+          setIsCheckingRouting(false)
+          return
+        }
+        
+        console.log('🔍 DASHBOARD ROUTING - Profile:', profile)
+        
+        // Check if user is an organization admin
+        const isOrgAdmin = profile?.roles?.includes('admin') && profile?.organization_id
+        if (isOrgAdmin) {
+          console.log('🔍 DASHBOARD ROUTING - Redirecting to /orgadmin')
+          window.location.href = '/orgadmin'
+          return
+        }
+        
+        // Check if user is a coach
+        const isCoach = profile?.roles?.includes('coach')
+        if (isCoach) {
+          console.log('🔍 DASHBOARD ROUTING - Redirecting to /coach/dashboard')
+          window.location.href = '/coach/dashboard'
+          return
+        }
+        
+        // Check if user is a therapist
+        const isTherapist = profile?.roles?.includes('therapist')
+        if (isTherapist) {
+          console.log('🔍 DASHBOARD ROUTING - Redirecting to /therapist')
+          window.location.href = '/therapist'
+          return
+        }
+        
+        // Check if user is a sponsor (has active sponsor relationships)
+        const { data: sponsorData } = await supabase
+          .from('sponsor_relationships')
+          .select('id')
+          .eq('sponsor_id', user.id)
+          .eq('status', 'active')
+          .limit(1)
+        
+        const isSponsor = sponsorData && sponsorData.length > 0
+        const isPractitioner = profile?.has_completed_first_assessment
+        
+        // If user is ONLY a sponsor (not a practitioner), redirect to sponsor dashboard
+        if (isSponsor && !isPractitioner) {
+          console.log('🔍 DASHBOARD ROUTING - Redirecting to /sponsor/dashboard')
+          window.location.href = '/sponsor/dashboard'
+          return
+        }
+        
+        // Redirect practitioners who haven't completed assessment to welcome
+        if (!isPractitioner) {
+          console.log('🔍 DASHBOARD ROUTING - Redirecting to /welcome')
+          window.location.href = '/welcome'
+          return
+        }
+        
+        // User is a practitioner - show practitioner dashboard
+        console.log('🔍 DASHBOARD ROUTING - Showing practitioner dashboard')
+        setIsCheckingRouting(false)
+        
+      } catch (error) {
+        console.error('Error checking user routing:', error)
+        setIsCheckingRouting(false)
+      }
+    }
+    
+    checkUserRouting()
+  }, [])
+  
   const {
     loading,
     connection,
@@ -42,7 +127,8 @@ export default function Dashboard() {
     document.title = "New Man: Dashboard"; 
   }, []);
 
-  if (loading) {
+  // Show loading while checking routing or loading data
+  if (loading || isCheckingRouting) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100">
         <AppHeader />
@@ -52,7 +138,9 @@ export default function Dashboard() {
               <div className="h-8 bg-stone-300/60 rounded-lg w-64 mx-auto"></div>
               <div className="h-4 bg-amber-200/60 rounded-lg w-48 mx-auto"></div>
             </div>
-            <p className="text-stone-600 font-light mt-4">Loading dashboard...</p>
+            <p className="text-stone-600 font-light mt-4">
+              {isCheckingRouting ? 'Checking user permissions...' : 'Loading dashboard...'}
+            </p>
           </div>
         </main>
       </div>

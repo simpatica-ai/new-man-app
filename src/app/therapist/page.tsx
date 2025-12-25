@@ -14,6 +14,8 @@ import {
   TrendingUp,
   MessageSquareOff
 } from 'lucide-react';
+import AppHeader from '@/components/AppHeader'
+import Footer from '@/components/Footer'
 import {
   getCurrentUserOrganization,
   getOrganizationMembers,
@@ -72,20 +74,23 @@ export default function TherapistDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100 p-8">
-        <div className="container mx-auto max-w-6xl">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100">
+        <AppHeader />
+        <div className="container mx-auto p-8">
           <div className="flex items-center justify-center h-64">
             <RefreshCw className="h-8 w-8 animate-spin text-stone-600" />
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (!isTherapist) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100 p-8">
-        <div className="container mx-auto max-w-6xl">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100">
+        <AppHeader />
+        <div className="container mx-auto p-8">
           <Card>
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-12 w-12 text-blue-600 mx-auto mb-4" />
@@ -94,22 +99,25 @@ export default function TherapistDashboard() {
             </CardContent>
           </Card>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (!organization) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100 p-8">
-        <div className="container mx-auto max-w-6xl">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100">
+        <AppHeader />
+        <div className="container mx-auto p-8">
           <Card>
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-stone-800 mb-2">No Organization Found</h2>
-              <p className="text-stone-600">You don't appear to be part of an organization yet.</p>
+              <p className="text-stone-600">You don&apos;t appear to be part of an organization yet.</p>
             </CardContent>
           </Card>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -118,32 +126,9 @@ export default function TherapistDashboard() {
   const coaches = members.filter(m => m.roles?.includes('coach') && m.is_active);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100 p-8">
-      <div className="container mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-light text-stone-800">
-                {organization.name}
-                <span className="block text-xl font-medium text-blue-900 mt-1">
-                  Therapist Dashboard
-                </span>
-              </h1>
-              <div className="w-24 h-0.5 bg-gradient-to-r from-blue-600 to-stone-600 mt-3"></div>
-            </div>
-            {organization.logo_url && (
-              <div className="flex items-center space-x-4">
-                <img 
-                  src={organization.logo_url} 
-                  alt={`${organization.name} logo`}
-                  className="h-16 w-auto object-contain"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-stone-50 to-blue-100">
+      <AppHeader />
+      <main className="container mx-auto p-8 max-w-6xl">
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -357,7 +342,8 @@ export default function TherapistDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 }
