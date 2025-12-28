@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,13 +23,105 @@ function OrganizationWelcomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [creationError, setCreationError] = useState<string | null>(null);
 
   useEffect(() => {
-    const orgId = searchParams.get('org');
-    if (orgId) {
-      setOrganizationId(orgId);
-    }
+    const handleGoogleAuthCompletion = async () => {
+      // Check if there's pending organization data from Google auth
+      const pendingOrgData = localStorage.getItem('pendingOrgData');
+      if (pendingOrgData) {
+        setIsCreatingOrg(true);
+        try {
+          const orgData = JSON.parse(pendingOrgData);
+          
+          // Get current authenticated user
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) {
+            throw new Error('Authentication required. Please sign in again.');
+          }
+
+          // Complete organization creation with authenticated user's email
+          const response = await fetch('/api/organization-demo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: orgData.name,
+              email: user.email, // Use authenticated user's email
+              organization: orgData.organization,
+              organizationType: orgData.organizationType,
+              message: orgData.message,
+              useGoogleAuth: false // Use regular flow but with Google user's email
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Failed to create organization');
+          }
+
+          // Clear the pending data
+          localStorage.removeItem('pendingOrgData');
+          
+          // Set the organization ID for display
+          if (result.organization?.id) {
+            setOrganizationId(result.organization.id);
+          }
+        } catch (error) {
+          console.error('Error completing organization creation:', error);
+          setCreationError(error instanceof Error ? error.message : 'Failed to create organization');
+        } finally {
+          setIsCreatingOrg(false);
+        }
+      } else {
+        // Check URL params for existing organization
+        const orgId = searchParams.get('org');
+        if (orgId) {
+          setOrganizationId(orgId);
+        }
+      }
+    };
+
+    handleGoogleAuthCompletion();
   }, [searchParams]);
+
+  if (isCreatingOrg) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-amber-50 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">Creating Your Organization</h3>
+            <p className="text-stone-600">Please wait while we set up your organization...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (creationError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-amber-50 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="text-red-600 mb-4">
+              <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">Organization Creation Failed</h3>
+            <p className="text-stone-600 mb-4">{creationError}</p>
+            <Button onClick={() => router.push('/organizations')} className="bg-amber-600 hover:bg-amber-700">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const nextSteps = [
     {
