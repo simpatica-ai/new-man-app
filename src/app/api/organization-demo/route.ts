@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
     if (authError) {
       console.error('Error creating user:', authError);
       return NextResponse.json(
-        { error: 'Failed to create user account' },
+        { error: `Failed to create user account: ${authError.message}` },
         { status: 500 }
       );
     }
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       }
       return NextResponse.json(
-        { error: 'Failed to create organization' },
+        { error: `Failed to create organization: ${orgError.message}` },
         { status: 500 }
       );
     }
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
       }
       await supabase.from('organizations').delete().eq('id', orgData.id);
       return NextResponse.json(
-        { error: 'Failed to create user profile' },
+        { error: `Failed to create user profile: ${profileError.message}` },
         { status: 500 }
       );
     }
