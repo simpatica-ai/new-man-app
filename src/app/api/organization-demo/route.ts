@@ -90,12 +90,20 @@ async function sendWelcomeEmail(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, organization, organizationType, message } = body;
+    const { name, email, password, organization, organizationType, message, useGoogleAuth } = body;
 
     // Validate required fields
     if (!name || !email || !organization) {
       return NextResponse.json(
         { error: 'Name, email, and organization are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password if not using Google auth
+    if (!useGoogleAuth && !password) {
+      return NextResponse.json(
+        { error: 'Password is required when not using Google authentication' },
         { status: 400 }
       );
     }
@@ -149,8 +157,8 @@ export async function POST(request: NextRequest) {
       counter++;
     }
 
-    // Generate temporary password
-    const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+    // Generate temporary password or use provided password
+    const tempPassword = password || (Math.random().toString(36).slice(-12) + 'A1!');
 
     // Create user account
     if (!supabaseAdmin) {
