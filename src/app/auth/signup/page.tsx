@@ -13,6 +13,7 @@ import EmailConfirmationWaiting from '@/components/EmailConfirmationWaiting'
 function SignupContent() {
   const searchParams = useSearchParams()
   const prefilledEmail = searchParams.get('email')
+  const redirectPath = searchParams.get('redirect')
   
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -31,7 +32,17 @@ function SignupContent() {
     if (prefilledEmail) {
       setFormData(prev => ({ ...prev, email: prefilledEmail }))
     }
-  }, [prefilledEmail])
+
+    // Listen for auth state changes to handle redirect after signup
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session && redirectPath) {
+        // Redirect to the specified path after successful signup
+        window.location.href = `/${redirectPath}`;
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [prefilledEmail, redirectPath]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()

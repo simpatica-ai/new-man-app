@@ -1,115 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { 
   CheckCircle,
-  Eye,
-  EyeOff
+  ArrowRight,
+  Users,
+  Building2,
+  UserPlus
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import PublicHeader from '@/components/PublicHeader';
 import heroBackgroundOrg from '@/assets/hero-background-org.jpg';
 
 export default function OrganizationsPage() {
-  const [demoFormData, setDemoFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    organization: '',
-    organizationType: '',
-    message: ''
-  });
-  const [useGoogleAuth, setUseGoogleAuth] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const signInWithGoogle = async () => {
-    setIsSubmitting(true);
-    
-    // Store organization data in localStorage for after auth
-    localStorage.setItem('pendingOrgData', JSON.stringify({
-      name: demoFormData.name,
-      organization: demoFormData.organization,
-      organizationType: demoFormData.organizationType,
-      message: demoFormData.message
-    }));
-    
-    const redirectUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3000/organizations/welcome' 
-      : `${window.location.origin}/organizations/welcome`;
-    
-    const { error } = await supabase.auth.signInWithOAuth({ 
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl
-      }
-    });
-    
-    if (error) {
-      console.error('Google auth error:', error);
-      alert('Failed to authenticate with Google. Please try again.');
-      setIsSubmitting(false);
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+    checkUser();
+  }, []);
+
+  const handleGetStarted = () => {
+    if (user) {
+      // User is logged in, go to create organization
+      router.push('/create-organization');
+    } else {
+      // User needs to sign up first
+      router.push('/auth/signup?redirect=create-organization');
     }
   };
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const handleDemoRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (useGoogleAuth) {
-      await signInWithGoogle();
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      const response = await fetch('/api/organization-demo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...demoFormData,
-          useGoogleAuth: false
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create organization');
-      }
-
-      // If we have a login URL, redirect immediately
-      if (result.loginUrl) {
-        window.location.href = result.loginUrl;
-        return;
-      }
-
-      // Fallback to success message if no login URL
-      setSubmitSuccess(true);
-      setDemoFormData({
-        name: '',
-        email: '',
-        password: '',
-        organization: '',
-        organizationType: '',
-        message: ''
-      });
-    } catch (error) {
-      console.error('Error creating organization:', error);
-      alert(error instanceof Error ? error.message : 'Failed to create organization. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -164,142 +102,72 @@ export default function OrganizationsPage() {
                 </div>
                 
                 <div>
-                  {submitSuccess ? (
-                    <Card className="border-green-200 bg-green-50">
-                      <CardContent className="pt-6 text-center">
-                        <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-green-800 mb-2">Organization Created Successfully!</h3>
-                        <p className="text-green-700">
-                          Your organization has been set up and you&apos;ve been assigned as the administrator. Check your email for login credentials and setup instructions.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Create Your Organization</CardTitle>
-                        <CardDescription>
-                          Set up your organization account instantly. You&apos;ll receive login credentials and can start inviting team members immediately.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <form onSubmit={handleDemoRequest} className="space-y-4">
-                          <div className="grid md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Building2 className="h-6 w-6 text-amber-600" />
+                        Get Started with Your Organization
+                      </CardTitle>
+                      <CardDescription>
+                        {user 
+                          ? "You're signed in! Ready to create your organization." 
+                          : "First, create your account, then set up your organization."
+                        }
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {user ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
                             <div>
-                              <Label htmlFor="name">Full Name *</Label>
-                              <Input
-                                id="name"
-                                required
-                                value={demoFormData.name}
-                                onChange={(e) => setDemoFormData({...demoFormData, name: e.target.value})}
-                                placeholder="Your full name"
-                              />
+                              <p className="font-medium text-green-800">Account Ready</p>
+                              <p className="text-sm text-green-700">Signed in as {user.email}</p>
                             </div>
-                            <div>
-                              <Label htmlFor="email">Email Address *</Label>
-                              <Input
-                                id="email"
-                                type="email"
-                                required
-                                value={demoFormData.email}
-                                onChange={(e) => setDemoFormData({...demoFormData, email: e.target.value})}
-                                placeholder="your@email.com"
-                              />
-                            </div>
-                          </div>
-                          
-                          {!useGoogleAuth && (
-                            <div>
-                              <Label htmlFor="password">Password *</Label>
-                              <div className="relative">
-                                <Input
-                                  id="password"
-                                  type={showPassword ? "text" : "password"}
-                                  required
-                                  value={demoFormData.password}
-                                  onChange={(e) => setDemoFormData({...demoFormData, password: e.target.value})}
-                                  placeholder="Create a password"
-                                  className="pr-10"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700"
-                                >
-                                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div>
-                            <Label htmlFor="organization">Organization Name *</Label>
-                            <Input
-                              id="organization"
-                              required
-                              value={demoFormData.organization}
-                              onChange={(e) => setDemoFormData({...demoFormData, organization: e.target.value})}
-                              placeholder="Your organization name"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="organizationType">Organization Type</Label>
-                            <Input
-                              id="organizationType"
-                              value={demoFormData.organizationType}
-                              onChange={(e) => setDemoFormData({...demoFormData, organizationType: e.target.value})}
-                              placeholder="e.g., Treatment Center, Sober Living, Recovery Coaching, etc."
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="message">Tell us about your needs</Label>
-                            <Textarea
-                              id="message"
-                              value={demoFormData.message}
-                              onChange={(e) => setDemoFormData({...demoFormData, message: e.target.value})}
-                              placeholder="Tell us about your organization: How many clients/residents do you serve? What recovery programming do you currently offer? How do you envision virtue development fitting into your services?"
-                              rows={4}
-                            />
                           </div>
                           
                           <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id="useGoogle"
-                                checked={useGoogleAuth}
-                                onChange={(e) => setUseGoogleAuth(e.target.checked)}
-                                className="rounded border-stone-300"
-                              />
-                              <Label htmlFor="useGoogle" className="text-sm">
-                                Use Google Authentication instead
-                              </Label>
-                            </div>
-                            
-                            {useGoogleAuth && (
-                              <p className="text-sm text-stone-600">
-                                You&apos;ll be redirected to Google to sign in, then returned to complete your organization setup.
-                              </p>
-                            )}
+                            <h4 className="font-medium text-stone-800">Next: Create Your Organization</h4>
+                            <p className="text-sm text-stone-600">
+                              Set up your organization profile, invite team members, and start using virtue development tools.
+                            </p>
                           </div>
                           
-                          <div className="grid grid-cols-3 gap-3">
-                            <div></div>
-                            <div></div>
-                            <button 
-                              type="submit" 
-                              className="bg-stone-700 hover:bg-stone-800 text-white text-base py-3 rounded-lg disabled:opacity-50 font-medium transition-colors"
-                              disabled={isSubmitting}
-                            >
-                              {isSubmitting ? 'Creating Organization...' : useGoogleAuth ? 'Continue with Google' : 'Create Organization Now'}
-                            </button>
+                          <Button 
+                            onClick={handleGetStarted}
+                            className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3"
+                          >
+                            Create Organization
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-stone-800">Step 1: Create Your Account</h4>
+                            <p className="text-sm text-stone-600">
+                              First, create your personal account. You can use email/password or sign in with Google.
+                            </p>
                           </div>
-                        </form>
-                      </CardContent>
-                    </Card>
-                  )}
+                          
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-stone-800">Step 2: Set Up Organization</h4>
+                            <p className="text-sm text-stone-600">
+                              After creating your account, you&apos;ll be able to create and manage your organization.
+                            </p>
+                          </div>
+                          
+                          <Button 
+                            onClick={handleGetStarted}
+                            className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3"
+                          >
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Create Account & Get Started
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
 
               </div>
