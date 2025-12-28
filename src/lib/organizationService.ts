@@ -506,6 +506,42 @@ export const isCurrentUserCoach = async (): Promise<boolean> => {
 };
 
 /**
+ * Validate organization user limit before adding new members
+ */
+export const validateUserLimit = async (organizationId: string): Promise<void> => {
+  try {
+    // Check if we should use mock data
+    if (isTestMode() || !(await hasOrganizationalSchema())) {
+      console.log('🧪 Mock user limit validation - allowing invitation');
+      return; // Allow in test mode
+    }
+
+    // Get organization details
+    const { data: organization, error: orgError } = await supabase
+      .from('organizations')
+      .select('max_users, active_user_count')
+      .eq('id', organizationId)
+      .single();
+
+    if (orgError) {
+      throw new Error(`Failed to fetch organization: ${orgError.message}`);
+    }
+
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+
+    // Check if adding one more user would exceed the limit
+    if (organization.active_user_count >= organization.max_users) {
+      throw new Error(`Organization has reached its maximum user limit of ${organization.max_users} users`);
+    }
+  } catch (error) {
+    console.error('Error validating user limit:', error);
+    throw error;
+  }
+};
+
+/**
  * Format time since last activity
  */
 export const formatLastActivity = (lastActivity: string | null): string => {

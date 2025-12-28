@@ -37,10 +37,19 @@ export default function OrganizationsPage() {
         body: JSON.stringify(demoFormData),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to submit demo request');
+        throw new Error(result.error || 'Failed to create organization');
       }
 
+      // If we have a login URL, redirect immediately
+      if (result.loginUrl) {
+        window.location.href = result.loginUrl;
+        return;
+      }
+
+      // Fallback to success message if no login URL
       setSubmitSuccess(true);
       setDemoFormData({
         name: '',
@@ -50,8 +59,8 @@ export default function OrganizationsPage() {
         message: ''
       });
     } catch (error) {
-      console.error('Error submitting demo request:', error);
-      // TODO: Show error message to user
+      console.error('Error creating organization:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create organization. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +99,7 @@ export default function OrganizationsPage() {
                         <li className="flex"><span className="mr-2">•</span><span><strong>Recovery Analytics</strong> - Track virtue development progress alongside traditional recovery metrics for holistic assessment</span></li>
                         <li className="flex"><span className="mr-2">•</span><span><strong>Privacy & Security</strong> - Secure platform with robust data protection for sensitive recovery information</span></li>
                         <li className="flex"><span className="mr-2">•</span><span><strong>Integrated Coaching</strong> - Connect individuals with virtue-focused coaching that complements traditional recovery support</span></li>
-                        <li className="flex"><span className="mr-2">•</span><span><strong>Custom Branding</strong> - Apply your organization's logo, colors, and messaging throughout the platform experience</span></li>
+                        <li className="flex"><span className="mr-2">•</span><span><strong>Custom Branding</strong> - Apply your organization&apos;s logo, colors, and messaging throughout the platform experience</span></li>
                         <li className="flex"><span className="mr-2">•</span><span><strong>Progress Tracking</strong> - Comprehensive reporting and engagement metrics for individual and group progress</span></li>
                       </ul>
                     </div>
@@ -114,18 +123,18 @@ export default function OrganizationsPage() {
                     <Card className="border-green-200 bg-green-50">
                       <CardContent className="pt-6 text-center">
                         <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-green-800 mb-2">Application Submitted!</h3>
+                        <h3 className="text-lg font-semibold text-green-800 mb-2">Organization Created Successfully!</h3>
                         <p className="text-green-700">
-                          Thank you for your interest. We'll review your information and send you an invitation link to set up your organizational account within 24 hours.
+                          Your organization has been set up and you&apos;ve been assigned as the administrator. Check your email for login credentials and setup instructions.
                         </p>
                       </CardContent>
                     </Card>
                   ) : (
                     <Card>
                       <CardHeader>
-                        <CardTitle>Get Started with Your Organization</CardTitle>
+                        <CardTitle>Create Your Organization</CardTitle>
                         <CardDescription>
-                          Tell us about your organization and we'll review your information to set up your account and send you an invitation to begin.
+                          Set up your organization account instantly. You&apos;ll receive login credentials and can start inviting team members immediately.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -194,7 +203,7 @@ export default function OrganizationsPage() {
                               className="bg-stone-700 hover:bg-stone-800 text-white text-base py-3 rounded-lg disabled:opacity-50 font-medium transition-colors"
                               disabled={isSubmitting}
                             >
-                              {isSubmitting ? 'Submitting...' : 'Get Started Now'}
+                              {isSubmitting ? 'Creating Organization...' : 'Create Organization Now'}
                             </button>
                           </div>
                         </form>

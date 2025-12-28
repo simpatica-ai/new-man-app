@@ -45,6 +45,7 @@ import { supabase } from '@/lib/supabaseClient';
 import OrganizationPaymentCard from '@/components/OrganizationPaymentCard';
 import AppHeader from '@/components/AppHeader';
 import Footer from '@/components/Footer';
+import OrgAdminOnboarding from '@/components/OrgAdminOnboarding';
 
 export default function OrgAdminDashboard() {
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -296,6 +297,7 @@ export default function OrgAdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100">
       <AppHeader />
+      <OrgAdminOnboarding />
       <div className="container mx-auto max-w-6xl p-8">
 
 
@@ -402,7 +404,7 @@ export default function OrgAdminDashboard() {
                         <select
                           className="w-full p-2 border rounded-md"
                           value={inviteForm.role}
-                          onChange={(e) => setInviteForm({...inviteForm, role: e.target.value as any})}
+                          onChange={(e) => setInviteForm({...inviteForm, role: e.target.value as 'admin' | 'coach' | 'therapist' | 'practitioner'})}
                         >
                           <option value="practitioner">Practitioner</option>
                           <option value="coach">Coach</option>
