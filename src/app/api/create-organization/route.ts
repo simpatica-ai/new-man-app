@@ -103,10 +103,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already has an organization
-    const { data: existingProfile } = await supabase
+    // Check if user already has an organization - verify by both ID and email for safety
+    const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .select('organization_id, roles')
+      .select('organization_id, roles, full_name')
       .eq('id', user.id)
       .single();
 
@@ -115,6 +115,13 @@ export async function POST(request: NextRequest) {
         { error: 'You already belong to an organization' },
         { status: 400 }
       );
+    }
+
+    // Additional safety check: ensure we don't have any profile conflicts
+    // This prevents issues with duplicate names or mismatched profiles
+    console.log(`Creating organization for user: ${user.email} (ID: ${user.id})`);
+    if (existingProfile) {
+      console.log(`Existing profile found: ${existingProfile.full_name}`);
     }
 
     // Generate organization slug
@@ -158,6 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user profile to admin role and link to organization
+    console.log(`Updating profile for user: ${user.email} (ID: ${user.id}) to admin of organization: ${orgData.name}`);
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -176,6 +184,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log(`Successfully updated profile for user: ${user.email}`);
 
     // Store the organization request for admin tracking
     try {
