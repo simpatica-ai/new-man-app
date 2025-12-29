@@ -52,10 +52,17 @@ export default function CreateOrganizationPage() {
     setIsSubmitting(true);
     
     try {
+      // Get the user's session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
       const response = await fetch('/api/create-organization', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           organization: orgFormData.organization,
