@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { User } from '@supabase/supabase-js';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ import Footer from '@/components/Footer';
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -34,8 +35,8 @@ export default function CreateOrganizationPage() {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Redirect to signup if not authenticated
-        router.push('/auth/signup?redirect=create-organization');
+        // Redirect to home page with login prompt for existing users
+        router.push('/?login=true&redirect=create-organization');
         return;
       }
       setUser(user);
