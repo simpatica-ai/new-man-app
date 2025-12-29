@@ -221,25 +221,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store the original demo request for admin tracking
-    try {
-      await supabase
-        .from('organization_demo_requests' as 'profiles') // Type assertion for missing table type
-        .insert({
-          name,
-          email,
-          organization,
-          organization_type: organizationType,
-          message,
-          status: 'completed',
-          organization_id: orgData.id,
-          user_id: authUser.user.id
-        });
-    } catch (trackingError) {
-      console.error('Failed to store demo request tracking:', trackingError);
-      // Don't fail the entire process if tracking fails
-    }
-
     // Send welcome email (non-blocking)
     try {
       await sendWelcomeEmail(email, name, organization, tempPassword);
