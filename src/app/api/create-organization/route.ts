@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, supabaseAdmin } from '@/lib/supabaseClient';
 import nodemailer from 'nodemailer';
 
 // Helper function to generate a URL-friendly slug from organization name
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     // Ensure slug is unique
     while (true) {
-      const { data: existingOrg } = await supabase
+      const { data: existingOrg } = await supabaseAdmin
         .from('organizations')
         .select('id')
         .eq('slug', slug)
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create organization
-    const { data: orgData, error: orgError } = await supabase
+    const { data: orgData, error: orgError } = await supabaseAdmin
       .from('organizations')
       .insert({
         name: organization,
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user profile to admin role and link to organization
-    const { error: profileError } = await supabase
+    const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
         role: 'admin',
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       console.error('Error updating profile:', profileError);
       // Clean up organization if profile update fails
-      await supabase.from('organizations').delete().eq('id', orgData.id);
+      await supabaseAdmin.from('organizations').delete().eq('id', orgData.id);
       return NextResponse.json(
         { error: `Failed to update user profile: ${profileError.message}` },
         { status: 500 }
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     // Store the organization request for admin tracking
     try {
-      await supabase
+      await supabaseAdmin
         .from('organization_demo_requests' as 'profiles') // Type assertion for missing table type
         .insert({
           name: user.user_metadata?.full_name || user.email,
