@@ -36,8 +36,8 @@ export default function OrganizationsPage() {
       // User is logged in, go to create organization
       router.push('/create-organization');
     } else {
-      // User needs to sign up first
-      router.push('/auth/signup?redirect=create-organization');
+      // User needs to sign in first - redirect to home page which will show AuthCard
+      router.push('/?login=true&redirect=create-organization');
     }
   };
 
@@ -111,7 +111,7 @@ export default function OrganizationsPage() {
                       <CardDescription>
                         {user 
                           ? "You're signed in! Ready to create your organization." 
-                          : "First, create your account, then set up your organization."
+                          : "Sign in to your account, then set up your organization."
                         }
                       </CardDescription>
                     </CardHeader>
@@ -144,16 +144,16 @@ export default function OrganizationsPage() {
                       ) : (
                         <div className="space-y-4">
                           <div className="space-y-3">
-                            <h4 className="font-medium text-stone-800">Step 1: Create Your Account</h4>
+                            <h4 className="font-medium text-stone-800">Step 1: Sign In</h4>
                             <p className="text-sm text-stone-600">
-                              First, create your personal account. You can use email/password or sign in with Google.
+                              Sign in to your existing account or create a new one if needed.
                             </p>
                           </div>
                           
                           <div className="space-y-3">
                             <h4 className="font-medium text-stone-800">Step 2: Set Up Organization</h4>
                             <p className="text-sm text-stone-600">
-                              After creating your account, you&apos;ll be able to create and manage your organization.
+                              After signing in, you&apos;ll be able to create and manage your organization.
                             </p>
                           </div>
                           
@@ -162,7 +162,7 @@ export default function OrganizationsPage() {
                             className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3"
                           >
                             <UserPlus className="mr-2 h-4 w-4" />
-                            Create Account & Get Started
+                            Sign In & Get Started
                           </Button>
                         </div>
                       )}

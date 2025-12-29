@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +10,29 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function AuthCard() {
+  const searchParams = useSearchParams();
+  const shouldShowLogin = searchParams.get('login') === 'true';
+  const redirectPath = searchParams.get('redirect');
+  
   const [loading, setLoading] = useState(false);
-  const [isLoginView, setIsLoginView] = useState(false); // Changed to false to show signup first
+  const [isLoginView, setIsLoginView] = useState(shouldShowLogin); // Show login if parameter is set
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Listen for auth state changes to handle redirect after login/signup
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session && redirectPath) {
+        // Redirect to the specified path after successful authentication
+        window.location.href = `/${redirectPath}`;
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [redirectPath]);
 
   const handlePasswordReset = async () => {
     if (!email) {
