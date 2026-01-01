@@ -461,7 +461,9 @@ export default function VirtueDetailPage() {
           virtueName: virtue.name,
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
-          stage1MemoContent: currentMemoContent
+          stage1MemoContent: currentMemoContent,
+          userId: currentUserId,
+          virtueId: virtue.id
         }),
       });
 
