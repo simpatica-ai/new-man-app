@@ -652,7 +652,8 @@ export default function VirtueDetailPage() {
         fetchStage3Prompt();
       }
     }
-  }, [displayedStageNumber, virtue, currentUserId, fetchStage1Prompt, fetchStage2Prompt, fetchStage3Prompt]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedStageNumber, virtue, currentUserId]);
 
   const updateStageStatus = async (stageNumber: number, status: StageStatus) => {
     if (!currentUserId || !virtue) return { error: { message: 'User or virtue not loaded.' } };
