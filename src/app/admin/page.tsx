@@ -18,6 +18,7 @@ import UserActivityMonitor from '@/components/admin/UserActivityMonitor';
 import { AIFeedbackViewer } from '@/components/admin/AIFeedbackViewer';
 import SubscriptionDashboard from '@/components/SubscriptionDashboard';
 import PaymentStatsOverview from '@/components/admin/PaymentStatsOverview';
+import PractitionerMigration from '@/components/admin/PractitionerMigration';
 
 // --- TYPE DEFINITIONS ---
 type PractitionerDetails = {
@@ -246,8 +247,9 @@ export default function AdminPage() {
 
 
       <Tabs defaultValue="practitioners">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="practitioners">Users</TabsTrigger>
+          <TabsTrigger value="migration">Migration</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
@@ -369,6 +371,10 @@ export default function AdminPage() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="migration">
+          <PractitionerMigration />
         </TabsContent>
 
         <TabsContent value="support">

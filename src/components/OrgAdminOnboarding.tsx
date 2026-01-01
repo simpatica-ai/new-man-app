@@ -219,6 +219,12 @@ export default function OrgAdminOnboarding() {
                     <li>• <strong>Therapists:</strong> Have oversight access for therapeutic purposes</li>
                     <li>• <strong>Admins:</strong> Manage organization settings and all members</li>
                   </ul>
+                  <div className="mt-3 p-3 bg-blue-100 rounded border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      <strong>Need to transfer existing users?</strong> Contact support to migrate individual practitioners 
+                      into your organization. We can help move their progress and data seamlessly.
+                    </p>
+                  </div>
                 </div>
               )}
 
