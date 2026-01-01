@@ -66,7 +66,16 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
                     <TooltipProvider delayDuration={100}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <button className="text-stone-400 hover:text-stone-600 flex-shrink-0">
+                                <button 
+                                    className="text-stone-400 hover:text-stone-600 flex-shrink-0"
+                                    onClick={(e) => {
+                                        // On mobile, show an alert with the definition
+                                        if (window.innerWidth < 768) {
+                                            e.preventDefault();
+                                            alert(defect.definition || 'No definition available');
+                                        }
+                                    }}
+                                >
                                     <HelpCircle className="h-3.5 w-3.5" />
                                 </button>
                             </TooltipTrigger>
@@ -105,7 +114,7 @@ const DefectRow = ({ defect, rating, harmLevel, onRatingChange, onHarmChange }: 
             
             {/* Impact Question */}
             <div>
-                <label className="text-xs font-medium text-stone-600 mb-2 block">Impact</label>
+                <label className="text-xs font-medium text-stone-600 mb-2 block">Impact on others</label>
                 <RadioGroup 
                     onValueChange={(value) => onHarmChange(defect.name, value)} 
                     value={harmLevel || 'Moderate'}
@@ -202,9 +211,14 @@ export default function AssessmentPage() {
     const answeredCount = Object.keys(ratings).filter(key => ratings[key] !== undefined).length;
     const harmAnsweredCount = Object.keys(harmLevels).filter(key => harmLevels[key] !== undefined && harmLevels[key] !== '').length;
     const allQuestionsAnswered = answeredCount === defects.length && harmAnsweredCount === defects.length;
+    
+    // Fix progress calculation to be based on actual questions answered, not panels
+    const totalQuestions = defects.length;
+    const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+    
+    // Keep panel calculation for display purposes
     const answeredPanels = Math.ceil(answeredCount / itemsPerPage);
     const totalPanels = totalPages;
-    const progress = Math.round((answeredPanels / totalPanels) * 100);
 
     // Initialize default impact values when defects load
     useEffect(() => {
@@ -1045,7 +1059,10 @@ export default function AssessmentPage() {
                             ></div>
                         </div>
                         <p className="text-xs text-stone-500 text-center">
-                            This may take a few moments. Please don&rsquo;t close this window.
+                            This may take a few moments.
+                        </p>
+                        <p className="text-xs text-stone-500 text-center">
+                            <strong>Please do not close this window.</strong>
                         </p>
                     </div>
                 </DialogContent>
