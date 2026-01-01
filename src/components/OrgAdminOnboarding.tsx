@@ -97,27 +97,27 @@ export default function OrgAdminOnboarding() {
     
     switch (step.id) {
       case 'setup':
-        setIsOpen(false);
-        // Switch to Settings tab
+        // Switch to Settings tab but keep modal open
         const settingsTab = document.querySelector('[data-value="Settings"]') as HTMLElement;
         if (settingsTab) {
           settingsTab.click();
         }
+        // Continue to next step after a brief delay
+        setTimeout(() => {
+          handleNext();
+        }, 500);
         break;
       case 'team':
       case 'practitioners':
-        setIsOpen(false);
-        // Switch to Members tab and open invite form
+        // Switch to Members tab but keep modal open
         const membersTab = document.querySelector('[data-value="Members"]') as HTMLElement;
         if (membersTab) {
           membersTab.click();
         }
+        // Continue to next step after a brief delay
         setTimeout(() => {
-          const inviteButton = document.querySelector('button:contains("Invite Member")') as HTMLElement;
-          if (inviteButton) {
-            inviteButton.click();
-          }
-        }, 100);
+          handleNext();
+        }, 500);
         break;
       default:
         handleNext();
