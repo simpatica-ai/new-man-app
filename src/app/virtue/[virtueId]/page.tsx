@@ -428,6 +428,61 @@ export default function VirtueDetailPage() {
     try {
       const currentMemoContent = memos.get(1) || '';
       
+      // Fetch specific defect data for this virtue
+      let specificDefects = [];
+      try {
+        // Get the user's latest assessment
+        const { data: latestAssessment } = await supabase
+          .from('user_assessments')
+          .select('id')
+          .eq('user_id', currentUserId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (latestAssessment) {
+          // Get defects mapped to this virtue with user's ratings
+          const { data: defectData } = await supabase
+            .from('defects_virtues')
+            .select(`
+              defects (
+                id,
+                name,
+                definition
+              )
+            `)
+            .eq('virtue_id', virtue.id);
+
+          if (defectData && defectData.length > 0) {
+            // Get user's ratings for these defects
+            const { data: userRatings } = await supabase
+              .from('user_assessment_defects')
+              .select('defect_name, rating, harm_level')
+              .eq('assessment_id', latestAssessment.id)
+              .eq('user_id', currentUserId);
+
+            if (userRatings) {
+              // Match defects with ratings and sort by rating (highest first)
+              specificDefects = defectData
+                .map(d => {
+                  const rating = userRatings.find(r => r.defect_name === d.defects.name);
+                  return {
+                    name: d.defects.name,
+                    definition: d.defects.definition,
+                    rating: rating ? rating.rating : 0,
+                    harmLevel: rating ? rating.harm_level : 'None'
+                  };
+                })
+                .filter(d => d.rating > 0) // Only include defects with ratings
+                .sort((a, b) => b.rating - a.rating); // Sort by rating, highest first
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not fetch specific defect data:', error.message);
+        // Continue with generic analysis if defect fetching fails
+      }
+      
       // Check for cached prompt first (unless forcing refresh)
       if (!forceRefresh) {
         const { data: existingPrompts } = await supabase
@@ -462,8 +517,7 @@ export default function VirtueDetailPage() {
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: currentMemoContent,
-          userId: currentUserId,
-          virtueId: virtue.id
+          specificDefects: specificDefects
         }),
       });
 
