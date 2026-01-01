@@ -3,8 +3,19 @@ import { supabase, supabaseAdmin } from '@/lib/supabaseClient';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin access
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Verify the token and get user
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
       return NextResponse.json(

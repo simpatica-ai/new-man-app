@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,10 +55,25 @@ export default function PractitionerMigration() {
     try {
       setLoading(true);
       
-      // Fetch users and organizations
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage({ type: 'error', text: 'Authentication required' });
+        return;
+      }
+      
+      // Fetch users and organizations with authorization header
       const [usersResponse, orgsResponse] = await Promise.all([
-        fetch('/api/admin/users'),
-        fetch('/api/admin/organizations')
+        fetch('/api/admin/users', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        }),
+        fetch('/api/admin/organizations', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        })
       ]);
       
       const usersData = await usersResponse.json();
@@ -103,9 +119,19 @@ export default function PractitionerMigration() {
     try {
       setLoading(true);
       
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage({ type: 'error', text: 'Authentication required' });
+        return;
+      }
+      
       const response = await fetch('/api/admin/migrate-user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           userId: selectedUser.id,
           organizationId: selectedOrgId,
@@ -141,9 +167,19 @@ export default function PractitionerMigration() {
     try {
       setLoading(true);
       
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage({ type: 'error', text: 'Authentication required' });
+        return;
+      }
+      
       const response = await fetch('/api/admin/migrate-user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           userId: selectedUser.id,
           organizationId: null,
@@ -232,7 +268,7 @@ export default function PractitionerMigration() {
                           Created: {new Date(selectedUser.created_at).toLocaleDateString()}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Roles: {selectedUser.roles.join(', ')}
+                          Roles: {selectedUser.roles?.join(', ') || 'No roles assigned'}
                         </p>
                       </div>
                     </div>
@@ -400,7 +436,7 @@ export default function PractitionerMigration() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {user.roles.map(role => (
+                          {(user.roles || []).map(role => (
                             <Badge key={role} variant="secondary" className="text-xs">
                               {role}
                             </Badge>

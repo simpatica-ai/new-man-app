@@ -1,153 +1,86 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// Create admin client that bypasses RLS
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Admin API called')
-    console.log('Environment check:')
-    console.log('NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
-
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('Missing Supabase environment variables')
-      return NextResponse.json({ error: 'Missing environment variables' }, { status: 500 })
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use service role key to bypass RLS
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    console.log('Getting auth users...')
-    // Get auth users with emails
-    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers()
-    if (authError) {
-      console.error('Auth users error:', authError)
-      throw authError
-    }
-    console.log('Auth users count:', users?.length || 0)
-
-    console.log('Getting profiles...')
-    // Get profiles
-    const { data: profiles, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, full_name, created_at')
-    if (profileError) {
-      console.error('Profiles error:', profileError)
-      throw profileError
-    }
-    console.log('Profiles count:', profiles?.length || 0)
-
-    // Get connections
-    const { data: connections, error: connectionsError } = await supabase
-      .from('sponsor_connections')
-      .select('practitioner_user_id, sponsor_user_id, status')
-    if (connectionsError) throw connectionsError
-
-    // Get all sponsor profiles
-    const sponsorIds = connections?.filter(c => c.status === 'active').map(c => c.sponsor_user_id) || []
-    let sponsorProfiles: { id: string; full_name: string }[] = []
-    if (sponsorIds.length > 0) {
-      const { data: sponsorData, error: sponsorError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', sponsorIds)
-      if (sponsorError) throw sponsorError
-      sponsorProfiles = sponsorData || []
-    }
-
-    // Get pending sponsor relationships (invitations not yet accepted)
-    // Note: Removing practitioner_email query as column doesn't exist
-    const { data: pendingRelationships, error: pendingError } = await supabase
-      .from('sponsor_relationships')
-      .select('sponsor_id, status')
-      .in('status', ['pending', 'pending_confirmation'])
-    if (pendingError) {
-      console.error('Pending relationships error:', pendingError)
-      // Don't throw, just log and continue with empty array
-      console.log('Continuing without pending relationships data')
-    }
-
-    // Get support tickets
-    const { data: supportTickets, error: ticketError } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    // Get alpha feedback
-    const { data: alphaFeedback, error: feedbackError } = await supabase
-      .from('alpha_feedback')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    // Get payment totals for each user
-    const { data: paymentTotals, error: paymentError } = await supabase
-      .from('payments')
-      .select('user_id, amount, status')
-      .eq('status', 'succeeded')
+    const token = authHeader.split(' ')[1];
     
-    if (paymentError) {
-      console.error('Payment totals error:', paymentError)
+    // Verify the user is authenticated and get their profile
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Calculate payment totals by user
-    const userPaymentTotals = (paymentTotals || []).reduce((acc, payment) => {
-      if (!acc[payment.user_id]) {
-        acc[payment.user_id] = 0;
-      }
-      acc[payment.user_id] += parseFloat(payment.amount || '0');
-      return acc;
-    }, {} as Record<string, number>);
+    // Get user profile to check admin role
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('roles')
+      .eq('id', user.id)
+      .single();
 
-    // Merge user data
-    const userData = (profiles || []).map(p => {
-      const authUser = users?.find(u => u.id === p.id)
-      const connection = connections?.find(c => c.practitioner_user_id === p.id && c.status === 'active')
-      const sponsorProfile = connection ? sponsorProfiles.find(sp => sp.id === connection.sponsor_user_id) : null
-      const sponsorAuthUser = connection ? users?.find(u => u.id === connection.sponsor_user_id) : null
-      const pendingInvite = pendingRelationships?.find(pr => pr.practitioner_email === authUser?.email)
-      
-      // Determine user status
-      let userStatus = 'active'
-      if (authUser && !authUser.email_confirmed_at) {
-        userStatus = 'pending_confirmation'
-      }
-      
-      // Determine sponsor status
-      let sponsorStatus = null
-      if (pendingInvite) {
-        sponsorStatus = pendingInvite.status === 'pending' ? 'invite_pending' : 'sponsor_pending_confirmation'
-      }
+    if (profileError || !profile?.roles?.includes('admin')) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
 
-      // Get payment total for this user
-      const paymentTotal = userPaymentTotals[p.id] || 0;
+    // Fetch all users with their organization information
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('profiles')
+      .select(`
+        id,
+        full_name,
+        organization_id,
+        roles,
+        created_at,
+        organizations(name)
+      `)
+      .order('created_at', { ascending: false });
 
-      // Determine user type (individual vs organization member)
-      const userType = p.organization_id ? 'org_user' : 'individual';
-      
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    }
+
+    // Get auth users to get email addresses
+    const { data: authUsers, error: authError2 } = await supabaseAdmin.auth.admin.listUsers();
+    if (authError2) {
+      console.error('Error fetching auth users:', authError2);
+      return NextResponse.json({ error: 'Failed to fetch user emails' }, { status: 500 });
+    }
+
+    // Combine profile and auth data
+    const combinedUsers = users.map(profile => {
+      const authUser = authUsers.users.find(au => au.id === profile.id);
       return {
-        ...p,
+        id: profile.id,
+        full_name: profile.full_name,
         email: authUser?.email || null,
-        last_sign_in_at: authUser?.last_sign_in_at || null,
-        email_confirmed_at: authUser?.email_confirmed_at || null,
-        user_status: userStatus,
-        user_type: userType,
-        payment_total: paymentTotal,
-        connection_id: connection ? connection.sponsor_user_id : null,
-        sponsor_name: sponsorProfile?.full_name || null,
-        sponsor_email: sponsorAuthUser?.email || null,
-        sponsor_status: sponsorStatus
-      }
-    })
+        organization_id: profile.organization_id,
+        organization_name: profile.organizations?.name || null,
+        roles: profile.roles || [],
+        created_at: profile.created_at
+      };
+    });
 
-    return NextResponse.json({ 
-      users: userData,
-      supportTickets: supportTickets || [],
-      alphaFeedback: alphaFeedback || []
-    })
+    return NextResponse.json({ users: combinedUsers });
   } catch (error) {
-    console.error('Admin API error:', error)
-    return NextResponse.json({ error: 'Failed to fetch admin data' }, { status: 500 })
+    console.error('Error in users API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

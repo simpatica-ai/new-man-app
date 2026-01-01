@@ -108,7 +108,11 @@ export default function AdminPage() {
       setIsAdmin(true);
 
       // Fetch user data from API route (bypasses RLS)
-      const response = await fetch('/api/admin/users')
+      const response = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       const { users: userData, supportTickets, alphaFeedback } = await response.json()
       
       setPractitioners(userData || [])

@@ -156,7 +156,7 @@ export default function AppHeader() {
                 <MessageSquare className="h-4 w-4" />
                 <span className="hidden md:inline ml-1">Feedback</span>
               </Button>
-              {isAdmin && (
+              {isAdmin && profile?.organization_id && (
                 <Link href="/orgadmin">
                   <Button 
                     title="Organization Admin" 
@@ -166,6 +166,19 @@ export default function AppHeader() {
                   >
                     <Shield className="h-4 w-4" />
                     <span className="hidden md:inline ml-1">Org Admin</span>
+                  </Button>
+                </Link>
+              )}
+              {isAdmin && !profile?.organization_id && (
+                <Link href="/admin">
+                  <Button 
+                    title="System Admin" 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors h-8 px-2"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">Sys Admin</span>
                   </Button>
                 </Link>
               )}
