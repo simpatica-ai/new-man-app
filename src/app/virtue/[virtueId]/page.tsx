@@ -565,7 +565,7 @@ export default function VirtueDetailPage() {
     } finally {
       setIsPromptLoading(false);
     }
-  }, [virtue, defectAnalysis, virtueId, currentUserId, progress, memos]);
+  }, [virtue, defectAnalysis, virtueId, currentUserId, progress]);
 
   const fetchStage3Prompt = useCallback(async (forceRefresh = false) => {
     if (!virtue || !currentUserId) return;
