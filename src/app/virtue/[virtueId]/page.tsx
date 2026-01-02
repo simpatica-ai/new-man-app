@@ -454,6 +454,8 @@ export default function VirtueDetailPage() {
             .eq('virtue_id', virtue.id);
 
           if (defectData && defectData.length > 0) {
+            console.log('Defects mapped to virtue:', defectData);
+            
             // Get user's ratings for these defects
             const { data: userRatings } = await supabase
               .from('user_assessment_defects')
@@ -461,8 +463,10 @@ export default function VirtueDetailPage() {
               .eq('assessment_id', latestAssessment.id)
               .eq('user_id', currentUserId);
 
+            console.log('User ratings for defects:', userRatings);
+
             if (userRatings) {
-              // Match defects with ratings and sort by rating (highest first)
+              // Match defects with ratings and sort by combined priority (frequency + impact)
               specificDefects = defectData
                 .map(d => {
                   const rating = userRatings.find(r => r.defect_name === d.defects.name);
@@ -474,7 +478,24 @@ export default function VirtueDetailPage() {
                   };
                 })
                 .filter(d => d.rating > 0) // Only include defects with ratings
-                .sort((a, b) => b.rating - a.rating); // Sort by rating, highest first
+                .sort((a, b) => {
+                  // Create priority score: frequency (1-5) + harm level weight
+                  const getHarmWeight = (harm) => {
+                    switch(harm) {
+                      case 'Severe': return 3;
+                      case 'Moderate': return 2;
+                      case 'Mild': return 1;
+                      default: return 0;
+                    }
+                  };
+                  
+                  const aPriority = a.rating + getHarmWeight(a.harmLevel);
+                  const bPriority = b.rating + getHarmWeight(b.harmLevel);
+                  
+                  return bPriority - aPriority; // Sort by combined priority, highest first
+                });
+              
+              console.log('Processed specific defects:', specificDefects);
             }
           }
         }
