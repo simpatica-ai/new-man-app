@@ -562,7 +562,7 @@ export default function VirtueDetailPage() {
       const sequenceNumber = (promptHistory?.length || 0) + 1;
       
       // Save the new prompt to database with tracking metadata
-      await supabase
+      const { error: insertError } = await supabase
         .from('virtue_prompts')
         .insert({
           user_id: currentUserId,
@@ -573,6 +573,10 @@ export default function VirtueDetailPage() {
           prompt_sequence: sequenceNumber,
           is_completion_prompt: data.metadata?.isCompletionPrompt || false
         });
+      
+      if (insertError) {
+        console.error('Failed to save prompt to database:', insertError);
+      }
       
       setStage1AiPrompt(data.prompt);
 
@@ -644,7 +648,7 @@ export default function VirtueDetailPage() {
 
       
       // Save the new prompt to database
-      await supabase
+      const { error: insertError } = await supabase
         .from('virtue_prompts')
         .insert({
           user_id: currentUserId,
@@ -652,6 +656,10 @@ export default function VirtueDetailPage() {
           stage_number: 2,
           prompt_text: data.prompt
         });
+      
+      if (insertError) {
+        console.error('Failed to save Stage 2 prompt to database:', insertError);
+      }
       
       setStage2AiPrompt(data.prompt);
 
@@ -719,7 +727,7 @@ export default function VirtueDetailPage() {
       const data = await response.json();
       
       // Save the new prompt to database
-      await supabase
+      const { error: insertError } = await supabase
         .from('virtue_prompts')
         .insert({
           user_id: currentUserId,
@@ -727,6 +735,10 @@ export default function VirtueDetailPage() {
           stage_number: 3,
           prompt_text: data.prompt
         });
+      
+      if (insertError) {
+        console.error('Failed to save Stage 3 prompt to database:', insertError);
+      }
       
       setStage3AiPrompt(data.prompt);
 
