@@ -529,15 +529,14 @@ export default function VirtueDetailPage() {
         }
       }
       
-      // Get prompt history for this virtue to help AI track progress
+      // Get ALL prompt history for this virtue to help AI track progress
       const { data: promptHistory } = await supabase
         .from('virtue_prompts')
         .select('prompt_text, created_at')
         .eq('user_id', currentUserId)
         .eq('virtue_id', virtue.id)
         .eq('stage_number', 1)
-        .order('created_at', { ascending: true })
-        .limit(5); // Last 5 prompts to show progression
+        .order('created_at', { ascending: true });
       
       const previousPrompts = promptHistory?.map(p => p.prompt_text) || [];
       console.log('Previous prompts for context:', previousPrompts.length);
