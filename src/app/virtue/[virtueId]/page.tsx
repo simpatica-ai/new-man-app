@@ -529,6 +529,19 @@ export default function VirtueDetailPage() {
         }
       }
       
+      // Get prompt history for this virtue to help AI track progress
+      const { data: promptHistory } = await supabase
+        .from('virtue_prompts')
+        .select('prompt_text, created_at')
+        .eq('user_id', currentUserId)
+        .eq('virtue_id', virtue.id)
+        .eq('stage_number', 1)
+        .order('created_at', { ascending: true })
+        .limit(5); // Last 5 prompts to show progression
+      
+      const previousPrompts = promptHistory?.map(p => p.prompt_text) || [];
+      console.log('Previous prompts for context:', previousPrompts.length);
+      
       // Generate new prompt if no cache, cache is old, or forcing refresh
       const response = await fetch('https://getstage1-917009769018.us-central1.run.app', {
         method: 'POST',
@@ -538,21 +551,28 @@ export default function VirtueDetailPage() {
           virtueDef: virtue.description,
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: currentMemoContent,
-          specificDefects: specificDefects
+          specificDefects: specificDefects,
+          previousPrompts: previousPrompts
         }),
       });
 
       if (!response.ok) throw new Error('Failed to fetch Stage 1 prompt');
       const data = await response.json();
       
-      // Save the new prompt to database
+      // Calculate prompt sequence number
+      const sequenceNumber = (promptHistory?.length || 0) + 1;
+      
+      // Save the new prompt to database with tracking metadata
       await supabase
         .from('virtue_prompts')
         .insert({
           user_id: currentUserId,
           virtue_id: virtue.id,
           stage_number: 1,
-          prompt_text: data.prompt
+          prompt_text: data.prompt,
+          defect_focus: data.metadata?.defectFocus || null,
+          prompt_sequence: sequenceNumber,
+          is_completion_prompt: data.metadata?.isCompletionPrompt || false
         });
       
       setStage1AiPrompt(data.prompt);
