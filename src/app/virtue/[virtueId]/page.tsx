@@ -421,11 +421,12 @@ export default function VirtueDetailPage() {
 
   }
 
-  const fetchStage1Prompt = useCallback(async (forceRefresh = false) => {
+  const fetchStage1Prompt = useCallback(async (forceRefresh = false, overrideStage1Status?: string) => {
     if (!virtue || !currentUserId) return;
 
     setIsPromptLoading(true);
     try {
+      const stage1Status = overrideStage1Status || progress.get(`${virtueId}-1`);
       const currentMemoContent = memos.get(1) || '';
       
       // Fetch specific defect data for this virtue
@@ -551,7 +552,8 @@ export default function VirtueDetailPage() {
           characterDefectAnalysis: defectAnalysis?.analysis_text || 'No character defect analysis available.',
           stage1MemoContent: currentMemoContent,
           specificDefects: specificDefects,
-          previousPrompts: previousPrompts
+          previousPrompts: previousPrompts,
+          isStageComplete: stage1Status === 'completed'
         }),
       });
 
@@ -873,6 +875,8 @@ export default function VirtueDetailPage() {
 
         
         if (stageNumber === 1) {
+          // Refresh Stage 1 prompt to show completion acknowledgment
+          fetchStage1Prompt(true, 'completed');
           // Clear cached Stage 2 prompts to ensure fresh generation
           await supabase
             .from('virtue_prompts')

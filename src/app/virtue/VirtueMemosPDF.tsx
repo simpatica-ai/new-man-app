@@ -145,29 +145,86 @@ const formatStatus = (status: string): string => {
   }
 };
 
-// Helper function to convert HTML to plain text (basic implementation)
-const convertHTMLToText = (html: string): string => {
-  if (!html) return '';
+// Helper function to parse HTML and extract formatted text segments
+interface TextSegment {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+}
+
+const parseHTMLToSegments = (html: string): TextSegment[][] => {
+  if (!html) return [];
   
-  // Remove HTML tags but preserve line breaks
-  let text = html
+  // First, split into paragraphs by block-level elements
+  const paragraphHTML = html
+    .replace(/<\/p>/gi, '|||PARAGRAPH|||')
+    .replace(/<\/div>/gi, '|||PARAGRAPH|||')
+    .replace(/<\/h[1-6]>/gi, '|||PARAGRAPH|||')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<p[^>]*>/gi, '')
-    .replace(/<li[^>]*>/gi, '• ')
-    .replace(/<\/li>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .trim();
+    .split('|||PARAGRAPH|||')
+    .filter(p => p.trim());
   
-  // Clean up excessive line breaks
-  text = text.replace(/\n{3,}/g, '\n\n');
+  const paragraphs: TextSegment[][] = [];
   
-  return text;
+  for (const paraHTML of paragraphHTML) {
+    const segments: TextSegment[] = [];
+    let currentText = paraHTML;
+    
+    // Remove opening block tags
+    currentText = currentText
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<div[^>]*>/gi, '')
+      .replace(/<h[1-6][^>]*>/gi, '');
+    
+    // Parse bold and italic tags
+    const regex = /<(strong|b|em|i)>(.*?)<\/(strong|b|em|i)>|([^<]+)/gi;
+    let match;
+    
+    while ((match = regex.exec(currentText)) !== null) {
+      if (match[1]) {
+        // This is a formatted segment
+        const tag = match[1].toLowerCase();
+        const text = match[2]
+          .replace(/<[^>]+>/g, '') // Remove any nested tags
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .trim();
+        
+        if (text) {
+          segments.push({
+            text,
+            bold: tag === 'strong' || tag === 'b',
+            italic: tag === 'em' || tag === 'i'
+          });
+        }
+      } else if (match[4]) {
+        // This is plain text
+        const text = match[4]
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .trim();
+        
+        if (text) {
+          segments.push({ text });
+        }
+      }
+    }
+    
+    if (segments.length > 0) {
+      paragraphs.push(segments);
+    }
+  }
+  
+  return paragraphs;
 };
 
 const VirtueMemosPDF = ({ virtueName, userName, stages }: VirtueMemosPDFProps) => {
@@ -198,9 +255,20 @@ const VirtueMemosPDF = ({ virtueName, userName, stages }: VirtueMemosPDFProps) =
             </View>
             
             <View style={styles.memoContent}>
-              {convertHTMLToText(stage.memoContent).split('\n\n').map((paragraph, pIndex) => (
+              {parseHTMLToSegments(stage.memoContent).map((segments, pIndex) => (
                 <Text key={pIndex} style={styles.paragraph}>
-                  {paragraph}
+                  {segments.map((segment, sIndex) => (
+                    <Text 
+                      key={sIndex}
+                      style={[
+                        segment.bold && styles.bold,
+                        segment.italic && styles.italic
+                      ]}
+                    >
+                      {segment.text}
+                      {sIndex < segments.length - 1 ? ' ' : ''}
+                    </Text>
+                  ))}
                 </Text>
               ))}
             </View>
