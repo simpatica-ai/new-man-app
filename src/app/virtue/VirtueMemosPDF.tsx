@@ -155,9 +155,12 @@ interface TextSegment {
 const parseHTMLToSegments = (html: string): TextSegment[][] => {
   if (!html) return [];
   
+  // First, remove all <br> tags and replace with spaces to avoid "br>" artifacts
+  let cleanedHTML = html.replace(/<br\s*\/?>/gi, ' ');
+  
   // Split into paragraphs by block-level closing tags
   const paragraphSplitter = /<\/(p|div|h[1-6]|blockquote)>/gi;
-  const paragraphTexts = html.split(paragraphSplitter).filter(text => {
+  const paragraphTexts = cleanedHTML.split(paragraphSplitter).filter(text => {
     // Filter out the tag names that come from the split
     return text && !['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'].includes(text.toLowerCase());
   });
@@ -178,7 +181,6 @@ const parseHTMLToSegments = (html: string): TextSegment[][] => {
     // This regex matches: <strong>text</strong>, <b>text</b>, <em>text</em>, <i>text</i>, or plain text
     const formatRegex = /<(strong|b)>(.*?)<\/(strong|b)>|<(em|i)>(.*?)<\/(em|i)>|([^<]+)/gi;
     let match;
-    let lastIndex = 0;
     
     while ((match = formatRegex.exec(paraHTML)) !== null) {
       if (match[1] && match[2]) {
@@ -200,7 +202,6 @@ const parseHTMLToSegments = (html: string): TextSegment[][] => {
           segments.push({ text });
         }
       }
-      lastIndex = match.index + match[0].length;
     }
     
     if (segments.length > 0) {
@@ -238,7 +239,7 @@ const VirtueMemosPDF = ({ virtueName, userName, stages }: VirtueMemosPDFProps) =
 
         {/* Stage Sections */}
         {stages.map((stage, index) => (
-          <View key={index} style={styles.stageSection} wrap={false}>
+          <View key={index} style={styles.stageSection}>
             <View style={styles.stageHeader}>
               <Text style={styles.stageTitle}>
                 {getStageDisplayName(stage.stageNumber)}: {getEmpatheticTitle(stage.stageNumber)}
