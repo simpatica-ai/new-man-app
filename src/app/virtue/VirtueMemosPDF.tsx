@@ -155,8 +155,11 @@ interface TextSegment {
 const parseHTMLToSegments = (html: string): TextSegment[][] => {
   if (!html) return [];
   
-  // First, remove all <br> tags and replace with spaces to avoid "br>" artifacts
-  let cleanedHTML = html.replace(/<br\s*\/?>/gi, ' ');
+  // First, normalize br tags - convert double br to paragraph breaks
+  // This preserves intentional paragraph breaks (like before section headers)
+  let cleanedHTML = html
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>') // Double br becomes paragraph break
+    .replace(/<br\s*\/?>/gi, ' '); // Single br becomes space
   
   // Split into paragraphs by block-level closing tags
   const paragraphSplitter = /<\/(p|div|h[1-6]|blockquote)>/gi;
