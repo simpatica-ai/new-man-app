@@ -155,25 +155,27 @@ interface TextSegment {
 const parseHTMLToSegments = (html: string): TextSegment[][] => {
   if (!html) return [];
   
-  // First, normalize br tags - convert double br to paragraph breaks
-  // This preserves intentional paragraph breaks (like before section headers)
+  // TipTap creates <p> tags for each paragraph
+  // When user presses Enter twice, it creates: <p>text</p><p><strong>Header</strong></p><p>more text</p>
+  // We need to preserve these as separate paragraphs
+  
+  // First, handle br tags that might exist
   let cleanedHTML = html
-    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>') // Double br becomes paragraph break
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>') // Double br
     .replace(/<br\s*\/?>/gi, ' '); // Single br becomes space
   
-  // Split into paragraphs by block-level closing tags
-  const paragraphSplitter = /<\/(p|div|h[1-6]|blockquote)>/gi;
-  const paragraphTexts = cleanedHTML.split(paragraphSplitter).filter(text => {
-    // Filter out the tag names that come from the split
-    return text && !['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'].includes(text.toLowerCase());
-  });
+  // Split by closing paragraph tags to get individual paragraphs
+  const paragraphSplitter = /<\/p>/gi;
+  const paragraphTexts = cleanedHTML.split(paragraphSplitter).filter(text => text.trim());
   
   const paragraphs: TextSegment[][] = [];
   
   for (let paraHTML of paragraphTexts) {
-    // Remove opening block tags
+    // Remove opening <p> tag and any other block tags
     paraHTML = paraHTML
-      .replace(/<(p|div|h[1-6]|blockquote)[^>]*>/gi, '')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<(div|h[1-6]|blockquote)[^>]*>/gi, '')
+      .replace(/<\/(div|h[1-6]|blockquote)>/gi, '')
       .trim();
     
     if (!paraHTML) continue;
