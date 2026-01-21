@@ -70,10 +70,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   bold: {
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
   },
   italic: {
-    fontStyle: 'italic',
+    fontStyle: 'italic' as const,
   },
   footer: {
     position: 'absolute',
@@ -155,68 +155,52 @@ interface TextSegment {
 const parseHTMLToSegments = (html: string): TextSegment[][] => {
   if (!html) return [];
   
-  // First, split into paragraphs by block-level elements
-  const paragraphHTML = html
-    .replace(/<\/p>/gi, '|||PARAGRAPH|||')
-    .replace(/<\/div>/gi, '|||PARAGRAPH|||')
-    .replace(/<\/h[1-6]>/gi, '|||PARAGRAPH|||')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .split('|||PARAGRAPH|||')
-    .filter(p => p.trim());
+  // Split into paragraphs by block-level closing tags
+  const paragraphSplitter = /<\/(p|div|h[1-6]|blockquote)>/gi;
+  const paragraphTexts = html.split(paragraphSplitter).filter(text => {
+    // Filter out the tag names that come from the split
+    return text && !['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'].includes(text.toLowerCase());
+  });
   
   const paragraphs: TextSegment[][] = [];
   
-  for (const paraHTML of paragraphHTML) {
-    const segments: TextSegment[] = [];
-    let currentText = paraHTML;
-    
+  for (let paraHTML of paragraphTexts) {
     // Remove opening block tags
-    currentText = currentText
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<div[^>]*>/gi, '')
-      .replace(/<h[1-6][^>]*>/gi, '');
+    paraHTML = paraHTML
+      .replace(/<(p|div|h[1-6]|blockquote)[^>]*>/gi, '')
+      .trim();
     
-    // Parse bold and italic tags
-    const regex = /<(strong|b|em|i)>(.*?)<\/(strong|b|em|i)>|([^<]+)/gi;
+    if (!paraHTML) continue;
+    
+    const segments: TextSegment[] = [];
+    
+    // Process the HTML to extract text with formatting
+    // This regex matches: <strong>text</strong>, <b>text</b>, <em>text</em>, <i>text</i>, or plain text
+    const formatRegex = /<(strong|b)>(.*?)<\/(strong|b)>|<(em|i)>(.*?)<\/(em|i)>|([^<]+)/gi;
     let match;
+    let lastIndex = 0;
     
-    while ((match = regex.exec(currentText)) !== null) {
-      if (match[1]) {
-        // This is a formatted segment
-        const tag = match[1].toLowerCase();
-        const text = match[2]
-          .replace(/<[^>]+>/g, '') // Remove any nested tags
-          .replace(/&nbsp;/g, ' ')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .trim();
-        
+    while ((match = formatRegex.exec(paraHTML)) !== null) {
+      if (match[1] && match[2]) {
+        // Bold text: <strong> or <b>
+        const text = cleanText(match[2]);
         if (text) {
-          segments.push({
-            text,
-            bold: tag === 'strong' || tag === 'b',
-            italic: tag === 'em' || tag === 'i'
-          });
+          segments.push({ text, bold: true });
         }
-      } else if (match[4]) {
-        // This is plain text
-        const text = match[4]
-          .replace(/<[^>]+>/g, '')
-          .replace(/&nbsp;/g, ' ')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .trim();
-        
+      } else if (match[4] && match[5]) {
+        // Italic text: <em> or <i>
+        const text = cleanText(match[5]);
+        if (text) {
+          segments.push({ text, italic: true });
+        }
+      } else if (match[7]) {
+        // Plain text
+        const text = cleanText(match[7]);
         if (text) {
           segments.push({ text });
         }
       }
+      lastIndex = match.index + match[0].length;
     }
     
     if (segments.length > 0) {
@@ -225,6 +209,19 @@ const parseHTMLToSegments = (html: string): TextSegment[][] => {
   }
   
   return paragraphs;
+};
+
+// Helper to clean HTML entities and extra tags
+const cleanText = (text: string): string => {
+  return text
+    .replace(/<[^>]+>/g, '') // Remove any remaining HTML tags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 };
 
 const VirtueMemosPDF = ({ virtueName, userName, stages }: VirtueMemosPDFProps) => {
