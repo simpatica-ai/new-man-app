@@ -155,23 +155,19 @@ interface TextSegment {
 const parseHTMLToSegments = (html: string): TextSegment[][] => {
   if (!html) return [];
   
-  // TipTap creates <p> tags for each paragraph
-  // When user presses Enter twice, it creates: <p>text</p><p><strong>Header</strong></p><p>more text</p>
-  // We need to preserve these as separate paragraphs
-  
-  // First, handle br tags that might exist
+  // Handle br tags - convert double br to paragraph breaks
   let cleanedHTML = html
-    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>') // Double br
-    .replace(/<br\s*\/?>/gi, ' '); // Single br becomes space
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>')
+    .replace(/<br\s*\/?>/gi, ' ');
   
-  // Split by closing paragraph tags to get individual paragraphs
+  // Split by closing paragraph tags to respect TipTap's paragraph structure
   const paragraphSplitter = /<\/p>/gi;
   const paragraphTexts = cleanedHTML.split(paragraphSplitter).filter(text => text.trim());
   
   const paragraphs: TextSegment[][] = [];
   
   for (let paraHTML of paragraphTexts) {
-    // Remove opening <p> tag and any other block tags
+    // Remove opening tags
     paraHTML = paraHTML
       .replace(/<p[^>]*>/gi, '')
       .replace(/<(div|h[1-6]|blockquote)[^>]*>/gi, '')
@@ -180,37 +176,41 @@ const parseHTMLToSegments = (html: string): TextSegment[][] => {
     
     if (!paraHTML) continue;
     
-    const segments: TextSegment[] = [];
+    // Check if this paragraph is ONLY a short bold text (likely a header)
+    const onlyBoldMatch = paraHTML.match(/^<strong>([^<]{1,50})<\/strong>$/i);
     
-    // Process the HTML to extract text with formatting
-    // This regex matches: <strong>text</strong>, <b>text</b>, <em>text</em>, <i>text</i>, or plain text
+    if (onlyBoldMatch) {
+      // This is a standalone header - add empty paragraph before it for spacing
+      if (paragraphs.length > 0) {
+        paragraphs.push([{ text: ' ' }]); // Add spacing paragraph
+      }
+    }
+    
+    // Parse the paragraph for formatted segments
+    const segments: TextSegment[] = [];
     const formatRegex = /<(strong|b)>(.*?)<\/(strong|b)>|<(em|i)>(.*?)<\/(em|i)>|([^<]+)/gi;
     let match;
     
     while ((match = formatRegex.exec(paraHTML)) !== null) {
       if (match[1] && match[2]) {
-        // Bold text: <strong> or <b>
         const text = cleanText(match[2]);
-        if (text) {
-          segments.push({ text, bold: true });
-        }
+        if (text) segments.push({ text, bold: true });
       } else if (match[4] && match[5]) {
-        // Italic text: <em> or <i>
         const text = cleanText(match[5]);
-        if (text) {
-          segments.push({ text, italic: true });
-        }
+        if (text) segments.push({ text, italic: true });
       } else if (match[7]) {
-        // Plain text
         const text = cleanText(match[7]);
-        if (text) {
-          segments.push({ text });
-        }
+        if (text) segments.push({ text });
       }
     }
     
     if (segments.length > 0) {
       paragraphs.push(segments);
+    }
+    
+    // If this was a standalone header, add empty paragraph after it for spacing
+    if (onlyBoldMatch) {
+      paragraphs.push([{ text: ' ' }]); // Add spacing paragraph
     }
   }
   
